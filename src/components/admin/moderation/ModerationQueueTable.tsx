@@ -22,15 +22,7 @@ type ModerationItem = {
   id: string
   userId: string
   name: string
-  type:
-    | "profile-pic"
-    | "name"
-    | "short-bio"
-    | "long-bio"
-    | "images"
-    | "video"
-    | "social-links"
-    | "music-links"
+  type: string
   date: string
 }
 

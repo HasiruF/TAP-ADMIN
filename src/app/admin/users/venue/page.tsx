@@ -13,6 +13,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react"
 
+import { ExternalLink } from "lucide-react"
 export default function VenueDetailPage({
   params,
 }: {
