@@ -37,11 +37,7 @@ const navMain = [
     url: "/admin/moderation",
     icon: ShieldAlert,
   },
-  {
-    title: "User Approvals",
-    url: "/admin/approvals",
-    icon: BadgeCheck,
-  },
+  
 ]
 
 export function AppSidebar() {
