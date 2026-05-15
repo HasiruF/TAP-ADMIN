@@ -1,0 +1,260 @@
+"use client"
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+
+type ModerationItem = {
+  id: string
+  userId: string
+  name: string
+  type: string
+  date: string
+  content: string
+}
+
+interface Props {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  item: ModerationItem | null
+  onApprove: (id: string) => void
+  onReject: (id: string) => void
+}
+
+export function ModerationPreviewDialog({
+  open,
+  onOpenChange,
+  item,
+  onApprove,
+  onReject,
+}: Props) {
+  if (!item) return null
+
+  const renderContent = () => {
+    switch (item.type) {
+      case "profile-pic":
+      case "images":
+        try {
+          const images = JSON.parse(item.content)
+          const list = Array.isArray(images) ? images : [item.content]
+
+          return (
+            <div className="grid grid-cols-2 gap-3">
+              {list.map((img: string, i: number) => (
+                <img
+                  key={i}
+                  src={img}
+                  className="rounded-xl w-full h-40 object-cover border"
+                  style={{ borderColor: "var(--border)" }}
+                />
+              ))}
+            </div>
+          )
+        } catch {
+          return (
+            <img
+              src={item.content}
+              className="rounded-xl w-full max-h-[300px] object-cover border"
+              style={{ borderColor: "var(--border)" }}
+            />
+          )
+        }
+
+      case "video":
+        return (
+          <iframe
+            className="w-full h-[300px] rounded-xl"
+            src={item.content}
+            allowFullScreen
+          />
+        )
+
+      case "social-links":
+      case "music-links":
+        try {
+          const links = JSON.parse(item.content)
+          return (
+            <div className="space-y-2">
+              {Array.isArray(links)
+                ? links.map((l: any, i: number) => (
+                    <a
+                      key={i}
+                      href={l.url}
+                      target="_blank"
+                      className="text-sm underline text-blue-400"
+                    >
+                      {l.platform || l}
+                    </a>
+                  ))
+                : Object.entries(links).map(([k, v]: any) => (
+                    <a
+                      key={k}
+                      href={v}
+                      target="_blank"
+                      className="text-sm underline text-blue-400 block"
+                    >
+                      {k}
+                    </a>
+                  ))}
+            </div>
+          )
+        } catch {
+          return <p>{item.content}</p>
+        }
+
+      default:
+        return (
+          <p
+            className="text-sm leading-relaxed"
+            style={{ color: "var(--foreground)" }}
+          >
+            {item.content}
+          </p>
+        )
+    }
+  }
+
+    return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+        className="max-w-6xl w-[40vw] p-0 overflow-hidden rounded-3xl"
+        style={{
+            backgroundColor: "var(--card)",
+            color: "var(--foreground)",
+            borderColor: "var(--border)",
+        }}
+        >
+        {/* HEADER */}
+        <div
+            className="px-10 py-8 border-b"
+            style={{
+            borderColor: "var(--border)",
+            }}
+        >
+            <DialogHeader>
+            <div className="flex items-start justify-between gap-6">
+                <div>
+                <p
+                    className="mb-2"
+                    style={{
+                    color: "var(--muted-foreground)",
+                    fontSize: "11px",
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                    }}
+                >
+                    Moderation Review
+                </p>
+
+                <DialogTitle
+                    style={{
+                    fontSize: "32px",
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 500,
+                    lineHeight: 1,
+                    }}
+                >
+                    {item.name}
+                </DialogTitle>
+
+                <p
+                    className="mt-3 capitalize"
+                    style={{
+                    color: "var(--gold)",
+                    fontSize: "14px",
+                    }}
+                >
+                    {item.type.replace("-", " ")}
+                </p>
+                </div>
+
+                {/* PREVIEW BUTTON */}
+                <a
+                href="https://civic-sauna-76601524.figma.site/"
+                target="_blank"
+                rel="noopener noreferrer"
+                >
+                <Button variant="outline">
+                    Show Preview
+                </Button>
+                </a>
+            </div>
+            </DialogHeader>
+        </div>
+
+        {/* CONTENT AREA */}
+        <div className="px-10 py-10 max-h-[70vh] overflow-y-auto">
+            <div
+            className="rounded-3xl border p-8"
+            style={{
+                backgroundColor: "var(--background)",
+                borderColor: "var(--border)",
+            }}
+            >
+            {renderContent()}
+            </div>
+        </div>
+
+        {/* FOOTER ACTIONS */}
+        <div
+            className="px-10 py-6 border-t flex items-center justify-between"
+            style={{
+            borderColor: "var(--border)",
+            backgroundColor: "var(--background)",
+            }}
+        >
+            {/* META */}
+            <div>
+            <p
+                style={{
+                color: "var(--muted-foreground)",
+                fontSize: "13px",
+                }}
+            >
+                User ID: {item.userId}
+            </p>
+
+            <p
+                style={{
+                color: "var(--muted-foreground)",
+                fontSize: "13px",
+                marginTop: "4px",
+                }}
+            >
+                Submitted: {item.date}
+            </p>
+            </div>
+
+            {/* ACTIONS */}
+            <div className="flex items-center gap-3">
+            <Button
+                variant="outline"
+                onClick={() => onReject(item.id)}
+                style={{
+                borderColor: "var(--status-banned-text)",
+                color: "var(--status-banned-text)",
+                }}
+            >
+                Reject
+            </Button>
+
+            <Button
+                onClick={() => onApprove(item.id)}
+                style={{
+                backgroundColor: "var(--status-active-bg)",
+                color: "var(--status-active-text)",
+                }}
+            >
+                Approve
+            </Button>
+            </div>
+        </div>
+        </DialogContent>
+    </Dialog>
+    )
+}
