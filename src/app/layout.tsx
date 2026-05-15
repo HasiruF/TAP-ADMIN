@@ -21,7 +21,7 @@ export const metadata = {
   title: "TAP Admin",
   description: "TAP Administration Dashboard",
   icons: {
-    icon: "/primary.svg",
+    icon: "/Primary.svg",
   },
 }
 
