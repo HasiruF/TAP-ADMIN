@@ -62,69 +62,71 @@ export default function AdminOverviewPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {stats.map((stat) => (
           <div
             key={stat.title}
-            className="relative overflow-hidden rounded-3xl border p-6"
+            className="relative overflow-hidden rounded-2xl border p-5"
             style={{
               backgroundColor: "var(--card)",
               borderColor: "var(--border)",
             }}
           >
-            {/* Glow */}
+            {/* subtle glow */}
             <div
-              className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10"
+              className="absolute -top-10 -right-10 w-24 h-24 rounded-full blur-2xl opacity-10"
               style={{
                 backgroundColor: "var(--gold)",
               }}
             />
 
-            <div className="relative z-10">
-              {/* Icon */}
+            <div className="relative z-10 flex items-start justify-between">
+              {/* LEFT */}
+              <div>
+                {/* label */}
+                <p
+                  className="mb-1"
+                  style={{
+                    color: "var(--muted-foreground)",
+                    fontSize: "12px",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {stat.title}
+                </p>
+
+                {/* number */}
+                <h2
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: "34px",
+                    lineHeight: "1",
+                    fontWeight: 500,
+                    color: "var(--foreground)",
+                  }}
+                >
+                  {stat.value}
+                </h2>
+              </div>
+
+              {/* ICON */}
               <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6"
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{
-                  backgroundColor: "rgba(201,168,76,0.10)",
-                  border: "1px solid rgba(201,168,76,0.15)",
+                  backgroundColor: "rgba(201,168,76,0.08)",
+                  border: "1px solid rgba(201,168,76,0.12)",
                 }}
               >
                 <stat.icon
-                  size={22}
-                  style={{
-                    color: "var(--gold)",
-                  }}
+                  size={18}
+                  style={{ color: "var(--gold)" }}
                 />
               </div>
-
-              {/* Label */}
-              <p
-                className="mb-2"
-                style={{
-                  color: "var(--muted-foreground)",
-                  fontSize: "13px",
-                  letterSpacing: "0.04em",
-                }}
-              >
-                {stat.title}
-              </p>
-
-              {/* Number */}
-              <h2
-                style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: "54px",
-                  lineHeight: "1",
-                  fontWeight: 500,
-                  color: "var(--foreground)",
-                }}
-              >
-                {stat.value}
-              </h2>
             </div>
           </div>
         ))}
-      </div>
+      </div>  
       <GrowthChart />
     </div>
   )
