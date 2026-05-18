@@ -99,8 +99,8 @@ export default function AdminOverviewPage() {
                 {/* number */}
                 <h2
                   style={{
-                    fontFamily: "var(--font-display)",
-                    fontSize: "34px",
+                    fontFamily: "var(--font-body)",
+                    fontSize: "30px",
                     lineHeight: "1",
                     fontWeight: 500,
                     color: "var(--foreground)",

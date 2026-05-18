@@ -85,8 +85,8 @@ export function GrowthChart() {
 
           <h2
             style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "40px",
+              fontFamily: "var(--font-body)",
+              fontSize: "30px",
               lineHeight: "1",
               fontWeight: 500,
               color: "var(--foreground)",
