@@ -23,7 +23,7 @@ export const artists = [{
   },
   media: {
     images: [],
-    videoUrl: "https://youtube.com",
+    videoUrl: "https://www.youtube.com/watch?v=kPa7bsKwL-c",
     socialMedia: {
       instagram: "@luna",
       tiktok: "",
@@ -32,6 +32,11 @@ export const artists = [{
       x: "",
     },
   },
+  photos: {
+      images: [
+        { url: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1" },
+      ],
+    },
   musicLinks: {
     links: [
       {

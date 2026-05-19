@@ -180,10 +180,10 @@ export function ModerationPreviewDialog({
                 rel="noopener noreferrer"
                 >
                 <Button variant="outline">
-                    Show Preview
+                    View Profile
                 </Button>
                 </a>
-            </div>
+                 </div>
             </DialogHeader>
         </div>
 

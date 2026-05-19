@@ -4,6 +4,7 @@ export const moderationData = [
     userId: "usr_1001",
     name: "Aria Stone",
     type: "profile-pic",
+    role: "artist",
     date: "2026-05-10",
     content:
       "https://images.unsplash.com/photo-1524504388940-b1c1722653e1",
@@ -13,6 +14,7 @@ export const moderationData = [
     userId: "usr_1001",
     name: "Aria Stone",
     type: "short-bio",
+    role: "artist",
     date: "2026-05-10",
     content:
       "Experimental vocalist blending jazz and electronic textures.",
@@ -22,6 +24,7 @@ export const moderationData = [
     userId: "usr_1002",
     name: "Neon Drift",
     type: "long-bio",
+    role: "venue",
     date: "2026-05-09",
     content:
       "Neon Drift is a live electronic duo known for immersive synth-driven performances across Europe and Asia. Their sound merges ambient soundscapes with high-energy techno elements.",
@@ -31,6 +34,7 @@ export const moderationData = [
     userId: "usr_1003",
     name: "Luna Vale",
     type: "images",
+    role: "artist",
     date: "2026-05-08",
     content: JSON.stringify([
       "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4",
@@ -41,6 +45,7 @@ export const moderationData = [
     id: "mod_005",
     userId: "usr_1004",
     name: "Echo Bloom",
+    role: "venue",
     type: "video",
     date: "2026-05-08",
     content: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -50,6 +55,7 @@ export const moderationData = [
     userId: "usr_1002",
     name: "Neon Drift",
     type: "social-links",
+    role: "venue",
     date: "2026-05-07",
     content: JSON.stringify({
       instagram: "https://instagram.com/neondrift",
@@ -62,6 +68,7 @@ export const moderationData = [
     userId: "usr_1005",
     name: "Kai Mercer",
     type: "music-links",
+    role: "artist",
     date: "2026-05-07",
     content: JSON.stringify([
       {
@@ -79,6 +86,7 @@ export const moderationData = [
     userId: "usr_1006",
     name: "Sora Waves",
     type: "name",
+    role: "artist",
     date: "2026-05-06",
     content: "Sora Wavess", // typo correction request
   },

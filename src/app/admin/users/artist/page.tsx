@@ -11,6 +11,8 @@ import {
   Music2,
   Video,
   Link as LinkIcon,
+  
+  Image as ImageIcon,
 } from "lucide-react"
 import { ExternalLink } from "lucide-react"
 
@@ -27,6 +29,17 @@ export default function ArtistDetailPage({
         Artist not found
       </div>
     )
+  }
+  const isYouTubeUrl = (url: string) => {
+    return /youtube\.com|youtu\.be/.test(url)
+  }
+
+  const getYouTubeEmbedUrl = (url: string) => {
+    const videoId = url.match(
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/
+    )?.[1]
+
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : null
   }
 
   const data = artist
@@ -136,7 +149,6 @@ export default function ArtistDetailPage({
               <p>Energy: {data.genres.energyLevel}</p>
             </div>
           </section>
-
           {/* MEDIA */}
           <section
             className="p-6 rounded-3xl border"
@@ -149,9 +161,30 @@ export default function ArtistDetailPage({
               <Video size={16} /> Media
             </h2>
 
-            <p className="text-sm mb-3">
-              Video: {data.media.videoUrl || "Not provided"}
-            </p>
+            {/* Video Preview */}
+            {data.media.videoUrl &&
+              isYouTubeUrl(data.media.videoUrl) &&
+              getYouTubeEmbedUrl(data.media.videoUrl) && (
+                <div
+                  className="relative rounded-xl overflow-hidden mb-4 border border-white/10"
+                  style={{ aspectRatio: "16/9" }}
+                >
+                  <iframe
+                    src={getYouTubeEmbedUrl(data.media.videoUrl) || ""}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              )}
+
+            {/* Video fallback */}
+            {!data.media.videoUrl && (
+              <p className="text-sm mb-3" style={{ color: "var(--muted-foreground)" }}>
+                No video provided
+              </p>
+            )}
+
 
             <div className="space-y-1 text-sm">
               <p>Instagram: {data.media.socialMedia.instagram}</p>
@@ -161,6 +194,8 @@ export default function ArtistDetailPage({
               <p>X: {data.media.socialMedia.x}</p>
             </div>
           </section>
+
+
 
           {/* MUSIC LINKS */}
           <section
@@ -295,6 +330,34 @@ export default function ArtistDetailPage({
           
         </div>
       </div>
+      {/* PHOTOS */}
+      <section
+        className="p-6 rounded-3xl border"
+        style={{
+          backgroundColor: "var(--card)",
+          borderColor: "var(--border)",
+        }}
+      >
+        <h2 className="mb-4 flex items-center gap-2">
+          <ImageIcon size={16} /> Artist Photos
+        </h2>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {data.photos.images.length > 0 ? (
+            data.photos.images.map((img: any, i: number) => (
+              <img
+                key={i}
+                src={img.url}
+                className="rounded-xl aspect-square object-cover"
+              />
+            ))
+          ) : (
+            <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+              No images uploaded
+            </p>
+          )}
+        </div>
+      </section>
     </div>
   )
 }

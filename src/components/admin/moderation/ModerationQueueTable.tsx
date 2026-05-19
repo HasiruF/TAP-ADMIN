@@ -24,6 +24,7 @@ type ModerationItem = {
   name: string
   type: string
   date: string
+  role: string
 }
 
 interface Props {
@@ -41,41 +42,88 @@ export function ModerationQueueTable({
   onRowClick,
 
 }: Props) {
+  const [roleFilter, setRoleFilter] = useState("artist")
   const [typeFilter, setTypeFilter] = useState("all")
 
-  const filteredData = data.filter((item) =>
-    typeFilter === "all" ? true : item.type === typeFilter
-  )
+  const filteredData = data.filter((item) => {
+    const matchesRole =
+      roleFilter === "all" ? true : item.role === roleFilter
+
+    const matchesType =
+      typeFilter === "all" ? true : item.type === typeFilter
+
+    return matchesRole && matchesType
+  })
 
   return (
-    
     <div className="space-y-4">
 
-      {/* FILTER */}
-      <div className="w-[220px]">
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger
-            style={{
-              backgroundColor: "var(--muted)",
-              border: "1px solid var(--border)",
-              color: "var(--foreground)",
-            }}
-          >
-            <SelectValue placeholder="Filter type" />
-          </SelectTrigger>
+      {/* FILTER BAR */}
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
 
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="profile-pic">Profile Pic</SelectItem>
-            <SelectItem value="name">Name</SelectItem>
-            <SelectItem value="short-bio">Short Bio</SelectItem>
-            <SelectItem value="long-bio">Long Bio</SelectItem>
-            <SelectItem value="images">Images</SelectItem>
-            <SelectItem value="video">Video</SelectItem>
-            <SelectItem value="social-links">Social Links</SelectItem>
-            <SelectItem value="music-links">Music Links</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* ROLE FILTER */}
+        <div className="flex items-center gap-3">
+          <Button
+            className="h-11 px-5 rounded-full"
+            variant={roleFilter === "artist" ? "default" : "outline"}
+            onClick={() => setRoleFilter("artist")}
+            style={
+              roleFilter === "artist"
+                ? {
+                    backgroundColor: "var(--chart-artists)",
+                    color: "var(--primary-foreground)",
+                    borderRadius: "999px",
+                  }
+                : {}
+            }
+          >
+            Artists
+          </Button>
+
+          <Button
+            className="h-11 px-5 rounded-full"
+            variant={roleFilter === "venue" ? "default" : "outline"}
+            onClick={() => setRoleFilter("venue")}
+            style={
+              roleFilter === "venue"
+                ? {
+                    backgroundColor: "var(--chart-venues)",
+                    color: "var(--primary-foreground)",
+                    borderRadius: "999px",
+                  }
+                : {}
+            }
+          >
+            Venues
+          </Button>
+        </div>
+
+        {/* TYPE FILTER */}
+        <div className="w-[220px]">
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger
+              style={{
+                backgroundColor: "var(--muted)",
+                border: "1px solid var(--border)",
+                color: "var(--foreground)",
+              }}
+            >
+              <SelectValue placeholder="Filter type" />
+            </SelectTrigger>
+
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="profile-pic">Profile Pic</SelectItem>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="short-bio">Short Bio</SelectItem>
+              <SelectItem value="long-bio">Long Bio</SelectItem>
+              <SelectItem value="images">Images</SelectItem>
+              <SelectItem value="video">Video</SelectItem>
+              <SelectItem value="social-links">Social Links</SelectItem>
+              <SelectItem value="music-links">Music Links</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* TABLE */}
@@ -93,10 +141,10 @@ export function ModerationQueueTable({
         <TableBody>
           {filteredData.map((item) => (
             <TableRow
-            key={item.id}
-            onClick={() => onRowClick(item)}
-            className="cursor-pointer"
-            style={{ borderColor: "var(--border)" }}
+              key={item.id}
+              onClick={() => onRowClick(item)}
+              className="cursor-pointer"
+              style={{ borderColor: "var(--border)" }}
             >
               {/* USER ID */}
               <TableCell
@@ -144,10 +192,10 @@ export function ModerationQueueTable({
                       backgroundColor: "var(--status-active-bg)",
                       color: "var(--status-active-text)",
                     }}
-                    
                     onClick={(e) => {
                       e.stopPropagation()
-                      onApprove(item.id)}}
+                      onApprove(item.id)
+                    }}
                   >
                     Approve
                   </Button>
@@ -160,7 +208,8 @@ export function ModerationQueueTable({
                     }}
                     onClick={(e) => {
                       e.stopPropagation()
-                      onReject(item.id)}}
+                      onReject(item.id)
+                    }}
                   >
                     Reject
                   </Button>
@@ -170,7 +219,6 @@ export function ModerationQueueTable({
           ))}
         </TableBody>
       </Table>
-      
     </div>
   )
 }

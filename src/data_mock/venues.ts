@@ -21,9 +21,10 @@ export const venues = [
     },
     photos: {
       images: [
-        { url: "/venues/glass1.jpg" },
-        { url: "/venues/glass2.jpg" },
-        { url: "/venues/glass3.jpg" },
+        
+        { url: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4" },
+        { url: "https://images.unsplash.com/photo-1504600770771-fb03a6961d33" },
+
       ],
     },
     bookingPreferences: {

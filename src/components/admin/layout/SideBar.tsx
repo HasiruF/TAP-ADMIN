@@ -13,12 +13,14 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useSidebar } from "@/components/ui/sidebar"
 import { usePathname } from "next/navigation"
+import { useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Users,
   ShieldAlert,
   BadgeCheck,
   Settings,
+  MessageSquare ,
   LogOut,
 } from "lucide-react"
 const navMain = [
@@ -37,13 +39,23 @@ const navMain = [
     url: "/admin/moderation",
     icon: ShieldAlert,
   },
-  
+  {
+    title: "Message Moderation",
+    url: "/admin/messages",
+    icon: MessageSquare ,
+  },
 ]
 
 export function AppSidebar() {
+  const router = useRouter()
+
   const pathname = usePathname()
   const { state } = useSidebar()
   const isCollapsed = state === "collapsed"
+  const handleLogout = () => {
+    // TEMP MOCK LOGOUT
+    router.push("/login")
+  }
   return (
     <Sidebar collapsible="icon"
       style={{
@@ -177,6 +189,7 @@ export function AppSidebar() {
           style={{ borderColor: "var(--border)" }}
         >
           <button
+            onClick={handleLogout}
             className="flex items-center gap-3 w-full px-3 py-2 rounded-xl hover:bg-[rgba(255,255,255,0.04)] transition"
             style={{ color: "var(--foreground)" }}
           >

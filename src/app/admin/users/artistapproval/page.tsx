@@ -11,6 +11,8 @@ import {
   Music2,
   Video,
   Link as LinkIcon,
+  
+  Image as ImageIcon,
 } from "lucide-react"
 
 export default function ArtistDetailPage({
@@ -311,6 +313,34 @@ export default function ArtistDetailPage({
         </section>
         </div>
       </div>
+      {/* PHOTOS */}
+      <section
+        className="p-6 rounded-3xl border"
+        style={{
+          backgroundColor: "var(--card)",
+          borderColor: "var(--border)",
+        }}
+      >
+        <h2 className="mb-4 flex items-center gap-2">
+          <ImageIcon size={16} /> Artist Photos
+        </h2>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {data.photos.images.length > 0 ? (
+            data.photos.images.map((img: any, i: number) => (
+              <img
+                key={i}
+                src={img.url}
+                className="rounded-xl aspect-square object-cover"
+              />
+            ))
+          ) : (
+            <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+              No images uploaded
+            </p>
+          )}
+        </div>
+      </section>
     </div>
   )
 }
