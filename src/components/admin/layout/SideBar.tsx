@@ -92,7 +92,7 @@ export function AppSidebar() {
                   style={{
                     fontFamily: "var(--font-display)",
                     color: "var(--foreground)",
-                    fontSize: "24px",
+                    fontSize: "18px",
                     letterSpacing: "0.12em",
                     lineHeight: 1,
                   }}
@@ -100,15 +100,7 @@ export function AppSidebar() {
                   TAP ADMIN
                 </h1>
 
-                <p
-                  style={{
-                    color: "var(--muted-foreground)",
-                    fontSize: "12px",
-                    marginTop: "4px",
-                  }}
-                >
-                  Control Center
-                </p>
+                
               </div>
             </div>
           )}

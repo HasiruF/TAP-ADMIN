@@ -7,27 +7,43 @@ import { MessageThread } from "@/components/admin/messages/MessageThread"
 export default function MessagesPage() {
   const [selected, setSelected] = useState(conversationsMock[0])
   const [search, setSearch] = useState("")
+  const [searchFilter, setSearchFilter] = useState("all");
 
-  // 🔍 FILTER LOGIC
-  const filteredConversations = useMemo(() => {
-    return conversationsMock.filter((conv) => {
-      const query = search.toLowerCase()
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
 
-      const artist = conv.artist.name.toLowerCase()
-      const venue = conv.venue.name.toLowerCase()
+    return conversationsMock
+      .filter((c) => {
+        if (!q) return true;
 
-      return (
-        artist.includes(query) ||
-        venue.includes(query) ||
-        `${artist} ${venue}`.includes(query)
-      )
-    })
-  }, [search])
+        if (searchFilter === "artist") {
+          return c.artist.name.toLowerCase().includes(q);
+        }
+
+        if (searchFilter === "venue") {
+          return c.venue.name.toLowerCase().includes(q);
+        }
+
+        return (
+          c.artist.name.toLowerCase().includes(q) ||
+          c.venue.name.toLowerCase().includes(q)
+        );
+      })
+
+      // SORT BY LAST MESSAGE TIME (NEWEST FIRST)
+      .sort((a, b) => {
+        const aLast = a.messages?.[a.messages.length - 1]?.timestamp;
+        const bLast = b.messages?.[b.messages.length - 1]?.timestamp;
+
+        return new Date(bLast).getTime() - new Date(aLast).getTime();
+      });
+  }, [search, searchFilter]);
 
   return (
+    
     <div className="h-[calc(100vh-80px)] flex gap-6">
 
-      {/* LEFT PANEL */}
+      {/* LEFT */}
       <div
         className="w-[360px] border rounded-2xl flex flex-col"
         style={{
@@ -35,13 +51,33 @@ export default function MessagesPage() {
           borderColor: "var(--border)",
         }}
       >
-        {/* 🔍 SEARCH BAR */}
-        <div className="p-3 border-b" style={{ borderColor: "var(--border)" }}>
+        {/* SEARCH */}
+        <div
+          className="p-3 border-b flex gap-2"
+          style={{ borderColor: "var(--border)" }}
+        >
+          {/* Dropdown */}
+          <select
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            className="px-3 py-2 rounded-xl"
+            style={{
+              backgroundColor: "var(--muted)",
+              color: "var(--foreground)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            <option value="all">All</option>
+            <option value="artist">Artist</option>
+            <option value="venue">Venue</option>
+          </select>
+
+          {/* Search Input */}
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search artist or venue..."
-            className="w-full px-3 py-2 rounded-xl outline-none"
+            placeholder="Search..."
+            className="w-full px-3 py-2 rounded-xl"
             style={{
               backgroundColor: "var(--muted)",
               color: "var(--foreground)",
@@ -50,48 +86,101 @@ export default function MessagesPage() {
           />
         </div>
 
-        {/* CONVERSATION LIST */}
         <div className="flex-1 overflow-y-auto">
-          {filteredConversations.length === 0 ? (
-            <div
-              className="p-4 text-sm"
-              style={{ color: "var(--muted-foreground)" }}
-            >
-              No conversations found
-            </div>
-          ) : (
-            filteredConversations.map((conv) => (
+          {filtered.map((c) => {
+            const lastMessage = c.messages[c.messages.length - 1]
+
+            return (
               <button
-                key={conv.id}
-                onClick={() => setSelected(conv)}
-                className="w-full text-left p-4 transition hover:bg-[rgba(255,255,255,0.04)]"
+                key={c.id}
+                onClick={() => setSelected(c)}
+                className="w-full text-left p-4 transition"
                 style={{
                   borderBottom: "1px solid var(--border)",
                 }}
               >
-                <p
-                  style={{
-                    color: "var(--foreground)",
-                    fontWeight: 500,
-                    fontSize: "14px",
-                  }}
-                >
-                  {conv.artist.name} → {conv.venue.name}
-                </p>
+                {/* HEADER ROW */}
+                <div className="flex flex-col gap-2">
 
-                <p
-                  className="text-xs mt-1"
-                  style={{ color: "var(--muted-foreground)" }}
-                >
-                  Last: {conv.messages[conv.messages.length - 1]?.content}
-                </p>
+                  {/* ARTIST */}
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="text-[10px] px-2 py-[2px] rounded-full"
+                      style={{
+                        backgroundColor: "var(--gold)",
+                        color: "var(--background)",
+                      }}
+                    >
+                      Artist
+                    </span>
+
+                    <span
+                      style={{
+                        color: "var(--foreground)",
+                        fontWeight: 500,
+                        fontSize: "13px",
+                      }}
+                    >
+                      {c.artist.name}
+                    </span>
+                  </div>
+
+                  {/* VENUE */}
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="text-[10px] px-2 py-[2px] rounded-full"
+                      style={{
+                        backgroundColor: "var(--deep-teal)",
+                        color: "var(--background)",
+                      }}
+                    >
+                      Venue
+                    </span>
+
+                    <span
+                      style={{
+                        color: "var(--foreground)",
+                        
+                        fontWeight: 500,
+                        fontSize: "13px",
+                      }}
+                    >
+                      {c.venue.name}
+                    </span>
+                  </div>
+
+                  {/* LAST MESSAGE + TIME */}
+                  <div className="flex gap-2 items-center mt-1">
+                    <p
+                      className="text-xs truncate max-w-[70%]"
+                      style={{ color: "var(--muted-foreground)" }}
+                    >
+                      Last Messaged
+                    </p>
+
+                    <span
+                      className="text-[12px]"
+                      style={{ color: "var(--muted-foreground)" }}
+                    >
+                      {lastMessage?.timestamp
+                      ? new Date(lastMessage.timestamp).toLocaleString([], {
+                          year: "numeric",
+                          month: "short",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : ""}
+                    </span>
+                  </div>
+                </div>
               </button>
-            ))
-          )}
+            )
+          })}
         </div>
       </div>
 
-      {/* RIGHT PANEL */}
+      {/* RIGHT */}
       <div
         className="flex-1 border rounded-2xl overflow-hidden"
         style={{
