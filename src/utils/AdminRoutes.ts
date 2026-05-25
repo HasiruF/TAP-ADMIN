@@ -20,3 +20,17 @@ export function getAdminUserRoute(user: {
   // fallback 
   return `/admin/users`
 }
+
+export function getAdminLogRoute(user: {
+  role: "artist" | "venue"
+}) {
+  if (user.role === "venue") {
+    return `/admin/log`
+  }
+
+  if (user.role === "artist") {
+    return `/admin/log`
+  }
+
+  return `/admin/log`
+}

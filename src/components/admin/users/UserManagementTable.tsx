@@ -4,6 +4,7 @@
 
 import { useState } from "react"
 import { getAdminUserRoute } from "@/utils/AdminRoutes"
+import { getAdminLogRoute } from "@/utils/AdminRoutes"
 import {
   Check,
   Ban,
@@ -12,7 +13,7 @@ import {
   X,
   Search,
 } from "lucide-react"
-
+import { MoreVertical  } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -53,6 +54,7 @@ interface User {
   name: string
   role: "artist" | "venue"
   joined: string
+  lastlogin: string
   status: UserStatus
   email: string
 }
@@ -65,6 +67,7 @@ const users: User[] = [
     email:"Luna@gmail.com",
     role: "artist",
     joined: "Jan 14, 2026",
+    lastlogin: "Jan 14, 2026",
     status: "active",
   },
   {
@@ -73,6 +76,7 @@ const users: User[] = [
     role: "venue",
     email: "velvet@gmail.com",
     joined: "Feb 02, 2026",
+    lastlogin: "Jan 14, 2026",
     status: "suspended",
   },
   {
@@ -81,6 +85,7 @@ const users: User[] = [
     role: "artist",
     email: "echo@gmail.com",
     joined: "Mar 08, 2026",
+    lastlogin: "Aug 14, 2026",
     status: "not-approved",
   },
   {
@@ -89,6 +94,7 @@ const users: User[] = [
     role: "venue",
     email: "noirt@gmail.com",
     joined: "Apr 19, 2026",
+    lastlogin: "Dec 14, 2026",
     status: "banned",
   },
   {
@@ -97,6 +103,7 @@ const users: User[] = [
     role: "venue",
     email: "fft@gmail.com",
     joined: "Apr 19, 2026",
+    lastlogin: "Jun 14, 2026",
     status: "not-approved",
   },
 ]
@@ -134,6 +141,7 @@ const filterOptions = [
   { label: "UserId", value: "id" },
   { label: "Email", value: "email"},
   { label: "Joined Date", value: "joined" },
+  { label: "Last Login Date", value: "lastlogin" },
 ]
 
 function renderActions(status: UserStatus) {
@@ -236,6 +244,9 @@ const router = useRouter()
             .includes(value)
           break
         case "joined":
+          matchesSearch = user.joined.toLowerCase().includes(value)
+          break
+        case "lastlogin":
           matchesSearch = user.joined.toLowerCase().includes(value)
           break
       }
@@ -391,11 +402,11 @@ const router = useRouter()
             <TableHead className="text-center w-[5%]">
               UserId
             </TableHead>
-            <TableHead className="text-center w-[24%]">
+            <TableHead className="text-center w-[20%]">
               Name
             </TableHead>
 
-            <TableHead className="text-center w-[28%]">
+            <TableHead className="text-center w-[20%]">
               Email
             </TableHead>
 
@@ -403,12 +414,20 @@ const router = useRouter()
               Joined Date
             </TableHead>
 
+            <TableHead className="text-center w-[18%]">
+              Last Login Date
+            </TableHead>
+
             <TableHead className="text-center w-[15%]">
               Status
             </TableHead>
 
-            <TableHead className="text-center w-[15%]">
+            <TableHead className="text-center w-[20%]">
               Actions
+            </TableHead>
+
+            <TableHead className="text-center w-[5%]">
+              
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -473,6 +492,15 @@ const router = useRouter()
                 {user.joined}
               </TableCell>
 
+              <TableCell
+                className="text-center"
+                style={{
+                  color: "var(--muted-foreground)",
+                }}
+              >
+                {user.lastlogin}
+              </TableCell>
+
               {/* STATUS */}
               <TableCell className="text-center">
                 <div
@@ -487,7 +515,24 @@ const router = useRouter()
               <TableCell className="text-center">
                 {renderActions(user.status)}
               </TableCell>
+              <TableCell
+                className="text-center"
+                style={{
+                  color: "var(--muted-foreground)",
+                }}
+              >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    router.push(getAdminLogRoute(user))
+                  }}
+                  className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.04)] transition"
+                >
+                  <MoreVertical size={18} style={{ color: "var(--foreground)" }} />
+                </button>
+              </TableCell>
             </TableRow>
+            
           ))}
         </TableBody>
       </Table>

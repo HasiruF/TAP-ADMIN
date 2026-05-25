@@ -56,10 +56,21 @@ export function ModerationQueueTable({
   })
 
   return (
-    <div className="space-y-4">
+    <div
+      className="rounded-[32px] border overflow-hidden"
+      style={{
+        backgroundColor: "var(--card)",
+        borderColor: "var(--border)",
+      }}
+    >
 
       {/* FILTER BAR */}
-      <div className="flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
+      <div
+        className="p-6 border-b flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5"
+        style={{
+          borderColor: "var(--border)",
+        }}
+      >
 
         {/* ROLE FILTER */}
         <div className="flex items-center gap-3">
@@ -99,7 +110,7 @@ export function ModerationQueueTable({
         </div>
 
         {/* TYPE FILTER */}
-        <div className="w-[220px]">
+        <div className="w-[60px]">
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger
               style={{
@@ -113,14 +124,8 @@ export function ModerationQueueTable({
 
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
-              <SelectItem value="profile-pic">Profile Pic</SelectItem>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="short-bio">Short Bio</SelectItem>
-              <SelectItem value="long-bio">Long Bio</SelectItem>
               <SelectItem value="images">Images</SelectItem>
               <SelectItem value="video">Video</SelectItem>
-              <SelectItem value="social-links">Social Links</SelectItem>
-              <SelectItem value="music-links">Music Links</SelectItem>
             </SelectContent>
           </Select>
         </div>
