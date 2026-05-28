@@ -22,6 +22,7 @@ import {
   Settings,
   MessageSquare ,
   LogOut,
+  BookOpen,
 } from "lucide-react"
 const navMain = [
   {
@@ -44,6 +45,11 @@ const navMain = [
     url: "/admin/messages",
     icon: MessageSquare ,
   },
+  {
+  title: "Help Resources",
+  url: "/admin/resources",
+  icon: BookOpen,
+  }
 ]
 
 export function AppSidebar() {
