@@ -33,7 +33,7 @@ import {
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-
+import { useAdminUsers } from "@/hooks/queries/useAdminUsers";
 import { useRouter } from "next/navigation"
 import {
   RadioGroup,
@@ -59,54 +59,6 @@ interface User {
   email: string
 }
 
-
-const users: User[] = [
-  {
-    id: 1,
-    name: "Luna Reverie",
-    email:"Luna@gmail.com",
-    role: "artist",
-    joined: "Jan 14, 2026",
-    lastlogin: "Jan 14, 2026",
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "Velvet Hall",
-    role: "venue",
-    email: "velvet@gmail.com",
-    joined: "Feb 02, 2026",
-    lastlogin: "Jan 14, 2026",
-    status: "suspended",
-  },
-  {
-    id: 3,
-    name: "Echo Ritual",
-    role: "artist",
-    email: "echo@gmail.com",
-    joined: "Mar 08, 2026",
-    lastlogin: "Aug 14, 2026",
-    status: "not-approved",
-  },
-  {
-    id: 4,
-    name: "Noir Stage",
-    role: "venue",
-    email: "noirt@gmail.com",
-    joined: "Apr 19, 2026",
-    lastlogin: "Dec 14, 2026",
-    status: "banned",
-  },
-  {
-    id: 5,
-    name: "Blanche Stage",
-    role: "venue",
-    email: "fft@gmail.com",
-    joined: "Apr 19, 2026",
-    lastlogin: "Jun 14, 2026",
-    status: "not-approved",
-  },
-]
 
 function getStatusStyles(status: UserStatus) {
   switch (status) {
@@ -212,6 +164,7 @@ const statusOptions = [
 
 export function UserManagementTable() {
     
+const { data: users = [], isLoading, error } = useAdminUsers();
 const [search, setSearch] = useState("")
 const [filter, setFilter] = useState("name")
 const [roleFilter, setRoleFilter] = useState("artist")
@@ -221,7 +174,13 @@ const ITEMS_PER_PAGE = 50
 const [currentPage, setCurrentPage] = useState(1)
 
 const router = useRouter()
+  if (isLoading) {
+  return <div className="p-6">Loading users...</div>;
+}
 
+if (error) {
+  return <div className="p-6 text-red-500">Failed to load users</div>;
+}
   const filteredUsers = users.filter((user) => {
     const value = search.toLowerCase()
 

@@ -14,24 +14,34 @@ import {
   
   Image as ImageIcon,
 } from "lucide-react"
-
+import { useAdminArtist } from "@/hooks/queries/useAdminArtists";
+import { use } from "react";
 export default function ArtistDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>;
 }) {
-  const artist = artists.find((a) => a.id === "artist")
+  const { id } = use(params);
 
-  if (!artist) {
-    return (
-      <div className="text-center py-20" style={{ color: "var(--foreground)" }}>
-        Artist not found
-      </div>
-    )
+  const {
+    data: artist,
+    isLoading,
+    error,
+  } = useAdminArtist(id);
+
+  if (isLoading) {
+    return <div className="p-6">Loading artist...</div>;
   }
 
-  const data = artist
+  if (error || !artist) {
+    return (
+      <div className="text-center py-20">
+        Artist not found
+      </div>
+    );
+  }
 
+  const data = artist;
   return (
     <div className="space-y-10">
       {/* HEADER */}
@@ -116,7 +126,7 @@ export default function ArtistDetailPage({
             <h2 className="mb-4">Genres & Style</h2>
 
             <div className="flex flex-wrap gap-2 mb-4">
-              {data.genres.genres.map((g) => (
+              {data.genres.genres.map((g: string) => (
                 <span
                   key={g}
                   className="px-3 py-1 rounded-full text-xs"
@@ -176,7 +186,7 @@ export default function ArtistDetailPage({
             </h2>
 
             <div className="space-y-2 text-sm">
-              {data.musicLinks.links.map((l) => (
+              {data.musicLinks.links.map((l:{ id: string; platform: string; url: string }) => (
                 <div key={l.id} className="flex items-center gap-2">
                   <LinkIcon size={12} style={{ color: "var(--gold)" }} />
                   {l.platform}: {l.url}

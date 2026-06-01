@@ -13,23 +13,31 @@ import {
   Image as ImageIcon,
 } from "lucide-react"
 import { ExternalLink } from "lucide-react"
+import { use } from "react";
+import { useAdminVenue } from "@/hooks/queries/useAdminVenues";
+
 export default function VenueDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>;
 }) {
-  const venue = venues.find((v) => v.id === "venue")
+  const { id } = use(params);
 
-  if (!venue) {
-    return (
-      <div className="text-center py-20" style={{ color: "var(--foreground)" }}>
-        Venue not found
-      </div>
-    )
+  const { data: venue, isLoading, error } = useAdminVenue(id);
+
+  if (isLoading) {
+    return <div className="p-6">Loading venue...</div>;
   }
 
-  const data = venue
+  if (error || !venue) {
+    return (
+      <div className="text-center py-20">
+        Venue not found
+      </div>
+    );
+  }
 
+  const data = venue;
   return (
     <div className="space-y-10">
       {/* HEADER */}

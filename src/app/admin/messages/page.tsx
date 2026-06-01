@@ -1,43 +1,54 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { conversationsMock } from "@/data_mock/conversations"
+import { useMemo, useState, useEffect } from "react"
+import { useAdminMessages } from "@/hooks/queries/useAdminMessages"
 import { MessageThread } from "@/components/admin/messages/MessageThread"
 
+import { Conversation } from "@/types/conversation";
 export default function MessagesPage() {
-  const [selected, setSelected] = useState(conversationsMock[0])
+  const { data: conversations = [], isLoading, error } = useAdminMessages()
+
+  const [selected, setSelected] = useState<any>(null)
   const [search, setSearch] = useState("")
-  const [searchFilter, setSearchFilter] = useState("all");
+  const [searchFilter, setSearchFilter] = useState("all")
+
+  useEffect(() => {
+    if (!selected && conversations.length > 0) {
+      setSelected(conversations[0])
+    }
+  }, [conversations, selected])
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase().trim();
+    const q = search.toLowerCase().trim()
 
-    return conversationsMock
-      .filter((c) => {
-        if (!q) return true;
+    return conversations
+      .filter((c: any) => {
+        if (!q) return true
 
         if (searchFilter === "artist") {
-          return c.artist.name.toLowerCase().includes(q);
+          return c.artist.name.toLowerCase().includes(q)
         }
 
         if (searchFilter === "venue") {
-          return c.venue.name.toLowerCase().includes(q);
+          return c.venue.name.toLowerCase().includes(q)
         }
 
         return (
           c.artist.name.toLowerCase().includes(q) ||
           c.venue.name.toLowerCase().includes(q)
-        );
+        )
       })
+      .sort((a: any, b: any) => {
+        const aLast = a.messages?.[a.messages.length - 1]?.timestamp
+        const bLast = b.messages?.[b.messages.length - 1]?.timestamp
 
-      // SORT BY LAST MESSAGE TIME (NEWEST FIRST)
-      .sort((a, b) => {
-        const aLast = a.messages?.[a.messages.length - 1]?.timestamp;
-        const bLast = b.messages?.[b.messages.length - 1]?.timestamp;
+        return new Date(bLast).getTime() - new Date(aLast).getTime()
+      })
+  }, [conversations, search, searchFilter])
 
-        return new Date(bLast).getTime() - new Date(aLast).getTime();
-      });
-  }, [search, searchFilter]);
+  if (isLoading) return <div className="p-6">Loading messages...</div>
+
+  if (error) return <div className="p-6 text-red-500">Failed to load messages</div>
 
   return (
     <div className="space-y-8">
@@ -207,15 +218,15 @@ export default function MessagesPage() {
         </div>
 
         {/* RIGHT */}
-        <div
-          className="flex-1 border rounded-2xl overflow-hidden"
-          style={{
-            backgroundColor: "var(--card)",
-            borderColor: "var(--border)",
-          }}
-        >
-          <MessageThread conversation={selected} />
-        </div>
+        <div className="flex-1 border rounded-2xl overflow-hidden">
+          {selected ? (
+            <MessageThread conversation={selected} />
+          ) : (
+            <div className="p-6 text-sm text-muted-foreground">
+              Select a conversation
+            </div>
+          )}
+        </div>  
       </div>
       </div>
   )

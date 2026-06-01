@@ -1,20 +1,21 @@
 export function getAdminUserRoute(user: {
   role: "artist" | "venue"
   status: string
+  id: string
 }) {
   if (user.role === "venue") {
     if (user.status == "not-approved") {
-      return `/admin/users/venueapproval`
+      return `/admin/users/venueapproval/${user.id}`
     }
-    return `/admin/users/venue`
+    return `/admin/users/venue/${user.id}`
   }
 
   // artist logic
   if (user.role === "artist") {
     if (user.status == "not-approved") {
-      return `/admin/users/artistapproval`
+      return `/admin/users/artistapproval/${user.id}`
     }
-    return `/admin/users/artist`
+    return `/admin/users/artist/${user.id}`
   }
 
   // fallback 

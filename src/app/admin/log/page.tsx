@@ -2,12 +2,23 @@
 import React from "react"
 import { activityLogsMock } from "@/data_mock/activityLogs"
 import { format } from "date-fns"
-
+import { useAdminLogs } from "@/hooks/queries/useAdminLogs";
 export default function LogsPage() {
+  const { data: logs = [], isLoading, error } = useAdminLogs()
+
   const user = {
     name: "Aria Stone",
     id: "usr_1001",
   }
+
+  if (isLoading) {
+    return <div className="p-6">Loading logs...</div>
+  }
+
+  if (error) {
+    return <div className="p-6 text-red-500">Failed to load logs</div>
+  }
+
   return (
     <div className="space-y-6">
 
@@ -73,7 +84,7 @@ export default function LogsPage() {
 
           {/* BODY */}
           <tbody>
-            {activityLogsMock.map((log) => {
+            {logs.map((log) => {
               const hasDiff =
                 log.changeFrom || log.changeTo
 

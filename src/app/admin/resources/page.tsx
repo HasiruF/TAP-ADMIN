@@ -1,6 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useResources } from "@/hooks/queries/useResources"
+
+
 import {
   DndContext,
   closestCenter,
@@ -14,7 +17,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
-
+import { Resource } from "@/types/resource"
 import { resourcesMock } from "@/data_mock/resources"
 import { CreateResourceDialog } from "@/components/admin/resources/CreateResourceDialog"
 import { ViewResourceDialog } from "@/components/admin/resources/ViewResourceDialog"
@@ -22,7 +25,13 @@ import { ViewResourceDialog } from "@/components/admin/resources/ViewResourceDia
 import SortableRow from "./SortableRow"
 
 export default function ResourcesPage() {
-  const [items, setItems] = useState(resourcesMock)
+  const { data: resources = [], isLoading, error } = useResources()
+
+  const [items, setItems] = useState<Resource[]>(resources)
+
+  useEffect(() => {
+    setItems(resources)
+  }, [resources])
 
   const [selectedResource, setSelectedResource] = useState<any>(null)
   const [open, setOpen] = useState(false)

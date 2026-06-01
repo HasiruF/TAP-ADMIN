@@ -1,4 +1,6 @@
-export const resourcesMock = [
+import type { Resource } from "@/types/resource"
+
+export const resourcesMock: Resource[] = [
   {
     id: "res_001",
     type: "youtube",

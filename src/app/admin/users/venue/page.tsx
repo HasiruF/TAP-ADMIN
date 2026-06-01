@@ -12,24 +12,29 @@ import {
   Music2,
   Image as ImageIcon,
 } from "lucide-react"
+import { useAdminVenue } from "@/hooks/queries/useAdminVenues";
 
 import { ExternalLink } from "lucide-react"
 export default function VenueDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: { id: string };
 }) {
-  const venue = venues.find((v) => v.id === "venue")
+  const { data: venue, isLoading, error } = useAdminVenue(params.id);
 
-  if (!venue) {
-    return (
-      <div className="text-center py-20" style={{ color: "var(--foreground)" }}>
-        Venue not found
-      </div>
-    )
+  if (isLoading) {
+    return <div className="p-6">Loading venue...</div>;
   }
 
-  const data = venue
+  if (error || !venue) {
+    return (
+      <div className="text-center py-20">
+        Venue not found
+      </div>
+    );
+  }
+
+  const data = venue;
 
   return (
     <div className="space-y-10">

@@ -2,21 +2,32 @@
 
 import { useState } from "react"
 import { ModerationQueueTable } from "@/components/admin/moderation/ModerationQueueTable"
-import { moderationData } from "@/data_mock/moderation"
 import { ModerationPreviewDialog } from "@/components/admin/moderation/ModerationPreviewDialog"
+import { useModerationQueue } from "@/hooks/queries/useModerationQueue"
 
 export default function ContentModerationPage() {
-    const [selectedItem, setSelectedItem] = useState<any | null>(null)
-    const [open, setOpen] = useState(false)
-    const handleApprove = (id: string) => {
-    console.log("approve", id)
-    }
+  const { data: moderationData = [], isLoading, error } = useModerationQueue()
 
-    const handleReject = (id: string) => {
+  const [selectedItem, setSelectedItem] = useState<any | null>(null)
+  const [open, setOpen] = useState(false)
+
+  const handleApprove = (id: string) => {
+    console.log("approve", id)
+  }
+
+  const handleReject = (id: string) => {
     console.log("reject", id)
-    } 
+  }
+
+  if (isLoading) {
+    return <div className="p-6">Loading moderation queue...</div>
+  }
+
+  if (error) {
+    return <div className="p-6 text-red-500">Failed to load moderation data</div>
+  }
+
   return (
-    
     <div className="space-y-8">
       {/* PAGE HEADER */}
       <div>
