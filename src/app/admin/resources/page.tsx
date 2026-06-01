@@ -1,8 +1,7 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from "react"
-import { useResources } from "@/hooks/queries/useResources"
-
+import { useEffect, useState } from 'react'
+import { useResources } from '@/hooks/queries/useResources'
 
 import {
   DndContext,
@@ -10,29 +9,29 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-} from "@dnd-kit/core"
+} from '@dnd-kit/core'
 
 import {
   arrayMove,
   SortableContext,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable"
-import { Resource } from "@/types/resource"
-import { resourcesMock } from "@/data_mock/resources"
-import { CreateResourceDialog } from "@/components/admin/resources/CreateResourceDialog"
-import { ViewResourceDialog } from "@/components/admin/resources/ViewResourceDialog"
+} from '@dnd-kit/sortable'
+import { Resource } from '@/types/resource'
+import { resourcesMock } from '@/data_mock/resources'
+import { CreateResourceDialog } from '@/components/admin/resources/CreateResourceDialog'
+import { ViewResourceDialog } from '@/components/admin/resources/ViewResourceDialog'
 
-import SortableRow from "./SortableRow"
+import SortableRow from './SortableRow'
 
 export default function ResourcesPage() {
-  const { data: resources = [], isLoading, error } = useResources()
+  const { data: resources = [] } = useResources()
 
-  const [items, setItems] = useState<Resource[]>(resources)
-
+  const [items, setItems] = useState<Resource[]>([])
+  // this is needed for rearranging the order. need to sync local state with the query
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setItems(resources)
   }, [resources])
-
   const [selectedResource, setSelectedResource] = useState<any>(null)
   const [open, setOpen] = useState(false)
 
@@ -53,13 +52,12 @@ export default function ResourcesPage() {
 
   return (
     <div className="space-y-8">
-
       {/* HEADER */}
       <div>
         <h1
           style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "52px",
+            fontFamily: 'var(--font-display)',
+            fontSize: '52px',
           }}
         >
           Resource Management
@@ -69,11 +67,16 @@ export default function ResourcesPage() {
       <CreateResourceDialog />
 
       {/* TABLE */}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={items.map((i) => i.id)}
+          strategy={verticalListSortingStrategy}
+        >
           <table className="w-full text-sm border rounded-2xl overflow-hidden">
-
             <thead>
               <tr>
                 <th></th>
@@ -95,9 +98,7 @@ export default function ResourcesPage() {
                 />
               ))}
             </tbody>
-
           </table>
-
         </SortableContext>
       </DndContext>
 

@@ -1,9 +1,9 @@
-"use client"
+'use client'
 
-import { useSortable } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
-import { GripVertical, Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { GripVertical, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export default function SortableRow({
   item,
@@ -24,7 +24,6 @@ export default function SortableRow({
       }}
       className="border-b hover:bg-white/5"
     >
-
       {/* DRAG */}
       <td className="p-3" {...attributes} {...listeners}>
         <GripVertical size={16} />
@@ -42,11 +41,13 @@ export default function SortableRow({
       {/* ACTIONS */}
       <td className="p-3 text-right">
         <div className="flex justify-end gap-2">
-
           <Button
             size="sm"
             variant="outline"
-            onClick={() => onView(item)}
+            onClick={() => {
+              console.log('ROW CLICK:', item.id, item.title)
+              onView(item)
+            }}
           >
             View
           </Button>
@@ -55,7 +56,6 @@ export default function SortableRow({
             <Trash2 size={14} />
             Delete
           </button>
-
         </div>
       </td>
     </tr>
