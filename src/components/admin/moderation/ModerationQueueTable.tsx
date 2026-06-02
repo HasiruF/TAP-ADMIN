@@ -1,6 +1,6 @@
-"use client"
+'use client'
 
-import { useState } from "react"
+import { useState } from 'react'
 import {
   Table,
   TableBody,
@@ -8,15 +8,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
+} from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from '@/components/ui/select'
 
 type ModerationItem = {
   id: string
@@ -40,17 +40,14 @@ export function ModerationQueueTable({
   onReject,
 
   onRowClick,
-
 }: Props) {
-  const [roleFilter, setRoleFilter] = useState("artist")
-  const [typeFilter, setTypeFilter] = useState("all")
+  const [roleFilter, setRoleFilter] = useState('artist')
+  const [typeFilter, setTypeFilter] = useState('all')
 
   const filteredData = data.filter((item) => {
-    const matchesRole =
-      roleFilter === "all" ? true : item.role === roleFilter
+    const matchesRole = roleFilter === 'all' ? true : item.role === roleFilter
 
-    const matchesType =
-      typeFilter === "all" ? true : item.type === typeFilter
+    const matchesType = typeFilter === 'all' ? true : item.type === typeFilter
 
     return matchesRole && matchesType
   })
@@ -59,31 +56,29 @@ export function ModerationQueueTable({
     <div
       className="rounded-[32px] border overflow-hidden"
       style={{
-        backgroundColor: "var(--card)",
-        borderColor: "var(--border)",
+        backgroundColor: 'var(--card)',
+        borderColor: 'var(--border)',
       }}
     >
-
       {/* FILTER BAR */}
       <div
         className="p-6 border-b flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5"
         style={{
-          borderColor: "var(--border)",
+          borderColor: 'var(--border)',
         }}
       >
-
         {/* ROLE FILTER */}
         <div className="flex items-center gap-3">
           <Button
             className="h-11 px-5 rounded-full"
-            variant={roleFilter === "artist" ? "default" : "outline"}
-            onClick={() => setRoleFilter("artist")}
+            variant={roleFilter === 'artist' ? 'default' : 'outline'}
+            onClick={() => setRoleFilter('artist')}
             style={
-              roleFilter === "artist"
+              roleFilter === 'artist'
                 ? {
-                    backgroundColor: "var(--chart-artists)",
-                    color: "var(--primary-foreground)",
-                    borderRadius: "999px",
+                    backgroundColor: 'var(--chart-artists)',
+                    color: 'var(--primary-foreground)',
+                    borderRadius: '999px',
                   }
                 : {}
             }
@@ -93,14 +88,14 @@ export function ModerationQueueTable({
 
           <Button
             className="h-11 px-5 rounded-full"
-            variant={roleFilter === "venue" ? "default" : "outline"}
-            onClick={() => setRoleFilter("venue")}
+            variant={roleFilter === 'venue' ? 'default' : 'outline'}
+            onClick={() => setRoleFilter('venue')}
             style={
-              roleFilter === "venue"
+              roleFilter === 'venue'
                 ? {
-                    backgroundColor: "var(--chart-venues)",
-                    color: "var(--primary-foreground)",
-                    borderRadius: "999px",
+                    backgroundColor: 'var(--chart-venues)',
+                    color: 'var(--primary-foreground)',
+                    borderRadius: '999px',
                   }
                 : {}
             }
@@ -114,9 +109,9 @@ export function ModerationQueueTable({
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger
               style={{
-                backgroundColor: "var(--muted)",
-                border: "1px solid var(--border)",
-                color: "var(--foreground)",
+                backgroundColor: 'var(--muted)',
+                border: '1px solid var(--border)',
+                color: 'var(--foreground)',
               }}
             >
               <SelectValue placeholder="Filter type" />
@@ -134,7 +129,7 @@ export function ModerationQueueTable({
       {/* TABLE */}
       <Table>
         <TableHeader>
-          <TableRow style={{ borderColor: "var(--border)" }}>
+          <TableRow style={{ borderColor: 'var(--border)' }}>
             <TableHead className="text-center">User ID</TableHead>
             <TableHead className="text-center">Name</TableHead>
             <TableHead className="text-center">Type</TableHead>
@@ -149,12 +144,12 @@ export function ModerationQueueTable({
               key={item.id}
               onClick={() => onRowClick(item)}
               className="cursor-pointer"
-              style={{ borderColor: "var(--border)" }}
+              style={{ borderColor: 'var(--border)' }}
             >
               {/* USER ID */}
               <TableCell
                 className="text-center"
-                style={{ color: "var(--muted-foreground)" }}
+                style={{ color: 'var(--muted-foreground)' }}
               >
                 {item.userId}
               </TableCell>
@@ -162,7 +157,7 @@ export function ModerationQueueTable({
               {/* NAME */}
               <TableCell
                 className="text-center"
-                style={{ color: "var(--foreground)", fontWeight: 500 }}
+                style={{ color: 'var(--foreground)', fontWeight: 500 }}
               >
                 {item.name}
               </TableCell>
@@ -172,18 +167,18 @@ export function ModerationQueueTable({
                 <span
                   className="px-3 py-1 rounded-full text-xs capitalize"
                   style={{
-                    backgroundColor: "rgba(201,168,76,0.1)",
-                    color: "var(--gold)",
+                    backgroundColor: 'rgba(201,168,76,0.1)',
+                    color: 'var(--gold)',
                   }}
                 >
-                  {item.type.replace("-", " ")}
+                  {item.type.replace('-', ' ')}
                 </span>
               </TableCell>
 
               {/* DATE */}
               <TableCell
                 className="text-center"
-                style={{ color: "var(--muted-foreground)" }}
+                style={{ color: 'var(--muted-foreground)' }}
               >
                 {item.date}
               </TableCell>
@@ -194,8 +189,8 @@ export function ModerationQueueTable({
                   <Button
                     size="sm"
                     style={{
-                      backgroundColor: "var(--status-active-bg)",
-                      color: "var(--status-active-text)",
+                      backgroundColor: 'var(--status-active-bg)',
+                      color: 'var(--status-active-text)',
                     }}
                     onClick={(e) => {
                       e.stopPropagation()
@@ -208,8 +203,8 @@ export function ModerationQueueTable({
                   <Button
                     size="sm"
                     style={{
-                      backgroundColor: "var(--status-banned-bg)",
-                      color: "var(--status-banned-text)",
+                      backgroundColor: 'var(--status-banned-bg)',
+                      color: 'var(--status-banned-text)',
                     }}
                     onClick={(e) => {
                       e.stopPropagation()

@@ -1,8 +1,8 @@
 // src/components/admin/overview/GrowthChart.tsx
 
-"use client"
+'use client'
 
-import { useMemo, useState } from "react"
+import { useMemo, useState } from 'react'
 
 import {
   Area,
@@ -12,48 +12,48 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts"
+} from 'recharts'
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button'
 
-type TimeRange = "14d" | "30d" | "1y"
+type TimeRange = '14d' | '30d' | '1y'
 
 const dataMap = {
-  "14d": [
-    { label: "Day 1", artists: 120, venues: 22 },
-    { label: "Day 3", artists: 140, venues: 25 },
-    { label: "Day 5", artists: 180, venues: 29 },
-    { label: "Day 7", artists: 220, venues: 33 },
-    { label: "Day 9", artists: 280, venues: 41 },
-    { label: "Day 11", artists: 340, venues: 52 },
-    { label: "Day 14", artists: 340, venues: 64 },
+  '14d': [
+    { label: 'Day 1', artists: 120, venues: 22 },
+    { label: 'Day 3', artists: 140, venues: 25 },
+    { label: 'Day 5', artists: 180, venues: 29 },
+    { label: 'Day 7', artists: 220, venues: 33 },
+    { label: 'Day 9', artists: 280, venues: 41 },
+    { label: 'Day 11', artists: 340, venues: 52 },
+    { label: 'Day 14', artists: 340, venues: 64 },
   ],
 
-  "30d": [
-    { label: "Week 1", artists: 420, venues: 68 },
-    { label: "Week 2", artists: 540, venues: 82 },
-    { label: "Week 3", artists: 690, venues: 95 },
-    { label: "Week 4", artists: 820, venues: 118 },
+  '30d': [
+    { label: 'Week 1', artists: 420, venues: 68 },
+    { label: 'Week 2', artists: 540, venues: 82 },
+    { label: 'Week 3', artists: 690, venues: 95 },
+    { label: 'Week 4', artists: 820, venues: 118 },
   ],
 
-  "1y": [
-    { label: "Jan", artists: 320, venues: 45 },
-    { label: "Feb", artists: 410, venues: 52 },
-    { label: "Mar", artists: 520, venues: 61 },
-    { label: "Apr", artists: 610, venues: 70 },
-    { label: "May", artists: 720, venues: 84 },
-    { label: "Jun", artists: 860, venues: 101 },
-    { label: "Jul", artists: 940, venues: 116 },
-    { label: "Aug", artists: 1220, venues: 130 },
-    { label: "Sep", artists: 1100, venues: 142 },
-    { label: "Oct", artists: 1210, venues: 155 },
-    { label: "Nov", artists: 1300, venues: 168 },
-    { label: "Dec", artists: 1420, venues: 182 },
+  '1y': [
+    { label: 'Jan', artists: 320, venues: 45 },
+    { label: 'Feb', artists: 410, venues: 52 },
+    { label: 'Mar', artists: 520, venues: 61 },
+    { label: 'Apr', artists: 610, venues: 70 },
+    { label: 'May', artists: 720, venues: 84 },
+    { label: 'Jun', artists: 860, venues: 101 },
+    { label: 'Jul', artists: 940, venues: 116 },
+    { label: 'Aug', artists: 1220, venues: 130 },
+    { label: 'Sep', artists: 1100, venues: 142 },
+    { label: 'Oct', artists: 1210, venues: 155 },
+    { label: 'Nov', artists: 1300, venues: 168 },
+    { label: 'Dec', artists: 1420, venues: 182 },
   ],
 }
 
 export function GrowthChart() {
-  const [range, setRange] = useState<TimeRange>("30d")
+  const [range, setRange] = useState<TimeRange>('30d')
 
   const [showArtists, setShowArtists] = useState(true)
   const [showVenues, setShowVenues] = useState(true)
@@ -64,8 +64,8 @@ export function GrowthChart() {
     <div
       className="rounded-[32px] border p-8"
       style={{
-        backgroundColor: "var(--card)",
-        borderColor: "var(--border)",
+        backgroundColor: 'var(--card)',
+        borderColor: 'var(--border)',
       }}
     >
       {/* HEADER */}
@@ -74,10 +74,10 @@ export function GrowthChart() {
           <p
             className="mb-2"
             style={{
-              color: "var(--muted-foreground)",
-              fontSize: "11px",
-              letterSpacing: "0.16em",
-              textTransform: "uppercase",
+              color: 'var(--muted-foreground)',
+              fontSize: '11px',
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
             }}
           >
             Platform Analytics
@@ -85,11 +85,11 @@ export function GrowthChart() {
 
           <h2
             style={{
-              fontFamily: "var(--font-body)",
-              fontSize: "30px",
-              lineHeight: "1",
+              fontFamily: 'var(--font-body)',
+              fontSize: '30px',
+              lineHeight: '1',
               fontWeight: 500,
-              color: "var(--foreground)",
+              color: 'var(--foreground)',
             }}
           >
             Platform Growth
@@ -100,13 +100,13 @@ export function GrowthChart() {
         <div className="flex flex-wrap items-center gap-3">
           {/* Artists Toggle */}
           <Button
-            variant={showArtists ? "default" : "outline"}
+            variant={showArtists ? 'default' : 'outline'}
             onClick={() => setShowArtists(!showArtists)}
             style={
               showArtists
                 ? {
-                    backgroundColor: "var(--chart-artists)",
-                    color: "var(--primary-foreground)",
+                    backgroundColor: 'var(--chart-artists)',
+                    color: 'var(--primary-foreground)',
                   }
                 : {}
             }
@@ -116,13 +116,13 @@ export function GrowthChart() {
 
           {/* Venues Toggle */}
           <Button
-            variant={showVenues ? "default" : "outline"}
+            variant={showVenues ? 'default' : 'outline'}
             onClick={() => setShowVenues(!showVenues)}
             style={
               showVenues
                 ? {
-                    backgroundColor: "var(--chart-venues)",
-                    color: "var(--primary-foreground)",
+                    backgroundColor: 'var(--chart-venues)',
+                    color: 'var(--primary-foreground)',
                   }
                 : {}
             }
@@ -134,14 +134,14 @@ export function GrowthChart() {
           <div
             className="flex items-center gap-2 p-1 rounded-2xl border"
             style={{
-              backgroundColor: "var(--muted)",
-              borderColor: "var(--border)",
+              backgroundColor: 'var(--muted)',
+              borderColor: 'var(--border)',
             }}
           >
             {[
-              { label: "14 Days", value: "14d" },
-              { label: "Month", value: "30d" },
-              { label: "Year", value: "1y" },
+              { label: '14 Days', value: '14d' },
+              { label: 'Month', value: '30d' },
+              { label: 'Year', value: '1y' },
             ].map((item) => (
               <button
                 key={item.value}
@@ -149,14 +149,12 @@ export function GrowthChart() {
                 className="px-4 py-2 rounded-xl transition-all text-sm"
                 style={{
                   backgroundColor:
-                    range === item.value
-                      ? "var(--accent)"
-                      : "transparent",
+                    range === item.value ? 'var(--accent)' : 'transparent',
 
                   color:
                     range === item.value
-                      ? "var(--accent-foreground)"
-                      : "var(--muted-foreground)",
+                      ? 'var(--accent-foreground)'
+                      : 'var(--muted-foreground)',
                 }}
               >
                 {item.label}
@@ -171,13 +169,7 @@ export function GrowthChart() {
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>
-              <linearGradient
-                id="artistsGradient"
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
+              <linearGradient id="artistsGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="0%"
                   stopColor="var(--chart-artists)"
@@ -190,13 +182,7 @@ export function GrowthChart() {
                 />
               </linearGradient>
 
-              <linearGradient
-                id="venuesGradient"
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
+              <linearGradient id="venuesGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="0%"
                   stopColor="var(--chart-venues)"
@@ -210,17 +196,14 @@ export function GrowthChart() {
               </linearGradient>
             </defs>
 
-            <CartesianGrid
-              stroke="var(--border)"
-              vertical={false}
-            />
+            <CartesianGrid stroke="var(--border)" vertical={false} />
 
             <XAxis
               dataKey="label"
               tickLine={false}
               axisLine={false}
               tick={{
-                fill: "var(--muted-foreground)",
+                fill: 'var(--muted-foreground)',
                 fontSize: 12,
               }}
             />
@@ -229,20 +212,20 @@ export function GrowthChart() {
               tickLine={false}
               axisLine={false}
               tick={{
-                fill: "var(--muted-foreground)",
+                fill: 'var(--muted-foreground)',
                 fontSize: 12,
               }}
             />
 
             <Tooltip
               contentStyle={{
-                backgroundColor: "var(--popover)",
-                border: "1px solid var(--border)",
-                borderRadius: "20px",
-                color: "var(--foreground)",
+                backgroundColor: 'var(--popover)',
+                border: '1px solid var(--border)',
+                borderRadius: '20px',
+                color: 'var(--foreground)',
               }}
               labelStyle={{
-                color: "var(--foreground)",
+                color: 'var(--foreground)',
               }}
             />
 

@@ -1,33 +1,30 @@
-"use client"
+'use client'
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog"
-import { useEffect, useState } from "react"
+} from '@/components/ui/dialog'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from '@/components/ui/select'
 
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
-type Resource = {
-  id: string
-  type: "youtube" | "website" | "document"
-  title: string
-  description: string
-  url?: string
-  fileName?: string
-}
+import { Resource } from '@/types/resource'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+
+import { resourceSchema, ResourceInput } from '@/lib/schemas/resourceSchema'
 
 export function ViewResourceDialog({
   open,
@@ -36,57 +33,50 @@ export function ViewResourceDialog({
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
-  resource: Resource
+  resource: ResourceInput
 }) {
-  const [type, setType] = useState(resource.type)
-  const [title, setTitle] = useState(resource.title)
-  const [description, setDescription] = useState(resource.description)
-  const [url, setUrl] = useState(resource.url || "")
-  useEffect(() => {
-    setType(resource.type)
-    setTitle(resource.title)
-    setDescription(resource.description)
-    setUrl(resource.url || "")
-  }, [resource])
-  const getYouTubeEmbed = (url: string) => {
+  const { register, watch, handleSubmit, setValue } = useForm<ResourceInput>({
+    resolver: zodResolver(resourceSchema),
+    defaultValues: resource,
+  })
+
+  const type = watch('type')
+  const url = watch('url')
+  const title = watch('title')
+
+  const embed = useMemo(() => {
+    if (type !== 'youtube' || !url) return null
+
     const id = url.match(
       /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/
     )?.[1]
+
     return id ? `https://www.youtube.com/embed/${id}` : null
+  }, [type, url])
+
+  const onSubmit = (data: ResourceInput) => {
+    console.log('SAVE:', data)
   }
-
-  const embed = type === "youtube" ? getYouTubeEmbed(url) : null
-
-  const handleSave = () => {
-    console.log({
-      type,
-      title,
-      description,
-      url,
-    })
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="max-w-6xl w-[60vw] p-0 overflow-hidden rounded-3xl"
         style={{
-          backgroundColor: "var(--card)",
-          color: "var(--foreground)",
-          borderColor: "var(--border)",
+          backgroundColor: 'var(--card)',
+          color: 'var(--foreground)',
+          borderColor: 'var(--border)',
         }}
       >
-
         {/* HEADER */}
         <div
           className="px-10 py-8 border-b"
-          style={{ borderColor: "var(--border)" }}
+          style={{ borderColor: 'var(--border)' }}
         >
           <DialogHeader>
             <DialogTitle
               style={{
-                fontSize: "32px",
-                fontFamily: "var(--font-display)",
+                fontSize: '32px',
+                fontFamily: 'var(--font-display)',
                 fontWeight: 500,
               }}
             >
@@ -95,26 +85,31 @@ export function ViewResourceDialog({
 
             <DialogDescription>
               Add and manage learning resources for artists and venues.
-          </DialogDescription>
+            </DialogDescription>
           </DialogHeader>
         </div>
 
         {/* BODY */}
-        <div className="px-10 py-10 grid grid-cols-2 gap-10">
 
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="px-10 py-10 grid grid-cols-2 gap-10"
+        >
           {/* LEFT - EDIT FORM */}
           <div className="space-y-8">
-
             {/* TYPE */}
             <div className="space-y-2">
               <label className="text-sm">Type</label>
 
-              <Select value={type} onValueChange={(v: any) => setType(v)}>
+              <Select
+                value={type}
+                onValueChange={(v) => setValue('type', v as any)}
+              >
                 <SelectTrigger
                   className="h-12"
                   style={{
-                    backgroundColor: "var(--muted)",
-                    borderColor: "var(--border)",
+                    backgroundColor: 'var(--muted)',
+                    borderColor: 'var(--border)',
                   }}
                 >
                   <SelectValue />
@@ -134,11 +129,10 @@ export function ViewResourceDialog({
 
               <Input
                 className="h-12"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                {...register('title')}
                 style={{
-                  backgroundColor: "var(--muted)",
-                  borderColor: "var(--border)",
+                  backgroundColor: 'var(--muted)',
+                  borderColor: 'var(--border)',
                 }}
               />
             </div>
@@ -148,28 +142,26 @@ export function ViewResourceDialog({
               <label className="text-sm">Description</label>
 
               <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                {...register('description')}
                 rows={5}
                 style={{
-                  backgroundColor: "var(--muted)",
-                  borderColor: "var(--border)",
+                  backgroundColor: 'var(--muted)',
+                  borderColor: 'var(--border)',
                 }}
               />
             </div>
 
             {/* URL */}
-            {(type === "youtube" || type === "website") && (
+            {(type === 'youtube' || type === 'website') && (
               <div className="space-y-2">
                 <label className="text-sm">URL</label>
 
                 <Input
                   className="h-12"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
+                  {...register('url')}
                   style={{
-                    backgroundColor: "var(--muted)",
-                    borderColor: "var(--border)",
+                    backgroundColor: 'var(--muted)',
+                    borderColor: 'var(--border)',
                   }}
                 />
               </div>
@@ -177,15 +169,13 @@ export function ViewResourceDialog({
 
             {/* ACTIONS */}
             <div className="flex justify-end gap-4 pt-4">
-              <Button variant="outline">
-                Close
-              </Button>
+              <Button variant="outline">Close</Button>
 
               <Button
-                onClick={handleSave}
+                type="submit"
                 style={{
-                  backgroundColor: "var(--gold)",
-                  color: "black",
+                  backgroundColor: 'var(--gold)',
+                  color: 'black',
                 }}
               >
                 Save Changes
@@ -197,59 +187,53 @@ export function ViewResourceDialog({
           <div
             className="rounded-3xl border p-6 h-fit"
             style={{
-              backgroundColor: "var(--background)",
-              borderColor: "var(--border)",
+              backgroundColor: 'var(--background)',
+              borderColor: 'var(--border)',
             }}
           >
-
             <p className="text-xs mb-4 text-muted-foreground uppercase tracking-widest">
               Live Preview
             </p>
 
             {/* YOUTUBE */}
-            {type === "youtube" && embed && (
+            {type === 'youtube' && embed && (
               <div
                 className="rounded-2xl overflow-hidden border"
-                style={{ aspectRatio: "16/9" }}
+                style={{ aspectRatio: '16/9' }}
               >
-                <iframe
-                  src={embed}
-                  className="w-full h-full"
-                  allowFullScreen
-                />
+                <iframe src={embed} className="w-full h-full" allowFullScreen />
               </div>
             )}
 
             {/* WEBSITE */}
-            {type === "website" && (
+            {type === 'website' && (
               <a
                 href={url}
                 target="_blank"
                 className="text-sm underline"
-                style={{ color: "var(--foreground)" }}
+                style={{ color: 'var(--foreground)' }}
               >
                 Open Website →
               </a>
             )}
 
             {/* PDF */}
-            {type === "document" && (
+            {type === 'document' && (
               <div
                 className="p-6 rounded-2xl border text-center"
-                style={{ borderColor: "var(--border)" }}
+                style={{ borderColor: 'var(--border)' }}
               >
                 <p className="text-sm">PDF Document</p>
                 <p
                   className="text-xs mt-2"
-                  style={{ color: "var(--muted-foreground)" }}
+                  style={{ color: 'var(--muted-foreground)' }}
                 >
-                  {resource.fileName || "No file uploaded"}
+                  {'Pdf File'}
                 </p>
               </div>
             )}
-
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   )

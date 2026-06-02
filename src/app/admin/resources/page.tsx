@@ -105,6 +105,7 @@ export default function ResourcesPage() {
       {/* GLOBAL DIALOG */}
       {selectedResource && (
         <ViewResourceDialog
+          key={selectedResource?.id}
           open={open}
           onOpenChange={setOpen}
           resource={selectedResource}

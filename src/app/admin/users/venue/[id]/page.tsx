@@ -1,7 +1,7 @@
-"use client"
+'use client'
 
-import { venues } from "@/data_mock/venues"
-import { Button } from "@/components/ui/button"
+import { venues } from '@/data_mock/venues'
+import { Button } from '@/components/ui/button'
 import {
   Ban,
   Shield,
@@ -11,33 +11,29 @@ import {
   Users,
   Music2,
   Image as ImageIcon,
-} from "lucide-react"
-import { ExternalLink } from "lucide-react"
-import { use } from "react";
-import { useAdminVenue } from "@/hooks/queries/useAdminVenues";
+} from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
+import { use } from 'react'
+import { useAdminVenue } from '@/hooks/queries/useAdminVenues'
 
 export default function VenueDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>
 }) {
-  const { id } = use(params);
+  const { id } = use(params)
 
-  const { data: venue, isLoading, error } = useAdminVenue(id);
+  const { data: venue, isLoading, error } = useAdminVenue(id)
 
   if (isLoading) {
-    return <div className="p-6">Loading venue...</div>;
+    return <div className="p-6">Loading venue...</div>
   }
 
   if (error || !venue) {
-    return (
-      <div className="text-center py-20">
-        Venue not found
-      </div>
-    );
+    return <div className="text-center py-20">Venue not found</div>
   }
 
-  const data = venue;
+  const data = venue
 
   return (
     <div className="space-y-10">
@@ -46,10 +42,10 @@ export default function VenueDetailPage({
         <p
           className="mb-2"
           style={{
-            color: "var(--muted-foreground)",
-            fontSize: "11px",
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
+            color: 'var(--muted-foreground)',
+            fontSize: '11px',
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
           }}
         >
           Admin • Venue Inspection
@@ -57,10 +53,10 @@ export default function VenueDetailPage({
 
         <h1
           style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "54px",
+            fontFamily: 'var(--font-display)',
+            fontSize: '54px',
             fontWeight: 500,
-            color: "var(--foreground)",
+            color: 'var(--foreground)',
           }}
         >
           {data.venueDetails.venueName}
@@ -71,13 +67,12 @@ export default function VenueDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* LEFT */}
         <div className="lg:col-span-2 space-y-6">
-
           {/* VENUE DETAILS */}
           <section
             className="p-6 rounded-3xl border"
             style={{
-              backgroundColor: "var(--card)",
-              borderColor: "var(--border)",
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
             }}
           >
             <h2 className="mb-4 flex items-center gap-2">
@@ -90,12 +85,12 @@ export default function VenueDetailPage({
               </p>
 
               <p className="flex items-center gap-2">
-                <MapPin size={14} style={{ color: "var(--gold)" }} />
-                {data.venueDetails.address}, {data.venueDetails.city},{" "}
+                <MapPin size={14} style={{ color: 'var(--gold)' }} />
+                {data.venueDetails.address}, {data.venueDetails.city},{' '}
                 {data.venueDetails.state} {data.venueDetails.zipCode}
               </p>
 
-              <p className="mt-3" style={{ color: "var(--muted-foreground)" }}>
+              <p className="mt-3" style={{ color: 'var(--muted-foreground)' }}>
                 {data.venueDetails.description}
               </p>
             </div>
@@ -105,8 +100,8 @@ export default function VenueDetailPage({
           <section
             className="p-6 rounded-3xl border"
             style={{
-              backgroundColor: "var(--card)",
-              borderColor: "var(--border)",
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
             }}
           >
             <h2 className="mb-4 flex items-center gap-2">
@@ -115,25 +110,25 @@ export default function VenueDetailPage({
 
             <div className="space-y-2 text-sm">
               <p>
-                Capacity:{" "}
-                <span style={{ color: "var(--foreground)" }}>
+                Capacity:{' '}
+                <span style={{ color: 'var(--foreground)' }}>
                   {data.capacitySpecs.capacity}
                 </span>
               </p>
 
               <p>
-                Stage:{" "}
-                {data.capacitySpecs.hasStage ? "Available" : "Not Available"}
+                Stage:{' '}
+                {data.capacitySpecs.hasStage ? 'Available' : 'Not Available'}
               </p>
 
               <p>Stage Size: {data.capacitySpecs.stageDimensions}</p>
 
               <p>
-                Sound System:{" "}
-                {data.capacitySpecs.soundSystem.join(", ") || "None listed"}
+                Sound System:{' '}
+                {data.capacitySpecs.soundSystem.join(', ') || 'None listed'}
               </p>
 
-              <p style={{ color: "var(--muted-foreground)" }}>
+              <p style={{ color: 'var(--muted-foreground)' }}>
                 {data.capacitySpecs.soundSystemNotes}
               </p>
             </div>
@@ -143,8 +138,8 @@ export default function VenueDetailPage({
           <section
             className="p-6 rounded-3xl border"
             style={{
-              backgroundColor: "var(--card)",
-              borderColor: "var(--border)",
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
             }}
           >
             <h2 className="mb-4 flex items-center gap-2">
@@ -153,25 +148,22 @@ export default function VenueDetailPage({
 
             <div className="space-y-2 text-sm">
               <p>
-                Event Types:{" "}
-                {data.bookingPreferences.eventTypes.join(", ") || "None"}
+                Event Types:{' '}
+                {data.bookingPreferences.eventTypes.join(', ') || 'None'}
               </p>
 
               <p>
-                Genres:{" "}
-                {data.bookingPreferences.genres.join(", ") || "All"}
+                Genres: {data.bookingPreferences.genres.join(', ') || 'All'}
               </p>
 
-              <p>
-                Pricing Model: {data.bookingPreferences.pricingModel}
-              </p>
+              <p>Pricing Model: {data.bookingPreferences.pricingModel}</p>
 
               <p>
-                Budget: {data.bookingPreferences.minPrice} -{" "}
+                Budget: {data.bookingPreferences.minPrice} -{' '}
                 {data.bookingPreferences.maxPrice}
               </p>
 
-              <p style={{ color: "var(--muted-foreground)" }}>
+              <p style={{ color: 'var(--muted-foreground)' }}>
                 {data.bookingPreferences.bookingNotes}
               </p>
             </div>
@@ -183,15 +175,12 @@ export default function VenueDetailPage({
           <Button
             className="w-full"
             onClick={() =>
-              window.open(
-                "https://civic-sauna-76601524.figma.site/",
-                "_blank"
-              )
+              window.open('https://civic-sauna-76601524.figma.site/', '_blank')
             }
             style={{
-              backgroundColor: "var(--muted)",
-              color: "var(--foreground)",
-              border: "1px solid var(--border)",
+              backgroundColor: 'var(--muted)',
+              color: 'var(--foreground)',
+              border: '1px solid var(--border)',
             }}
           >
             <ExternalLink size={14} />
@@ -202,8 +191,8 @@ export default function VenueDetailPage({
           <section
             className="p-6 rounded-3xl border"
             style={{
-              backgroundColor: "var(--card)",
-              borderColor: "var(--border)",
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
             }}
           >
             <h2 className="mb-6">Admin Actions</h2>
@@ -212,8 +201,8 @@ export default function VenueDetailPage({
               <Button
                 className="w-full"
                 style={{
-                  backgroundColor: "var(--status-active-bg)",
-                  color: "var(--status-active-text)",
+                  backgroundColor: 'var(--status-active-bg)',
+                  color: 'var(--status-active-text)',
                 }}
               >
                 <Shield size={14} />
@@ -223,8 +212,8 @@ export default function VenueDetailPage({
               <Button
                 className="w-full"
                 style={{
-                  backgroundColor: "var(--status-banned-bg)",
-                  color: "var(--status-banned-text)",
+                  backgroundColor: 'var(--status-banned-bg)',
+                  color: 'var(--status-banned-text)',
                 }}
               >
                 <Ban size={14} />
@@ -235,8 +224,8 @@ export default function VenueDetailPage({
                 className="w-full"
                 variant="outline"
                 style={{
-                  borderColor: "var(--border)",
-                  color: "var(--foreground)",
+                  borderColor: 'var(--border)',
+                  color: 'var(--foreground)',
                 }}
               >
                 <RefreshCw size={14} />
@@ -249,15 +238,15 @@ export default function VenueDetailPage({
           <section
             className="p-6 rounded-3xl border"
             style={{
-              backgroundColor: "var(--card)",
-              borderColor: "var(--border)",
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
             }}
           >
             <h2 className="mb-4">Quick Summary</h2>
 
             <div className="text-sm space-y-2">
               <p>Capacity: {data.capacitySpecs.capacity}</p>
-              <p>Stage: {data.capacitySpecs.hasStage ? "Yes" : "No"}</p>
+              <p>Stage: {data.capacitySpecs.hasStage ? 'Yes' : 'No'}</p>
               <p>City: {data.venueDetails.city}</p>
             </div>
           </section>
@@ -268,8 +257,8 @@ export default function VenueDetailPage({
       <section
         className="p-6 rounded-3xl border"
         style={{
-          backgroundColor: "var(--card)",
-          borderColor: "var(--border)",
+          backgroundColor: 'var(--card)',
+          borderColor: 'var(--border)',
         }}
       >
         <h2 className="mb-4 flex items-center gap-2">
@@ -286,7 +275,7 @@ export default function VenueDetailPage({
               />
             ))
           ) : (
-            <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
               No images uploaded
             </p>
           )}

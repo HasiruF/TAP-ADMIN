@@ -1,55 +1,62 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Plus, Upload } from "lucide-react"
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { resourceSchema, ResourceInput } from '@/lib/schemas/resourceSchema'
 
-import { Button } from "@/components/ui/button"
+import { Plus, Upload } from 'lucide-react'
+
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-
+} from '@/components/ui/dialog'
+import { useWatch } from 'react-hook-form'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from '@/components/ui/select'
 
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 
 export function CreateResourceDialog() {
-  const [type, setType] = useState<
-    "youtube" | "website" | "document"
-  >("youtube")
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    control,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<ResourceInput>({
+    resolver: zodResolver(resourceSchema),
+    defaultValues: {
+      type: 'youtube',
+    } as any,
+  })
 
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [url, setUrl] = useState("")
-  const [pdfFile, setPdfFile] = useState<File | null>(null)
-
-  const handleCreate = () => {
-    console.log({
-      type,
-      title,
-      description,
-      url,
-      pdfFile,
-    })
+  const type = useWatch({
+    control,
+    name: 'type',
+  })
+  const onSubmit = async (data: ResourceInput) => {
+    console.log('CREATE RESOURCE:', data)
   }
+  const pdfFile = watch('pdfFile')
 
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button
           style={{
-            backgroundColor: "var(--gold)",
-            color: "black",
+            backgroundColor: 'var(--gold)',
+            color: 'black',
           }}
         >
           <Plus size={16} />
@@ -60,28 +67,26 @@ export function CreateResourceDialog() {
       <DialogContent
         className="max-w-6xl w-[50vw] p-0 overflow-hidden rounded-3xl"
         style={{
-          backgroundColor: "var(--card)",
-          color: "var(--foreground)",
-          borderColor: "var(--border)",
+          backgroundColor: 'var(--card)',
+          color: 'var(--foreground)',
+          borderColor: 'var(--border)',
         }}
       >
-
         {/* HEADER */}
         <div
           className="px-10 py-8 border-b"
-          style={{ borderColor: "var(--border)" }}
+          style={{ borderColor: 'var(--border)' }}
         >
           <DialogHeader>
             <div className="flex items-start justify-between gap-6">
-
               <div>
                 <p
                   className="mb-2"
                   style={{
-                    color: "var(--muted-foreground)",
-                    fontSize: "11px",
-                    letterSpacing: "0.16em",
-                    textTransform: "uppercase",
+                    color: 'var(--muted-foreground)',
+                    fontSize: '11px',
+                    letterSpacing: '0.16em',
+                    textTransform: 'uppercase',
                   }}
                 >
                   Admin Panel
@@ -89,8 +94,8 @@ export function CreateResourceDialog() {
 
                 <DialogTitle
                   style={{
-                    fontSize: "32px",
-                    fontFamily: "var(--font-display)",
+                    fontSize: '32px',
+                    fontFamily: 'var(--font-display)',
                     fontWeight: 500,
                     lineHeight: 1,
                   }}
@@ -101,172 +106,166 @@ export function CreateResourceDialog() {
                 <p
                   className="mt-3"
                   style={{
-                    color: "var(--gold)",
-                    fontSize: "14px",
+                    color: 'var(--gold)',
+                    fontSize: '14px',
                   }}
                 >
                   Add learning material for artists & venues
                 </p>
               </div>
-
-              
-
             </div>
           </DialogHeader>
         </div>
 
         {/* CONTENT */}
         <div className="px-2 py-2 max-h-[70vh] overflow-y-auto">
-
-          <div
-            className="rounded-3xl border p-6 space-y-6"
-            style={{
-              backgroundColor: "var(--background)",
-              borderColor: "var(--border)",
-            }}
-          >
-
-            {/* TYPE */}
-            <div className="space-y-1">
-              <label className="text-sm">Resource Type</label>
-
-              <Select value={type} onValueChange={(v: any) => setType(v)}>
-                <SelectTrigger
-                  className="h-12"
-                  style={{
-                    backgroundColor: "var(--muted)",
-                    borderColor: "var(--border)",
-                  }}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-
-                <SelectContent>
-                  <SelectItem value="youtube">YouTube</SelectItem>
-                  <SelectItem value="website">Website</SelectItem>
-                  <SelectItem value="document">Document</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* TITLE */}
-            <div className="space-y-1">
-              <label className="text-sm">Title</label>
-
-              <Input
-                className="h-12"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter resource title"
-                style={{
-                  backgroundColor: "var(--muted)",
-                  borderColor: "var(--border)",
-                }}
-              />
-            </div>
-
-            {/* DESCRIPTION */}
-            <div className="space-y-1">
-              <label className="text-sm">Description</label>
-
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={5}
-                placeholder="Describe this resource..."
-                style={{
-                  backgroundColor: "var(--muted)",
-                  borderColor: "var(--border)",
-                }}
-              />
-            </div>
-
-            {/* URL */}
-            {(type === "youtube" || type === "website") && (
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <div
+              className="rounded-3xl border p-6 space-y-6"
+              style={{
+                backgroundColor: 'var(--background)',
+                borderColor: 'var(--border)',
+              }}
+            >
+              {/* TYPE */}
               <div className="space-y-1">
-                <label className="text-sm">
-                  {type === "youtube"
-                    ? "YouTube Link"
-                    : "Website URL"}
-                </label>
+                <label className="text-sm">Resource Type</label>
+
+                <Select
+                  value={type}
+                  onValueChange={(v) => setValue('type', v as any)}
+                >
+                  <SelectTrigger
+                    className="h-12"
+                    style={{
+                      backgroundColor: 'var(--muted)',
+                      borderColor: 'var(--border)',
+                    }}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    <SelectItem value="youtube">YouTube</SelectItem>
+                    <SelectItem value="website">Website</SelectItem>
+                    <SelectItem value="document">Document</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* TITLE */}
+              <div className="space-y-1">
+                <label className="text-sm">Title</label>
 
                 <Input
                   className="h-12"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://..."
+                  placeholder="Enter resource title"
                   style={{
-                    backgroundColor: "var(--muted)",
-                    borderColor: "var(--border)",
+                    backgroundColor: 'var(--muted)',
+                    borderColor: 'var(--border)',
+                  }}
+                  {...register('title')}
+                />
+              </div>
+              {errors.title && <p>{errors.title.message}</p>}
+              {/* DESCRIPTION */}
+              <div className="space-y-1">
+                <label className="text-sm">Description</label>
+
+                <Textarea
+                  {...register('description')}
+                  rows={5}
+                  placeholder="Describe this resource..."
+                  style={{
+                    backgroundColor: 'var(--muted)',
+                    borderColor: 'var(--border)',
                   }}
                 />
               </div>
-            )}
 
-            {/* PDF */}
-            {type === "document" && (
-              <div className="space-y-1">
-                <label className="text-sm">Upload PDF</label>
+              {/* URL */}
+              {(type === 'youtube' || type === 'website') && (
+                <div className="space-y-1">
+                  <label className="text-sm">
+                    {type === 'youtube' ? 'YouTube Link' : 'Website URL'}
+                  </label>
 
-                <label
-                  className="border rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition"
-                  style={{ borderColor: "var(--border)" }}
-                >
-                  <Upload
-                    size={30}
+                  <Input
+                    className="h-12"
+                    {...register('url')}
+                    placeholder="https://..."
                     style={{
-                      color: "var(--gold)",
-                      marginBottom: "12px",
+                      backgroundColor: 'var(--muted)',
+                      borderColor: 'var(--border)',
                     }}
                   />
+                </div>
+              )}
 
-                  <p className="text-sm">
-                    {pdfFile
-                      ? pdfFile.name
-                      : "Click to upload PDF"}
-                  </p>
+              {/* PDF */}
+              {type === 'document' && (
+                <div className="space-y-1">
+                  <label className="text-sm">Upload PDF</label>
 
-                  <p
-                    className="text-xs mt-2"
-                    style={{
-                      color: "var(--muted-foreground)",
-                    }}
+                  <label
+                    className="border rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition"
+                    style={{ borderColor: 'var(--border)' }}
                   >
-                    PDF only (max recommended 10MB)
-                  </p>
+                    <Upload
+                      size={30}
+                      style={{
+                        color: 'var(--gold)',
+                        marginBottom: '12px',
+                      }}
+                    />
 
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    className="hidden"
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) {
-                        setPdfFile(e.target.files[0])
-                      }
-                    }}
-                  />
-                </label>
+                    <p className="text-sm">
+                      {pdfFile?.name ?? 'Click to upload PDF'}
+                    </p>
+
+                    <p
+                      className="text-xs mt-2"
+                      style={{
+                        color: 'var(--muted-foreground)',
+                      }}
+                    >
+                      PDF only (max recommended 10MB)
+                    </p>
+
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          setValue('pdfFile', file, {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                          })
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              )}
+              {/* ACTIONS */}
+              <div className="flex justify-end gap-2 pt-6">
+                <Button variant="outline">Cancel</Button>
+
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  style={{
+                    backgroundColor: 'var(--gold)',
+                    color: 'black',
+                  }}
+                >
+                  Create Resource
+                </Button>
               </div>
-            )}
-
-            {/* ACTIONS */}
-            <div className="flex justify-end gap-2 pt-6">
-              <Button variant="outline">
-                Cancel
-              </Button>
-
-              <Button
-                onClick={handleCreate}
-                style={{
-                  backgroundColor: "var(--gold)",
-                  color: "black",
-                }}
-              >
-                Create Resource
-              </Button>
             </div>
-
-          </div>
+          </form>
         </div>
       </DialogContent>
     </Dialog>

@@ -1,6 +1,6 @@
-"use client"
+'use client'
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button'
 import {
   Ban,
   Shield,
@@ -10,38 +10,29 @@ import {
   Music2,
   Video,
   Link as LinkIcon,
-  
   Image as ImageIcon,
-} from "lucide-react"
-import { ExternalLink } from "lucide-react"
-import { useAdminArtist } from "@/hooks/queries/useAdminArtists";
-import { use } from "react";
+} from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
+import { useAdminArtist } from '@/hooks/queries/useAdminArtists'
+import { use } from 'react'
 export default function ArtistDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>
 }) {
-  const { id } = use(params);
+  const { id } = use(params)
 
-  const {
-    data: artist,
-    isLoading,
-    error,
-  } = useAdminArtist(id);
+  const { data: artist, isLoading, error } = useAdminArtist(id)
 
   if (isLoading) {
-    return <div className="p-6">Loading artist...</div>;
+    return <div className="p-6">Loading artist...</div>
   }
 
   if (error || !artist) {
-    return (
-      <div className="text-center py-20">
-        Artist not found
-      </div>
-    );
+    return <div className="text-center py-20">Artist not found</div>
   }
 
-  const data = artist;
+  const data = artist
   const isYouTubeUrl = (url: string) => {
     return /youtube\.com|youtu\.be/.test(url)
   }
@@ -54,7 +45,6 @@ export default function ArtistDetailPage({
     return videoId ? `https://www.youtube.com/embed/${videoId}` : null
   }
 
-
   return (
     <div className="space-y-10">
       {/* HEADER */}
@@ -62,10 +52,10 @@ export default function ArtistDetailPage({
         <p
           className="mb-2"
           style={{
-            color: "var(--muted-foreground)",
-            fontSize: "11px",
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
+            color: 'var(--muted-foreground)',
+            fontSize: '11px',
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
           }}
         >
           Admin • Artist Inspection
@@ -73,10 +63,10 @@ export default function ArtistDetailPage({
 
         <h1
           style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "54px",
+            fontFamily: 'var(--font-display)',
+            fontSize: '54px',
             fontWeight: 500,
-            color: "var(--foreground)",
+            color: 'var(--foreground)',
           }}
         >
           {data.basicInfo.stageName}
@@ -87,31 +77,34 @@ export default function ArtistDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* LEFT */}
         <div className="lg:col-span-2 space-y-6">
-
           {/* BASIC INFO */}
           <section
             className="p-6 rounded-3xl border"
             style={{
-              backgroundColor: "var(--card)",
-              borderColor: "var(--border)",
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
             }}
           >
             <h2 className="mb-4">Basic Info</h2>
 
             <div className="space-y-2 text-sm">
-              <p><strong>Stage Name:</strong> {data.basicInfo.stageName}</p>
-              <p><strong>Artist Type:</strong> {data.basicInfo.artistType}</p>
+              <p>
+                <strong>Stage Name:</strong> {data.basicInfo.stageName}
+              </p>
+              <p>
+                <strong>Artist Type:</strong> {data.basicInfo.artistType}
+              </p>
 
               <p className="flex items-center gap-2">
-                <MapPin size={14} style={{ color: "var(--gold)" }} />
-                {typeof data.basicInfo.location === "string"
+                <MapPin size={14} style={{ color: 'var(--gold)' }} />
+                {typeof data.basicInfo.location === 'string'
                   ? data.basicInfo.location
                   : data.basicInfo.location.city}
               </p>
 
               <p>
-                <strong>Open to Travel:</strong>{" "}
-                {data.basicInfo.openToTravel ? "Yes" : "No"}
+                <strong>Open to Travel:</strong>{' '}
+                {data.basicInfo.openToTravel ? 'Yes' : 'No'}
               </p>
 
               <p>
@@ -119,33 +112,34 @@ export default function ArtistDetailPage({
               </p>
             </div>
 
-            <div className="mt-4 text-sm" style={{ color: "var(--muted-foreground)" }}>
+            <div
+              className="mt-4 text-sm"
+              style={{ color: 'var(--muted-foreground)' }}
+            >
               {data.basicInfo.shortBio}
             </div>
 
-            <div className="mt-4 text-sm">
-              {data.basicInfo.extendedBio}
-            </div>
+            <div className="mt-4 text-sm">{data.basicInfo.extendedBio}</div>
           </section>
 
           {/* GENRES */}
           <section
             className="p-6 rounded-3xl border"
             style={{
-              backgroundColor: "var(--card)",
-              borderColor: "var(--border)",
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
             }}
           >
             <h2 className="mb-4">Genres & Style</h2>
 
             <div className="flex flex-wrap gap-2 mb-4">
-              {data.genres.genres.map((g : string) => (
+              {data.genres.genres.map((g: string) => (
                 <span
                   key={g}
                   className="px-3 py-1 rounded-full text-xs"
                   style={{
-                    backgroundColor: "var(--muted)",
-                    color: "var(--foreground)",
+                    backgroundColor: 'var(--muted)',
+                    color: 'var(--foreground)',
                   }}
                 >
                   {g}
@@ -164,8 +158,8 @@ export default function ArtistDetailPage({
           <section
             className="p-6 rounded-3xl border"
             style={{
-              backgroundColor: "var(--card)",
-              borderColor: "var(--border)",
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
             }}
           >
             <h2 className="mb-4 flex items-center gap-2">
@@ -178,10 +172,10 @@ export default function ArtistDetailPage({
               getYouTubeEmbedUrl(data.media.videoUrl) && (
                 <div
                   className="relative rounded-xl overflow-hidden mb-4 border border-white/10"
-                  style={{ aspectRatio: "16/9" }}
+                  style={{ aspectRatio: '16/9' }}
                 >
                   <iframe
-                    src={getYouTubeEmbedUrl(data.media.videoUrl) || ""}
+                    src={getYouTubeEmbedUrl(data.media.videoUrl) || ''}
                     className="w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
@@ -191,11 +185,13 @@ export default function ArtistDetailPage({
 
             {/* Video fallback */}
             {!data.media.videoUrl && (
-              <p className="text-sm mb-3" style={{ color: "var(--muted-foreground)" }}>
+              <p
+                className="text-sm mb-3"
+                style={{ color: 'var(--muted-foreground)' }}
+              >
                 No video provided
               </p>
             )}
-
 
             <div className="space-y-1 text-sm">
               <p>Instagram: {data.media.socialMedia.instagram}</p>
@@ -206,14 +202,12 @@ export default function ArtistDetailPage({
             </div>
           </section>
 
-
-
           {/* MUSIC LINKS */}
           <section
             className="p-6 rounded-3xl border"
             style={{
-              backgroundColor: "var(--card)",
-              borderColor: "var(--border)",
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
             }}
           >
             <h2 className="mb-4 flex items-center gap-2">
@@ -221,12 +215,14 @@ export default function ArtistDetailPage({
             </h2>
 
             <div className="space-y-2 text-sm">
-              {data.musicLinks.links.map((l:{ id: string; platform: string; url: string }) => (
-                <div key={l.id} className="flex items-center gap-2">
-                  <LinkIcon size={12} style={{ color: "var(--gold)" }} />
-                  {l.platform}: {l.url}
-                </div>
-              ))}
+              {data.musicLinks.links.map(
+                (l: { id: string; platform: string; url: string }) => (
+                  <div key={l.id} className="flex items-center gap-2">
+                    <LinkIcon size={12} style={{ color: 'var(--gold)' }} />
+                    {l.platform}: {l.url}
+                  </div>
+                )
+              )}
             </div>
           </section>
 
@@ -234,24 +230,23 @@ export default function ArtistDetailPage({
           <section
             className="p-6 rounded-3xl border"
             style={{
-              backgroundColor: "var(--card)",
-              borderColor: "var(--border)",
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
             }}
           >
             <h2 className="mb-4">Booking</h2>
 
             <p className="text-sm">
-              Fee: {data.bookingInfo.feeRange.currency}{" "}
-              {data.bookingInfo.feeRange.min} -{" "}
-              {data.bookingInfo.feeRange.max}
+              Fee: {data.bookingInfo.feeRange.currency}{' '}
+              {data.bookingInfo.feeRange.min} - {data.bookingInfo.feeRange.max}
             </p>
 
             <p className="text-sm">
-              Availability: {data.bookingInfo.availability.join(", ")}
+              Availability: {data.bookingInfo.availability.join(', ')}
             </p>
 
             <p className="text-sm">
-              Set Lengths: {data.bookingInfo.setLengths.join(", ")}
+              Set Lengths: {data.bookingInfo.setLengths.join(', ')}
             </p>
           </section>
 
@@ -259,19 +254,17 @@ export default function ArtistDetailPage({
           <section
             className="p-6 rounded-3xl border"
             style={{
-              backgroundColor: "var(--card)",
-              borderColor: "var(--border)",
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
             }}
           >
             <h2 className="mb-4">Live Setup</h2>
 
             <p className="text-sm">Type: {data.liveSetup.setupType}</p>
             <p className="text-sm">
-              Equipment: {data.liveSetup.equipment.join(", ")}
+              Equipment: {data.liveSetup.equipment.join(', ')}
             </p>
-            <p className="text-sm mt-2">
-              {data.liveSetup.technicalNotes}
-            </p>
+            <p className="text-sm mt-2">{data.liveSetup.technicalNotes}</p>
           </section>
         </div>
 
@@ -280,15 +273,12 @@ export default function ArtistDetailPage({
           <Button
             className="w-full"
             onClick={() =>
-              window.open(
-                "https://civic-sauna-76601524.figma.site/",
-                "_blank"
-              )
+              window.open('https://civic-sauna-76601524.figma.site/', '_blank')
             }
             style={{
-              backgroundColor: "var(--muted)",
-              color: "var(--foreground)",
-              border: "1px solid var(--border)",
+              backgroundColor: 'var(--muted)',
+              color: 'var(--foreground)',
+              border: '1px solid var(--border)',
             }}
           >
             <ExternalLink size={14} />
@@ -297,8 +287,8 @@ export default function ArtistDetailPage({
           <section
             className="p-6 rounded-3xl border"
             style={{
-              backgroundColor: "var(--card)",
-              borderColor: "var(--border)",
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
             }}
           >
             <h2 className="mb-6">Admin Actions</h2>
@@ -307,8 +297,8 @@ export default function ArtistDetailPage({
               <Button
                 className="w-full"
                 style={{
-                  backgroundColor: "var(--status-active-bg)",
-                  color: "var(--status-active-text)",
+                  backgroundColor: 'var(--status-active-bg)',
+                  color: 'var(--status-active-text)',
                 }}
               >
                 <Shield size={14} />
@@ -318,8 +308,8 @@ export default function ArtistDetailPage({
               <Button
                 className="w-full"
                 style={{
-                  backgroundColor: "var(--status-banned-bg)",
-                  color: "var(--status-banned-text)",
+                  backgroundColor: 'var(--status-banned-bg)',
+                  color: 'var(--status-banned-text)',
                 }}
               >
                 Ban
@@ -329,8 +319,8 @@ export default function ArtistDetailPage({
                 className="w-full"
                 variant="outline"
                 style={{
-                  borderColor: "var(--border)",
-                  color: "var(--foreground)",
+                  borderColor: 'var(--border)',
+                  color: 'var(--foreground)',
                 }}
               >
                 <RefreshCw size={14} />
@@ -338,15 +328,14 @@ export default function ArtistDetailPage({
               </Button>
             </div>
           </section>
-          
         </div>
       </div>
       {/* PHOTOS */}
       <section
         className="p-6 rounded-3xl border"
         style={{
-          backgroundColor: "var(--card)",
-          borderColor: "var(--border)",
+          backgroundColor: 'var(--card)',
+          borderColor: 'var(--border)',
         }}
       >
         <h2 className="mb-4 flex items-center gap-2">
@@ -363,7 +352,7 @@ export default function ArtistDetailPage({
               />
             ))
           ) : (
-            <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
               No images uploaded
             </p>
           )}

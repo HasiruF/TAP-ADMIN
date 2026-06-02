@@ -1,6 +1,6 @@
 export interface Attachment {
   id: string
-  type: "image" | "video" | "audio" | "pdf" | "document"
+  type: 'image' | 'video' | 'audio' | 'pdf' | 'document'
   name: string
   url: string
   size?: string

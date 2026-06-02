@@ -1,35 +1,56 @@
-"use client"
+'use client'
+import { useState } from 'react'
 
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-
+import { useLogin } from '@/features/auth/hooks'
+import { useQueryClient } from '@tanstack/react-query'
+import { loginSchema, LoginInput } from '@/lib/schemas/loginSchema'
 export default function LoginPage() {
   const router = useRouter()
+  const queryClient = useQueryClient()
+  const login = useLogin()
+  const [serverError, setServerError] = useState<string | null>(null)
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+  })
 
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const onSubmit = async (data: LoginInput) => {
+    try {
+      await login.mutateAsync(data)
 
-  const handleLogin = () => {
-    // TEMP MOCK LOGIN
-    router.push("/admin")
+      await queryClient.invalidateQueries({ queryKey: ['me'] })
+
+      router.push('/admin')
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Login failed. Please try again.'
+
+      setServerError(message)
+    }
   }
 
   return (
     <div
       className="min-h-screen flex items-center justify-center px-6"
       style={{
-        backgroundColor: "var(--background)",
+        backgroundColor: 'var(--background)',
       }}
     >
       <div
         className="w-full max-w-md rounded-[32px] border p-8"
         style={{
-          backgroundColor: "var(--card)",
-          borderColor: "var(--border)",
-          boxShadow: "0 20px 60px -20px rgba(0,0,0,0.45)",
+          backgroundColor: 'var(--card)',
+          borderColor: 'var(--border)',
+          boxShadow: '0 20px 60px -20px rgba(0,0,0,0.45)',
         }}
       >
         {/* LOGO */}
@@ -46,10 +67,10 @@ export default function LoginPage() {
           <p
             className="mb-2"
             style={{
-              color: "var(--muted-foreground)",
-              fontSize: "11px",
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
+              color: 'var(--muted-foreground)',
+              fontSize: '11px',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
             }}
           >
             TAP ADMIN
@@ -57,9 +78,9 @@ export default function LoginPage() {
 
           <h1
             style={{
-              fontFamily: "var(--font-display)",
-              color: "var(--foreground)",
-              fontSize: "44px",
+              fontFamily: 'var(--font-display)',
+              color: 'var(--foreground)',
+              fontSize: '44px',
               lineHeight: 1,
               fontWeight: 500,
             }}
@@ -69,63 +90,48 @@ export default function LoginPage() {
         </div>
 
         {/* FORM */}
-        <div className="space-y-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          {serverError && (
+            <div className="text-red-500 text-sm">{serverError}</div>
+          )}
+          {/* EMAIL */}
           <div className="space-y-2">
-            <label
-              style={{
-                color: "var(--muted-foreground)",
-                fontSize: "13px",
-              }}
-            >
-              Email
-            </label>
+            <label>Email</label>
 
-            <Input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@tap.com"
-              className="h-12 rounded-2xl border-0"
-              style={{
-                backgroundColor: "var(--muted)",
-                color: "var(--foreground)",
-              }}
-            />
+            <Input placeholder="admin@tap.com" {...register('email')} />
+
+            {errors.email && (
+              <p className="text-red-400 text-sm">{errors.email.message}</p>
+            )}
           </div>
 
+          {/* PASSWORD */}
           <div className="space-y-2">
-            <label
-              style={{
-                color: "var(--muted-foreground)",
-                fontSize: "13px",
-              }}
-            >
-              Password
-            </label>
+            <label>Password</label>
 
             <Input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="h-12 rounded-2xl border-0"
-              style={{
-                backgroundColor: "var(--muted)",
-                color: "var(--foreground)",
-              }}
+              {...register('password')}
             />
+
+            {errors.password && (
+              <p className="text-red-400 text-sm">{errors.password.message}</p>
+            )}
           </div>
 
+          {/* SUBMIT */}
           <Button
-            onClick={handleLogin}
-            className="w-full h-12 rounded-2xl mt-2"
+            type="submit"
+            className="w-full h-12 rounded-2xl"
+            disabled={isSubmitting}
             style={{
-              backgroundColor: "var(--gold)",
-              color: "var(--primary-foreground)",
+              backgroundColor: 'var(--gold)',
             }}
           >
-            Sign In
+            {login.isPending ? 'Signing in...' : 'Sign In'}
           </Button>
-        </div>
+        </form>
       </div>
     </div>
   )

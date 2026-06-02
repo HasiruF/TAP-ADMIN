@@ -1,9 +1,9 @@
 export async function fetchAdminMessages() {
-  const res = await fetch("/api/admin/messages");
+  const res = await fetch('/api/admin/messages')
 
   if (!res.ok) {
-    throw new Error("Failed to fetch messages");
+    throw new Error('Failed to fetch messages')
   }
 
-  return res.json();
+  return res.json()
 }

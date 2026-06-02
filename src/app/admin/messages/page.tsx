@@ -1,23 +1,18 @@
-"use client"
+'use client'
 
-import { useMemo, useState, useEffect } from "react"
-import { useAdminMessages } from "@/hooks/queries/useAdminMessages"
-import { MessageThread } from "@/components/admin/messages/MessageThread"
+import { useMemo, useState, useEffect } from 'react'
+import { useAdminMessages } from '@/hooks/queries/useAdminMessages'
+import { MessageThread } from '@/components/admin/messages/MessageThread'
 
-import { Conversation } from "@/types/conversation";
+import { Conversation } from '@/types/conversation'
 export default function MessagesPage() {
   const { data: conversations = [], isLoading, error } = useAdminMessages()
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [searchFilter, setSearchFilter] = useState('all')
 
-  const [selected, setSelected] = useState<any>(null)
-  const [search, setSearch] = useState("")
-  const [searchFilter, setSearchFilter] = useState("all")
-
-  useEffect(() => {
-    if (!selected && conversations.length > 0) {
-      setSelected(conversations[0])
-    }
-  }, [conversations, selected])
-
+  const effectiveSelectedId = selectedId ?? conversations?.[0]?.id ?? null
+  const selected = conversations.find((c) => c.id === effectiveSelectedId)
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim()
 
@@ -25,11 +20,11 @@ export default function MessagesPage() {
       .filter((c: any) => {
         if (!q) return true
 
-        if (searchFilter === "artist") {
+        if (searchFilter === 'artist') {
           return c.artist.name.toLowerCase().includes(q)
         }
 
-        if (searchFilter === "venue") {
+        if (searchFilter === 'venue') {
           return c.venue.name.toLowerCase().includes(q)
         }
 
@@ -48,7 +43,8 @@ export default function MessagesPage() {
 
   if (isLoading) return <div className="p-6">Loading messages...</div>
 
-  if (error) return <div className="p-6 text-red-500">Failed to load messages</div>
+  if (error)
+    return <div className="p-6 text-red-500">Failed to load messages</div>
 
   return (
     <div className="space-y-8">
@@ -57,10 +53,10 @@ export default function MessagesPage() {
         <p
           className="mb-3"
           style={{
-            color: "var(--muted-foreground)",
-            fontSize: "11px",
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
+            color: 'var(--muted-foreground)',
+            fontSize: '11px',
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
           }}
         >
           Platform Management
@@ -68,30 +64,29 @@ export default function MessagesPage() {
 
         <h1
           style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "52px",
-            lineHeight: "1",
+            fontFamily: 'var(--font-display)',
+            fontSize: '52px',
+            lineHeight: '1',
             fontWeight: 500,
-            color: "var(--foreground)",
+            color: 'var(--foreground)',
           }}
         >
           Message Moderation
         </h1>
       </div>
       <div className="h-[calc(100vh-80px)] flex gap-6">
-        
         {/* LEFT */}
         <div
           className="w-[360px] border rounded-2xl flex flex-col"
           style={{
-            backgroundColor: "var(--card)",
-            borderColor: "var(--border)",
+            backgroundColor: 'var(--card)',
+            borderColor: 'var(--border)',
           }}
         >
           {/* SEARCH */}
           <div
             className="p-3 border-b flex gap-2"
-            style={{ borderColor: "var(--border)" }}
+            style={{ borderColor: 'var(--border)' }}
           >
             {/* Dropdown */}
             <select
@@ -99,9 +94,9 @@ export default function MessagesPage() {
               onChange={(e) => setSearchFilter(e.target.value)}
               className="px-3 py-2 rounded-xl"
               style={{
-                backgroundColor: "var(--muted)",
-                color: "var(--foreground)",
-                border: "1px solid var(--border)",
+                backgroundColor: 'var(--muted)',
+                color: 'var(--foreground)',
+                border: '1px solid var(--border)',
               }}
             >
               <option value="all">All</option>
@@ -116,9 +111,9 @@ export default function MessagesPage() {
               placeholder="Search..."
               className="w-full px-3 py-2 rounded-xl"
               style={{
-                backgroundColor: "var(--muted)",
-                color: "var(--foreground)",
-                border: "1px solid var(--border)",
+                backgroundColor: 'var(--muted)',
+                color: 'var(--foreground)',
+                border: '1px solid var(--border)',
               }}
             />
           </div>
@@ -130,22 +125,21 @@ export default function MessagesPage() {
               return (
                 <button
                   key={c.id}
-                  onClick={() => setSelected(c)}
+                  onClick={() => setSelectedId(c.id)}
                   className="w-full text-left p-4 transition"
                   style={{
-                    borderBottom: "1px solid var(--border)",
+                    borderBottom: '1px solid var(--border)',
                   }}
                 >
                   {/* HEADER ROW */}
                   <div className="flex flex-col gap-2">
-
                     {/* ARTIST */}
                     <div className="flex items-center gap-2">
                       <span
                         className="text-[10px] px-2 py-[2px] rounded-full"
                         style={{
-                          backgroundColor: "var(--gold)",
-                          color: "var(--background)",
+                          backgroundColor: 'var(--gold)',
+                          color: 'var(--background)',
                         }}
                       >
                         Artist
@@ -153,9 +147,9 @@ export default function MessagesPage() {
 
                       <span
                         style={{
-                          color: "var(--foreground)",
+                          color: 'var(--foreground)',
                           fontWeight: 500,
-                          fontSize: "13px",
+                          fontSize: '13px',
                         }}
                       >
                         {c.artist.name}
@@ -167,8 +161,8 @@ export default function MessagesPage() {
                       <span
                         className="text-[10px] px-2 py-[2px] rounded-full"
                         style={{
-                          backgroundColor: "var(--deep-teal)",
-                          color: "var(--background)",
+                          backgroundColor: 'var(--deep-teal)',
+                          color: 'var(--background)',
                         }}
                       >
                         Venue
@@ -176,10 +170,10 @@ export default function MessagesPage() {
 
                       <span
                         style={{
-                          color: "var(--foreground)",
-                          
+                          color: 'var(--foreground)',
+
                           fontWeight: 500,
-                          fontSize: "13px",
+                          fontSize: '13px',
                         }}
                       >
                         {c.venue.name}
@@ -190,24 +184,24 @@ export default function MessagesPage() {
                     <div className="flex gap-2 items-center mt-1">
                       <p
                         className="text-xs truncate max-w-[70%]"
-                        style={{ color: "var(--muted-foreground)" }}
+                        style={{ color: 'var(--muted-foreground)' }}
                       >
                         Last Messaged
                       </p>
 
                       <span
                         className="text-[12px]"
-                        style={{ color: "var(--muted-foreground)" }}
+                        style={{ color: 'var(--muted-foreground)' }}
                       >
                         {lastMessage?.timestamp
-                        ? new Date(lastMessage.timestamp).toLocaleString([], {
-                            year: "numeric",
-                            month: "short",
-                            day: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : ""}
+                          ? new Date(lastMessage.timestamp).toLocaleString([], {
+                              year: 'numeric',
+                              month: 'short',
+                              day: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          : ''}
                       </span>
                     </div>
                   </div>
@@ -226,8 +220,8 @@ export default function MessagesPage() {
               Select a conversation
             </div>
           )}
-        </div>  
+        </div>
       </div>
-      </div>
+    </div>
   )
 }

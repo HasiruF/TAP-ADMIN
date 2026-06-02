@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import {
   Sidebar,
   SidebarContent,
@@ -9,71 +9,80 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-} from "@/components/ui/sidebar"
-import { SidebarTrigger } from "@/components/ui/sidebar"
-import { useSidebar } from "@/components/ui/sidebar"
-import { usePathname } from "next/navigation"
-import { useRouter } from "next/navigation"
+} from '@/components/ui/sidebar'
+import { SidebarTrigger } from '@/components/ui/sidebar'
+import { useSidebar } from '@/components/ui/sidebar'
+import { usePathname } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import { useLogout } from '@/features/auth/hooks'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   LayoutDashboard,
   Users,
   ShieldAlert,
   BadgeCheck,
   Settings,
-  MessageSquare ,
+  MessageSquare,
   LogOut,
   BookOpen,
-} from "lucide-react"
+} from 'lucide-react'
 const navMain = [
   {
-    title: "Overview",
-    url: "/admin",
+    title: 'Overview',
+    url: '/admin',
     icon: LayoutDashboard,
   },
   {
-    title: "User Management",
-    url: "/admin/users",
+    title: 'User Management',
+    url: '/admin/users',
     icon: Users,
   },
   {
-    title: "Content Moderation",
-    url: "/admin/moderation",
+    title: 'Content Moderation',
+    url: '/admin/moderation',
     icon: ShieldAlert,
   },
   {
-    title: "Message Moderation",
-    url: "/admin/messages",
-    icon: MessageSquare ,
+    title: 'Message Moderation',
+    url: '/admin/messages',
+    icon: MessageSquare,
   },
   {
-  title: "Help Resources",
-  url: "/admin/resources",
-  icon: BookOpen,
-  }
+    title: 'Help Resources',
+    url: '/admin/resources',
+    icon: BookOpen,
+  },
 ]
 
 export function AppSidebar() {
-  const router = useRouter()
-
   const pathname = usePathname()
   const { state } = useSidebar()
-  const isCollapsed = state === "collapsed"
-  const handleLogout = () => {
-    // TEMP MOCK LOGOUT
-    router.push("/login")
+  const isCollapsed = state === 'collapsed'
+  const logout = useLogout()
+  const queryClient = useQueryClient()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await logout.mutateAsync()
+
+    queryClient.removeQueries({ queryKey: ['me'] })
+
+    // MOCK redirect
+    router.push('/login')
   }
   return (
-    <Sidebar collapsible="icon"
+    <Sidebar
+      collapsible="icon"
       style={{
-        backgroundColor: "var(--background)",
-        borderRight: "1px solid var(--border)",
+        backgroundColor: 'var(--background)',
+        borderRight: '1px solid var(--border)',
       }}
     >
       {/* HEADER */}
       <SidebarHeader>
         <div
           className={`flex items-center px-4 py-4 transition-all ${
-            isCollapsed ? "justify-center" : "justify-between"
+            isCollapsed ? 'justify-center' : 'justify-between'
           }`}
         >
           {/* LOGO + TEXT*/}
@@ -82,8 +91,8 @@ export function AppSidebar() {
               <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center border"
                 style={{
-                  backgroundColor: "var(--sidebar-accent)",
-                  borderColor: "var(--sidebar-border)",
+                  backgroundColor: 'var(--sidebar-accent)',
+                  borderColor: 'var(--sidebar-border)',
                 }}
               >
                 <img
@@ -96,17 +105,15 @@ export function AppSidebar() {
               <div>
                 <h1
                   style={{
-                    fontFamily: "var(--font-display)",
-                    color: "var(--foreground)",
-                    fontSize: "18px",
-                    letterSpacing: "0.12em",
+                    fontFamily: 'var(--font-display)',
+                    color: 'var(--foreground)',
+                    fontSize: '18px',
+                    letterSpacing: '0.12em',
                     lineHeight: 1,
                   }}
                 >
                   TAP ADMIN
                 </h1>
-
-                
               </div>
             </div>
           )}
@@ -121,9 +128,9 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel
             style={{
-              color: "var(--muted-foreground)",
-              letterSpacing: "0.14em",
-              fontSize: "10px",
+              color: 'var(--muted-foreground)',
+              letterSpacing: '0.14em',
+              fontSize: '10px',
             }}
           >
             MANAGEMENT
@@ -139,11 +146,11 @@ export function AppSidebar() {
                     asChild
                     style={{
                       color: isActive
-                        ? "var(--primary-foreground)"
-                        : "var(--foreground)",
+                        ? 'var(--primary-foreground)'
+                        : 'var(--foreground)',
                       backgroundColor: isActive
-                        ? "var(--foreground)"
-                        : "transparent",
+                        ? 'var(--foreground)'
+                        : 'transparent',
                     }}
                     className="
                       transition-all
@@ -155,20 +162,22 @@ export function AppSidebar() {
                     <a
                       href={item.url}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl
-                         ${isCollapsed ? "justify-center" : ""}`}
+                         ${isCollapsed ? 'justify-center' : ''}`}
                     >
                       <item.icon
                         size={24}
                         style={{
-                          color: isActive
-                            ? "var(--gold)"
-                            : "var(--gold)",
+                          color: isActive ? 'var(--gold)' : 'var(--gold)',
                         }}
                       />
 
-                      <span className={isCollapsed ? "hidden" : "text-[15px] font-medium"}>
+                      <span
+                        className={
+                          isCollapsed ? 'hidden' : 'text-[15px] font-medium'
+                        }
+                      >
                         {item.title}
-                      </span>     
+                      </span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -176,22 +185,20 @@ export function AppSidebar() {
             })}
           </SidebarMenu>
         </SidebarGroup>
-
-
       </SidebarContent>
 
       {/* FOOTER */}
       <SidebarFooter>
         <div
           className="px-4 py-4 border-t"
-          style={{ borderColor: "var(--border)" }}
+          style={{ borderColor: 'var(--border)' }}
         >
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 w-full px-3 py-2 rounded-xl hover:bg-[rgba(255,255,255,0.04)] transition"
-            style={{ color: "var(--foreground)" }}
+            style={{ color: 'var(--foreground)' }}
           >
-            <LogOut size={18} style={{ color: "var(--muted-foreground)" }} />
+            <LogOut size={18} style={{ color: 'var(--muted-foreground)' }} />
             <span className="text-sm">Logout</span>
           </button>
         </div>

@@ -1,32 +1,27 @@
 // src/app/admin/page.tsx
 
-import {
-  Music2,
-  Building2,
-  BadgeCheck,
-  Clock3,
-} from "lucide-react"
-import { GrowthChart } from "@/components/admin/overview/GrowthChart"
+import { Music2, Building2, BadgeCheck, Clock3 } from 'lucide-react'
+import { GrowthChart } from '@/components/admin/overview/GrowthChart'
 
 const stats = [
   {
-    title: "Artists",
-    value: "1,284",
+    title: 'Artists',
+    value: '1,284',
     icon: Music2,
   },
   {
-    title: "Venues",
-    value: "148",
+    title: 'Venues',
+    value: '148',
     icon: Building2,
   },
   {
-    title: "Pending Artist Approvals",
-    value: "23",
+    title: 'Pending Artist Approvals',
+    value: '23',
     icon: BadgeCheck,
   },
   {
-    title: "Pending Venue Approvals",
-    value: "11",
+    title: 'Pending Venue Approvals',
+    value: '11',
     icon: Clock3,
   },
 ]
@@ -39,10 +34,10 @@ export default function AdminOverviewPage() {
         <p
           className="mb-3"
           style={{
-            color: "var(--muted-foreground)",
-            fontSize: "11px",
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
+            color: 'var(--muted-foreground)',
+            fontSize: '11px',
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
           }}
         >
           TAP Administration
@@ -50,11 +45,11 @@ export default function AdminOverviewPage() {
 
         <h1
           style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "52px",
-            lineHeight: "1",
+            fontFamily: 'var(--font-display)',
+            fontSize: '52px',
+            lineHeight: '1',
             fontWeight: 500,
-            color: "var(--foreground)",
+            color: 'var(--foreground)',
           }}
         >
           Overview
@@ -68,15 +63,15 @@ export default function AdminOverviewPage() {
             key={stat.title}
             className="relative overflow-hidden rounded-2xl border p-5"
             style={{
-              backgroundColor: "var(--card)",
-              borderColor: "var(--border)",
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
             }}
           >
             {/* subtle glow */}
             <div
               className="absolute -top-10 -right-10 w-24 h-24 rounded-full blur-2xl opacity-10"
               style={{
-                backgroundColor: "var(--gold)",
+                backgroundColor: 'var(--gold)',
               }}
             />
 
@@ -87,10 +82,10 @@ export default function AdminOverviewPage() {
                 <p
                   className="mb-1"
                   style={{
-                    color: "var(--muted-foreground)",
-                    fontSize: "12px",
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
+                    color: 'var(--muted-foreground)',
+                    fontSize: '12px',
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
                   }}
                 >
                   {stat.title}
@@ -99,11 +94,11 @@ export default function AdminOverviewPage() {
                 {/* number */}
                 <h2
                   style={{
-                    fontFamily: "var(--font-body)",
-                    fontSize: "30px",
-                    lineHeight: "1",
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '30px',
+                    lineHeight: '1',
                     fontWeight: 500,
-                    color: "var(--foreground)",
+                    color: 'var(--foreground)',
                   }}
                 >
                   {stat.value}
@@ -114,19 +109,16 @@ export default function AdminOverviewPage() {
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{
-                  backgroundColor: "rgba(201,168,76,0.08)",
-                  border: "1px solid rgba(201,168,76,0.12)",
+                  backgroundColor: 'rgba(201,168,76,0.08)',
+                  border: '1px solid rgba(201,168,76,0.12)',
                 }}
               >
-                <stat.icon
-                  size={18}
-                  style={{ color: "var(--gold)" }}
-                />
+                <stat.icon size={18} style={{ color: 'var(--gold)' }} />
               </div>
             </div>
           </div>
         ))}
-      </div>  
+      </div>
       <GrowthChart />
     </div>
   )

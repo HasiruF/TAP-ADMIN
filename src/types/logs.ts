@@ -1,14 +1,14 @@
 export type EventType =
-  | "login"
-  | "logout"
-  | "approval"
-  | "name-change"
-  | "profile-update"
-  | "media-upload"
-  | "password-reset"
-  | "suspended"
-  | "banned"
-  | "other"
+  | 'login'
+  | 'logout'
+  | 'approval'
+  | 'name-change'
+  | 'profile-update'
+  | 'media-upload'
+  | 'password-reset'
+  | 'suspended'
+  | 'banned'
+  | 'other'
 
 export interface ActivityLog {
   id: string

@@ -1,14 +1,14 @@
-"use client"
-import React from "react"
-import { activityLogsMock } from "@/data_mock/activityLogs"
-import { format } from "date-fns"
-import { useAdminLogs } from "@/hooks/queries/useAdminLogs";
+'use client'
+import React from 'react'
+import { activityLogsMock } from '@/data_mock/activityLogs'
+import { format } from 'date-fns'
+import { useAdminLogs } from '@/hooks/queries/useAdminLogs'
 export default function LogsPage() {
   const { data: logs = [], isLoading, error } = useAdminLogs()
 
   const user = {
-    name: "Aria Stone",
-    id: "usr_1001",
+    name: 'Aria Stone',
+    id: 'usr_1001',
   }
 
   if (isLoading) {
@@ -21,21 +21,20 @@ export default function LogsPage() {
 
   return (
     <div className="space-y-6">
-
       {/* HEADER */}
       <div
         className="p-6 rounded-3xl border"
         style={{
-          backgroundColor: "var(--card)",
-          borderColor: "var(--border)",
+          backgroundColor: 'var(--card)',
+          borderColor: 'var(--border)',
         }}
       >
         <p
           style={{
-            color: "var(--muted-foreground)",
-            fontSize: "11px",
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
+            color: 'var(--muted-foreground)',
+            fontSize: '11px',
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
           }}
         >
           Activity Logs
@@ -43,11 +42,11 @@ export default function LogsPage() {
 
         <h1
           style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "42px",
-            color: "var(--foreground)",
+            fontFamily: 'var(--font-display)',
+            fontSize: '42px',
+            color: 'var(--foreground)',
             lineHeight: 1.1,
-            marginTop: "6px",
+            marginTop: '6px',
           }}
         >
           {user.name}
@@ -55,27 +54,26 @@ export default function LogsPage() {
 
         <p
           style={{
-            marginTop: "8px",
-            color: "var(--muted-foreground)",
-            fontSize: "13px",
+            marginTop: '8px',
+            color: 'var(--muted-foreground)',
+            fontSize: '13px',
           }}
         >
-          User ID: <span style={{ color: "var(--foreground)" }}>{user.id}</span>
+          User ID: <span style={{ color: 'var(--foreground)' }}>{user.id}</span>
         </p>
       </div>
 
       <div
         className="rounded-2xl border overflow-hidden"
         style={{
-          backgroundColor: "var(--card)",
-          borderColor: "var(--border)",
+          backgroundColor: 'var(--card)',
+          borderColor: 'var(--border)',
         }}
       >
         <table className="w-full text-sm">
-          
           {/* HEADER */}
           <thead>
-            <tr style={{ borderBottom: "1px solid var(--border)" }}>
+            <tr style={{ borderBottom: '1px solid var(--border)' }}>
               <th className="p-4 text-left w-[220px]">Date & Time</th>
               <th className="p-4 text-left w-[180px]">Event</th>
               <th className="p-4 text-left">Change</th>
@@ -85,18 +83,16 @@ export default function LogsPage() {
           {/* BODY */}
           <tbody>
             {logs.map((log) => {
-              const hasDiff =
-                log.changeFrom || log.changeTo
+              const hasDiff = log.changeFrom || log.changeTo
 
               return (
                 <React.Fragment key={log.id}>
-                  
                   {/* MAIN ROW */}
                   <tr
                     style={{
                       borderBottom: hasDiff
-                        ? "none"
-                        : "1px solid var(--border)",
+                        ? 'none'
+                        : '1px solid var(--border)',
                     }}
                     className="hover:bg-[rgba(255,255,255,0.03)] transition"
                   >
@@ -104,10 +100,10 @@ export default function LogsPage() {
                     <td
                       className="p-4 whitespace-nowrap align-top"
                       style={{
-                        color: "var(--muted-foreground)",
+                        color: 'var(--muted-foreground)',
                       }}
                     >
-                      {format(log.time, "yyyy-MM-dd HH:mm")}
+                      {format(log.time, 'yyyy-MM-dd HH:mm')}
                     </td>
 
                     {/* EVENT */}
@@ -115,11 +111,11 @@ export default function LogsPage() {
                       <span
                         className="px-2 py-[3px] rounded-full text-xs capitalize"
                         style={{
-                          backgroundColor: "rgba(201,168,76,0.12)",
-                          color: "var(--gold)",
+                          backgroundColor: 'rgba(201,168,76,0.12)',
+                          color: 'var(--gold)',
                         }}
                       >
-                        {log.event.replace("-", " ")}
+                        {log.event.replace('-', ' ')}
                       </span>
                     </td>
 
@@ -127,15 +123,14 @@ export default function LogsPage() {
                     <td
                       className="p-4"
                       style={{
-                        color: "var(--foreground)",
+                        color: 'var(--foreground)',
                       }}
                     >
                       <details className="group">
-                        
                         {/* SUMMARY */}
                         <summary
                           className={`list-none flex items-center justify-between ${
-                            hasDiff ? "cursor-pointer" : "pointer-events-none"
+                            hasDiff ? 'cursor-pointer' : 'pointer-events-none'
                           }`}
                         >
                           <span>{log.change}</span>
@@ -144,8 +139,8 @@ export default function LogsPage() {
                             <span
                               className="transition group-open:rotate-180"
                               style={{
-                                color: "var(--muted-foreground)",
-                                fontSize: "12px",
+                                color: 'var(--muted-foreground)',
+                                fontSize: '12px',
                               }}
                             >
                               ▼
@@ -155,20 +150,15 @@ export default function LogsPage() {
 
                         {/* EXPANDED CONTENT */}
                         {hasDiff && (
-                          <div
-                            className="mt-4 flex flex-wrap items-center gap-3"
-                          >
-
+                          <div className="mt-4 flex flex-wrap items-center gap-3">
                             {/* REMOVED ONLY */}
                             {log.changeFrom && !log.changeTo && (
                               <>
                                 <span
                                   className="px-3 py-1 rounded-full text-xs"
                                   style={{
-                                    backgroundColor:
-                                      "var(--status-banned-bg)",
-                                    color:
-                                      "var(--status-banned-text)",
+                                    backgroundColor: 'var(--status-banned-bg)',
+                                    color: 'var(--status-banned-text)',
                                   }}
                                 >
                                   {log.changeFrom}
@@ -176,8 +166,8 @@ export default function LogsPage() {
 
                                 <span
                                   style={{
-                                    color: "var(--muted-foreground)",
-                                    fontSize: "12px",
+                                    color: 'var(--muted-foreground)',
+                                    fontSize: '12px',
                                   }}
                                 >
                                   removed
@@ -191,10 +181,8 @@ export default function LogsPage() {
                                 <span
                                   className="px-3 py-1 rounded-full text-xs"
                                   style={{
-                                    backgroundColor:
-                                      "var(--status-active-bg)",
-                                    color:
-                                      "var(--status-active-text)",
+                                    backgroundColor: 'var(--status-active-bg)',
+                                    color: 'var(--status-active-text)',
                                   }}
                                 >
                                   {log.changeTo}
@@ -202,8 +190,8 @@ export default function LogsPage() {
 
                                 <span
                                   style={{
-                                    color: "var(--muted-foreground)",
-                                    fontSize: "12px",
+                                    color: 'var(--muted-foreground)',
+                                    fontSize: '12px',
                                   }}
                                 >
                                   added
@@ -218,10 +206,8 @@ export default function LogsPage() {
                                 <span
                                   className="px-3 py-1 rounded-full text-xs"
                                   style={{
-                                    backgroundColor:
-                                      "var(--status-banned-bg)",
-                                    color:
-                                      "var(--status-banned-text)",
+                                    backgroundColor: 'var(--status-banned-bg)',
+                                    color: 'var(--status-banned-text)',
                                   }}
                                 >
                                   {log.changeFrom}
@@ -230,7 +216,7 @@ export default function LogsPage() {
                                 {/* ARROW */}
                                 <span
                                   style={{
-                                    color: "var(--muted-foreground)",
+                                    color: 'var(--muted-foreground)',
                                   }}
                                 >
                                   →
@@ -240,10 +226,8 @@ export default function LogsPage() {
                                 <span
                                   className="px-3 py-1 rounded-full text-xs"
                                   style={{
-                                    backgroundColor:
-                                      "var(--status-active-bg)",
-                                    color:
-                                      "var(--status-active-text)",
+                                    backgroundColor: 'var(--status-active-bg)',
+                                    color: 'var(--status-active-text)',
                                   }}
                                 >
                                   {log.changeTo}
@@ -262,8 +246,7 @@ export default function LogsPage() {
                       <td
                         colSpan={3}
                         style={{
-                          borderBottom:
-                            "1px solid var(--border)",
+                          borderBottom: '1px solid var(--border)',
                         }}
                       />
                     </tr>
@@ -274,6 +257,6 @@ export default function LogsPage() {
           </tbody>
         </table>
       </div>
-      </div>
+    </div>
   )
 }

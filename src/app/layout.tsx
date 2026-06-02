@@ -1,41 +1,41 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { Cormorant_Garamond, Inter } from "next/font/google";
-import QueryProvider from "@/lib/providers/QueryProvider";
+import type { Metadata } from 'next'
+import { Geist, Geist_Mono } from 'next/font/google'
+import './globals.css'
+import { Cormorant_Garamond, Inter } from 'next/font/google'
+import QueryProvider from '@/lib/providers/QueryProvider'
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+})
 
 const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  variable: "--font-display",
-});
+  subsets: ['latin'],
+  variable: '--font-display',
+})
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+})
 
 const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-body",
-});
+  subsets: ['latin'],
+  variable: '--font-body',
+})
 
 export const metadata = {
-  title: "TAP Admin",
-  description: "TAP Administration Dashboard",
+  title: 'TAP Admin',
+  description: 'TAP Administration Dashboard',
   icons: {
-    icon: "/Primary.svg",
+    icon: '/Primary.svg',
   },
-};
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html
@@ -48,5 +48,5 @@ export default function RootLayout({
         <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
-  );
+  )
 }

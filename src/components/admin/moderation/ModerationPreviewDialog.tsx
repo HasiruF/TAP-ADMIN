@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import {
   Dialog,
@@ -6,8 +6,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 type ModerationItem = {
   id: string
@@ -37,8 +37,8 @@ export function ModerationPreviewDialog({
 
   const renderContent = () => {
     switch (item.type) {
-      case "profile-pic":
-      case "images":
+      case 'profile-pic':
+      case 'images':
         try {
           const images = JSON.parse(item.content)
           const list = Array.isArray(images) ? images : [item.content]
@@ -50,7 +50,7 @@ export function ModerationPreviewDialog({
                   key={i}
                   src={img}
                   className="rounded-xl w-full h-40 object-cover border"
-                  style={{ borderColor: "var(--border)" }}
+                  style={{ borderColor: 'var(--border)' }}
                 />
               ))}
             </div>
@@ -60,12 +60,12 @@ export function ModerationPreviewDialog({
             <img
               src={item.content}
               className="rounded-xl w-full max-h-[300px] object-cover border"
-              style={{ borderColor: "var(--border)" }}
+              style={{ borderColor: 'var(--border)' }}
             />
           )
         }
 
-      case "video":
+      case 'video':
         return (
           <iframe
             className="w-full h-[300px] rounded-xl"
@@ -74,8 +74,8 @@ export function ModerationPreviewDialog({
           />
         )
 
-      case "social-links":
-      case "music-links":
+      case 'social-links':
+      case 'music-links':
         try {
           const links = JSON.parse(item.content)
           return (
@@ -111,7 +111,7 @@ export function ModerationPreviewDialog({
         return (
           <p
             className="text-sm leading-relaxed"
-            style={{ color: "var(--foreground)" }}
+            style={{ color: 'var(--foreground)' }}
           >
             {item.content}
           </p>
@@ -119,142 +119,140 @@ export function ModerationPreviewDialog({
     }
   }
 
-    return (
+  return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent
+      <DialogContent
         className="max-w-6xl w-[40vw] p-0 overflow-hidden rounded-3xl"
         style={{
-            backgroundColor: "var(--card)",
-            color: "var(--foreground)",
-            borderColor: "var(--border)",
+          backgroundColor: 'var(--card)',
+          color: 'var(--foreground)',
+          borderColor: 'var(--border)',
         }}
-        >
+      >
         {/* HEADER */}
         <div
-            className="px-10 py-8 border-b"
-            style={{
-            borderColor: "var(--border)",
-            }}
+          className="px-10 py-8 border-b"
+          style={{
+            borderColor: 'var(--border)',
+          }}
         >
-            <DialogHeader>
+          <DialogHeader>
             <div className="flex items-start justify-between gap-6">
-                <div>
+              <div>
                 <p
-                    className="mb-2"
-                    style={{
-                    color: "var(--muted-foreground)",
-                    fontSize: "11px",
-                    letterSpacing: "0.16em",
-                    textTransform: "uppercase",
-                    }}
+                  className="mb-2"
+                  style={{
+                    color: 'var(--muted-foreground)',
+                    fontSize: '11px',
+                    letterSpacing: '0.16em',
+                    textTransform: 'uppercase',
+                  }}
                 >
-                    Moderation Review
+                  Moderation Review
                 </p>
 
                 <DialogTitle
-                    style={{
-                    fontSize: "32px",
-                    fontFamily: "var(--font-display)",
+                  style={{
+                    fontSize: '32px',
+                    fontFamily: 'var(--font-display)',
                     fontWeight: 500,
                     lineHeight: 1,
-                    }}
+                  }}
                 >
-                    {item.name}
+                  {item.name}
                 </DialogTitle>
 
                 <p
-                    className="mt-3 capitalize"
-                    style={{
-                    color: "var(--gold)",
-                    fontSize: "14px",
-                    }}
+                  className="mt-3 capitalize"
+                  style={{
+                    color: 'var(--gold)',
+                    fontSize: '14px',
+                  }}
                 >
-                    {item.type.replace("-", " ")}
+                  {item.type.replace('-', ' ')}
                 </p>
-                </div>
+              </div>
 
-                {/* PREVIEW BUTTON */}
-                <a
+              {/* PREVIEW BUTTON */}
+              <a
                 href="https://civic-sauna-76601524.figma.site/"
                 target="_blank"
                 rel="noopener noreferrer"
-                >
-                <Button variant="outline">
-                    View Profile
-                </Button>
-                </a>
-                 </div>
-            </DialogHeader>
+              >
+                <Button variant="outline">View Profile</Button>
+              </a>
+            </div>
+          </DialogHeader>
         </div>
 
         {/* CONTENT AREA */}
         <div className="px-10 py-10 max-h-[70vh] overflow-y-auto">
-            <div
+          <div
             className="rounded-3xl border p-8"
             style={{
-                backgroundColor: "var(--background)",
-                borderColor: "var(--border)",
+              backgroundColor: 'var(--background)',
+              borderColor: 'var(--border)',
             }}
-            >
+          >
             {renderContent()}
-            </div>
+          </div>
         </div>
 
         {/* FOOTER ACTIONS */}
         <div
-            className="px-10 py-6 border-t flex items-center justify-between"
-            style={{
-            borderColor: "var(--border)",
-            backgroundColor: "var(--background)",
-            }}
+          className="px-10 py-6 border-t flex items-center justify-between"
+          style={{
+            borderColor: 'var(--border)',
+            backgroundColor: 'var(--background)',
+          }}
         >
-            {/* META */}
-            <div>
+          {/* META */}
+          <div>
             <p
-                style={{
-                color: "var(--muted-foreground)",
-                fontSize: "13px",
-                }}
+              style={{
+                color: 'var(--muted-foreground)',
+                fontSize: '13px',
+              }}
             >
-                User ID: {item.userId}
+              User ID: {item.userId}
             </p>
 
             <p
-                style={{
-                color: "var(--muted-foreground)",
-                fontSize: "13px",
-                marginTop: "4px",
-                }}
+              style={{
+                color: 'var(--muted-foreground)',
+                fontSize: '13px',
+                marginTop: '4px',
+              }}
             >
-                Submitted: {item.date}
+              Submitted: {item.date}
             </p>
-            </div>
+          </div>
 
-            {/* ACTIONS */}
-            <div className="flex items-center gap-3">
+          {/* ACTIONS */}
+          <div className="flex items-center gap-3">
             <Button
-                variant="outline"
-                onClick={() => onReject(item.id)}
-                style={{
-                borderColor: "var(--status-banned-text)",
-                color: "var(--status-banned-text)",
-                }}
+              variant="outline"
+              onClick={() => onReject(item.id)}
+              style={{
+                borderColor: 'var(--status-banned-text)',
+                color: 'var(--status-banned-text)',
+              }}
             >
-                Reject
+              Reject
             </Button>
 
             <Button
-                onClick={() => onApprove(item.id)}
-                style={{
-                backgroundColor: "var(--status-active-bg)",
-                color: "var(--status-active-text)",
-                }}
+              onClick={() => onApprove(item.id)}
+              style={{
+                backgroundColor: 'var(--status-active-bg)',
+                color: 'var(--status-active-text)',
+              }}
             >
-                Approve
+              Approve
             </Button>
-            </div>
+          </div>
         </div>
-        </DialogContent>
+      </DialogContent>
     </Dialog>
-    )
+  )
 }

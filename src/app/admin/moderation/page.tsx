@@ -1,9 +1,9 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { ModerationQueueTable } from "@/components/admin/moderation/ModerationQueueTable"
-import { ModerationPreviewDialog } from "@/components/admin/moderation/ModerationPreviewDialog"
-import { useModerationQueue } from "@/hooks/queries/useModerationQueue"
+import { useState } from 'react'
+import { ModerationQueueTable } from '@/components/admin/moderation/ModerationQueueTable'
+import { ModerationPreviewDialog } from '@/components/admin/moderation/ModerationPreviewDialog'
+import { useModerationQueue } from '@/hooks/queries/useModerationQueue'
 
 export default function ContentModerationPage() {
   const { data: moderationData = [], isLoading, error } = useModerationQueue()
@@ -12,11 +12,11 @@ export default function ContentModerationPage() {
   const [open, setOpen] = useState(false)
 
   const handleApprove = (id: string) => {
-    console.log("approve", id)
+    console.log('approve', id)
   }
 
   const handleReject = (id: string) => {
-    console.log("reject", id)
+    console.log('reject', id)
   }
 
   if (isLoading) {
@@ -24,7 +24,9 @@ export default function ContentModerationPage() {
   }
 
   if (error) {
-    return <div className="p-6 text-red-500">Failed to load moderation data</div>
+    return (
+      <div className="p-6 text-red-500">Failed to load moderation data</div>
+    )
   }
 
   return (
@@ -34,10 +36,10 @@ export default function ContentModerationPage() {
         <p
           className="mb-3"
           style={{
-            color: "var(--muted-foreground)",
-            fontSize: "11px",
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
+            color: 'var(--muted-foreground)',
+            fontSize: '11px',
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
           }}
         >
           Platform Management
@@ -45,11 +47,11 @@ export default function ContentModerationPage() {
 
         <h1
           style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "52px",
-            lineHeight: "1",
+            fontFamily: 'var(--font-display)',
+            fontSize: '52px',
+            lineHeight: '1',
             fontWeight: 500,
-            color: "var(--foreground)",
+            color: 'var(--foreground)',
           }}
         >
           Content Moderation
@@ -61,17 +63,17 @@ export default function ContentModerationPage() {
         onApprove={handleApprove}
         onReject={handleReject}
         onRowClick={(item) => {
-            setSelectedItem(item)
-            setOpen(true)
+          setSelectedItem(item)
+          setOpen(true)
         }}
-        />
-       <ModerationPreviewDialog
+      />
+      <ModerationPreviewDialog
         open={open}
         onOpenChange={setOpen}
         item={selectedItem}
         onApprove={handleApprove}
         onReject={handleReject}
-        /> 
+      />
     </div>
   )
 }

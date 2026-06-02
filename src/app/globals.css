@@ -1,6 +1,6 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -94,20 +94,19 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --gold: #C9A84C;
-  --deep-teal: #1C4A47; 
+  --gold: #c9a84c;
+  --deep-teal: #1c4a47;
   --chart-artists: var(--gold);
   --chart-venues: var(--deep-teal);
   --status-active-bg: rgba(106, 174, 123, 0.12);
-  --status-active-text: #6AAE7B;
+  --status-active-text: #6aae7b;
   --status-pending-bg: rgba(201, 168, 76, 0.12);
   --status-pending-text: var(--gold);
   --status-suspended-bg: rgba(244, 114, 182, 0.12);
-  --status-suspended-text: #F472B6;
+  --status-suspended-text: #f472b6;
   --status-banned-bg: rgba(139, 58, 42, 0.14);
   --status-banned-text: var(--danger);
-  --table-hover: rgba(255,255,255,0.03);
-
+  --table-hover: rgba(255, 255, 255, 0.03);
 }
 
 .dark {
@@ -141,19 +140,20 @@
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);.dark {
-  --chart-artists: var(--gold);
-  --chart-venues: var(--deep-teal);
-  --status-active-bg: rgba(106, 174, 123, 0.12);
-  --status-active-text: #6AAE7B;
-  --status-pending-bg: rgba(201, 168, 76, 0.12);
-  --status-pending-text: var(--gold);
-  --status-suspended-bg: rgba(244, 114, 182, 0.12);
-  --status-suspended-text: #F472B6;
-  --status-banned-bg: rgba(139, 58, 42, 0.14);
-  --status-banned-text: var(--danger);
-  --table-hover: rgba(255,255,255,0.03);
-}
+  --sidebar-ring: oklch(0.556 0 0);
+  .dark {
+    --chart-artists: var(--gold);
+    --chart-venues: var(--deep-teal);
+    --status-active-bg: rgba(106, 174, 123, 0.12);
+    --status-active-text: #6aae7b;
+    --status-pending-bg: rgba(201, 168, 76, 0.12);
+    --status-pending-text: var(--gold);
+    --status-suspended-bg: rgba(244, 114, 182, 0.12);
+    --status-suspended-text: #f472b6;
+    --status-banned-bg: rgba(139, 58, 42, 0.14);
+    --status-banned-text: var(--danger);
+    --table-hover: rgba(255, 255, 255, 0.03);
+  }
 }
 @layer base {
   * {
