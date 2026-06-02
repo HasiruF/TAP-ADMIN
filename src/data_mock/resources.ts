@@ -15,6 +15,7 @@ export const resourcesMock: Resource[] = [
     title: 'Venue Setup Checklist',
     description: 'Step-by-step checklist for registering a venue',
     url: 'https://example.com/files/venue-setup-checklist.pdf',
+    fileName: 'venue-setup-checklist',
   },
 
   {
@@ -39,6 +40,7 @@ export const resourcesMock: Resource[] = [
     title: 'Music Event Safety Guidelines',
     description: 'Safety rules and compliance checklist for live events',
     url: 'https://example.com/files/event-safety.pdf',
+    fileName: 'venue-setup-checklist',
   },
 
   {
@@ -64,6 +66,7 @@ export const resourcesMock: Resource[] = [
     title: 'Contract Template for Venues',
     description: 'Standard contract template for artist bookings',
     url: 'https://example.com/files/venue-contract-template.pdf',
+    fileName: 'venue-setup-checklist',
   },
 
   {
@@ -88,6 +91,7 @@ export const resourcesMock: Resource[] = [
     title: 'Emergency Procedures for Venues',
     description: 'Fire safety and emergency exit protocols',
     url: 'https://example.com/files/emergency-procedures.pdf',
+    fileName: 'venue-setup-checklist',
   },
 
   {
