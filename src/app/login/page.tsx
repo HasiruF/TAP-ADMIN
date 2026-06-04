@@ -23,9 +23,17 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   })
 
+  const setCookie = (name: string, value: string) => {
+    // eslint-disable-next-line react-hooks/immutability
+    window.document.cookie = `${name}=${value}; path=/;`
+  }
+
   const onSubmit = async (data: LoginInput) => {
     try {
-      await login.mutateAsync(data)
+      const res = await login.mutateAsync(data)
+
+      setCookie('token', res.token)
+      setCookie('refreshToken', res.refreshToken)
 
       await queryClient.invalidateQueries({ queryKey: ['me'] })
 

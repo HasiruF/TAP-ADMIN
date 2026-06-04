@@ -61,14 +61,25 @@ export function AppSidebar() {
   const logout = useLogout()
   const queryClient = useQueryClient()
   const router = useRouter()
-
+  const clearAuthCookies = () => {
+    document.cookie = 'token=; Max-Age=0; path=/;'
+    document.cookie = 'refreshToken=; Max-Age=0; path=/;'
+  }
   const handleLogout = async () => {
-    await logout.mutateAsync()
+    try {
+      await logout.mutateAsync()
 
-    queryClient.removeQueries({ queryKey: ['me'] })
+      clearAuthCookies()
 
-    // MOCK redirect
-    router.push('/login')
+      queryClient.removeQueries({ queryKey: ['me'] })
+
+      router.push('/login')
+    } catch (err) {
+      // even if API fails, stilll logout locally
+      clearAuthCookies()
+      queryClient.removeQueries({ queryKey: ['me'] })
+      router.push('/login')
+    }
   }
   return (
     <Sidebar
