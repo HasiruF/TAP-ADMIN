@@ -284,17 +284,6 @@ export default function VenueDetailPage({
 
               <Button
                 className="w-full"
-                style={{
-                  backgroundColor: 'var(--status-banned-bg)',
-                  color: 'var(--status-banned-text)',
-                }}
-              >
-                <Ban size={14} />
-                Ban Venue
-              </Button>
-
-              <Button
-                className="w-full"
                 variant="outline"
                 style={{
                   borderColor: 'var(--border)',

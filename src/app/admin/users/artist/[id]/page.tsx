@@ -369,16 +369,6 @@ export default function ArtistDetailPage({
 
               <Button
                 className="w-full"
-                style={{
-                  backgroundColor: 'var(--status-banned-bg)',
-                  color: 'var(--status-banned-text)',
-                }}
-              >
-                Ban
-              </Button>
-
-              <Button
-                className="w-full"
                 variant="outline"
                 style={{
                   borderColor: 'var(--border)',
