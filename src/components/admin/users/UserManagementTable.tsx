@@ -29,36 +29,41 @@ import { Input } from '@/components/ui/input'
 import { useAdminUsers } from '@/hooks/queries/useAdminUsers'
 import { useRouter } from 'next/navigation'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-
+import { mapUserToBe } from '@/types/user'
 import { Label } from '@/components/ui/label'
 import { label } from 'framer-motion/client'
 
 type UserStatus = 'active' | 'not-approved' | 'suspended' | 'banned'
 
-function getStatusStyles(status: UserStatus) {
+function getStatusStyles(status: string) {
   switch (status) {
-    case 'active':
+    case 'Active':
       return {
         backgroundColor: 'var(--status-active-bg)',
         color: 'var(--status-active-text)',
       }
 
-    case 'not-approved':
+    case 'Not-approved':
       return {
         backgroundColor: 'var(--status-pending-bg)',
         color: 'var(--status-pending-text)',
       }
 
-    case 'suspended':
+    case 'Suspended':
       return {
         backgroundColor: 'var(--status-suspended-bg)',
         color: 'var(--status-suspended-text)',
       }
 
-    case 'banned':
+    case 'Banned':
       return {
         backgroundColor: 'var(--status-banned-bg)',
         color: 'var(--status-banned-text)',
+      }
+    case 'Inactive':
+      return {
+        backgroundColor: 'var(--status-pending-bg)',
+        color: 'var(--status-pending-text)',
       }
   }
 }
@@ -71,9 +76,23 @@ const filterOptions = [
   { label: 'Last Login Date', value: 'lastlogin' },
 ]
 
-function renderActions(status: UserStatus) {
+function renderActions(status: string) {
   switch (status) {
-    case 'active':
+    case 'Active':
+      return (
+        <div className="flex items-center justify-center gap-2">
+          <Button variant="outline" size="sm">
+            <ShieldMinus size={14} />
+            Suspend
+          </Button>
+
+          <Button variant="destructive" size="sm">
+            <Ban size={14} />
+            Ban
+          </Button>
+        </div>
+      )
+    case 'Inactive':
       return (
         <div className="flex items-center justify-center gap-2">
           <Button variant="outline" size="sm">
@@ -83,7 +102,7 @@ function renderActions(status: UserStatus) {
         </div>
       )
 
-    case 'not-approved':
+    case 'Not-approved':
       return (
         <div className="flex items-center justify-center gap-2">
           <Button size="sm">
@@ -98,7 +117,7 @@ function renderActions(status: UserStatus) {
         </div>
       )
 
-    case 'suspended':
+    case 'Suspended':
       return (
         <div className="flex items-center justify-center gap-2">
           <Button size="sm">
@@ -108,7 +127,7 @@ function renderActions(status: UserStatus) {
         </div>
       )
 
-    case 'banned':
+    case 'Banned':
       return (
         <div className="flex justify-center">
           <Button size="sm">
@@ -128,7 +147,7 @@ const statusOptions = [
 ]
 
 export function UserManagementTable() {
-  const { data: users = [], isLoading, error } = useAdminUsers()
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('name')
   const [roleFilter, setRoleFilter] = useState('artist')
@@ -136,8 +155,11 @@ export function UserManagementTable() {
   const ITEMS_PER_PAGE = 50
 
   const [currentPage, setCurrentPage] = useState(1)
+  const { data, isLoading, error } = useAdminUsers(currentPage)
 
-  const router = useRouter()
+  const usersBe = data?.data ?? []
+  const hasNextPage = data?.hasNextPage ?? false
+  const users = usersBe.map(mapUserToBe)
   if (isLoading) {
     return <div className="p-6">Loading users...</div>
   }
@@ -168,26 +190,25 @@ export function UserManagementTable() {
           matchesSearch = user.joined.toLowerCase().includes(value)
           break
         case 'lastlogin':
-          matchesSearch = user.joined.toLowerCase().includes(value)
+          matchesSearch = user.lastLogin?.toLowerCase().includes(value)
           break
       }
     }
 
-    // ROLE FILTER
-    const matchesRole = user.role === roleFilter
+    const matchesRole =
+      roleFilter === 'all' ||
+      user.role.toLowerCase() === roleFilter.toLowerCase()
 
-    // STATUS FILTER
-    const matchesStatus = statusFilter === 'all' || user.status === statusFilter
-
+    const matchesStatus =
+      statusFilter === 'all' ||
+      user.status.toLowerCase() === statusFilter.toLowerCase()
     return matchesSearch && matchesRole && matchesStatus
   })
-  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE)
-
+  const totalPages = hasNextPage ? currentPage + 1 : currentPage
   const paginatedUsers = filteredUsers.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   )
-
   return (
     <div
       className="rounded-[32px] border overflow-hidden"
@@ -400,7 +421,7 @@ export function UserManagementTable() {
                   color: 'var(--muted-foreground)',
                 }}
               >
-                {user.lastlogin}
+                {user.lastLogin}
               </TableCell>
 
               {/* STATUS */}

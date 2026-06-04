@@ -1,9 +1,5 @@
-export async function fetchAdminUsers() {
-  const res = await fetch('/api/admin/users')
+import { api } from '@/lib/api/client'
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch users')
-  }
-
-  return res.json()
+export function fetchAdminUsers(page: number) {
+  return api(`/users?page=${page}&limit=50`)
 }
