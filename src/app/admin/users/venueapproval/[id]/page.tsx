@@ -47,7 +47,7 @@ export default function VenueDetailPage({
             textTransform: 'uppercase',
           }}
         >
-          Admin • Venue Approval
+          Admin • Venue Inspection
         </p>
 
         <h1
@@ -133,6 +133,79 @@ export default function VenueDetailPage({
             </div>
           </section>
 
+          <section
+            className="p-6 rounded-3xl border"
+            style={{
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
+            }}
+          >
+            <h2 className="mb-4">Equipment & Support</h2>
+
+            <div className="space-y-2 text-sm">
+              <p>
+                Full Band Support:{' '}
+                {data.capacitySpecs.fullBandSupport ? 'Yes' : 'No'}
+              </p>
+
+              <p>
+                Audio Mixers:{' '}
+                {data.capacitySpecs.audioMixersAvailable
+                  ? 'Available'
+                  : 'Not Available'}
+              </p>
+
+              <p>
+                Sound Engineer:{' '}
+                {data.capacitySpecs.soundEngineerAvailable
+                  ? 'Available'
+                  : 'Not Available'}
+              </p>
+
+              <p>
+                Production Team:{' '}
+                {data.capacitySpecs.productionTeamAvailable
+                  ? 'Available'
+                  : 'Not Available'}
+              </p>
+
+              <p>
+                Equipment Provided:{' '}
+                {data.capacitySpecs.equipmentProvided.join(', ') || 'None'}
+              </p>
+            </div>
+          </section>
+
+          {data.venueHistory?.length > 0 && (
+            <section
+              className="p-6 rounded-3xl border"
+              style={{
+                backgroundColor: 'var(--card)',
+                borderColor: 'var(--border)',
+              }}
+            >
+              <h2 className="mb-4">Venue History</h2>
+
+              <div className="space-y-4">
+                {data.venueHistory.map((event: any) => (
+                  <div key={event.id} className="text-sm border p-3 rounded-xl">
+                    <p className="font-medium">{event.performanceName}</p>
+
+                    <p className="text-muted-foreground">
+                      {event.eventDescription}
+                    </p>
+
+                    {event.media && (
+                      <img
+                        src={event.media}
+                        className="mt-2 rounded-lg aspect-video object-cover"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
           {/* BOOKING PREFERENCES */}
           <section
             className="p-6 rounded-3xl border"
@@ -185,6 +258,7 @@ export default function VenueDetailPage({
             <ExternalLink size={14} />
             Show Preview
           </Button>
+
           <section
             className="p-6 rounded-3xl border"
             style={{
@@ -194,18 +268,17 @@ export default function VenueDetailPage({
           >
             <h2 className="mb-6">Approval Decision</h2>
 
-            {/* FEEDBACK TEXT AREA */}
-            <div className="mb-4">
+            <div className="mb-5">
               <label
                 className="text-xs uppercase tracking-widest mb-2 block"
                 style={{ color: 'var(--muted-foreground)' }}
               >
-                Feedback to User
+                Write Feedback to User
               </label>
 
               <textarea
-                placeholder="Write feedback for the user..."
-                className="w-full min-h-[120px] p-3 rounded-2xl outline-none resize-none"
+                placeholder="Explain what needs to be improved or clarified..."
+                className="w-full min-h-[140px] p-3 rounded-2xl outline-none resize-none"
                 style={{
                   backgroundColor: 'var(--muted)',
                   color: 'var(--foreground)',
@@ -214,37 +287,46 @@ export default function VenueDetailPage({
               />
             </div>
 
-            {/* ACTION BUTTONS */}
-            <div className="space-y-3">
+            <div className="mb-5">
               <Button
                 className="w-full"
                 style={{
-                  backgroundColor: 'var(--status-active-bg)',
-                  color: 'var(--status-active-text)',
-                }}
-              >
-                Approve
-              </Button>
-
-              <Button
-                className="w-full"
-                style={{
-                  backgroundColor: 'var(--status-warning-bg)',
-                  color: 'var(--status-warning-text)',
+                  backgroundColor: 'var(--foreground)',
+                  color: 'var(--muted)',
+                  border: '1px solid var(--status-warning-bg)',
                 }}
               >
                 Request Changes
               </Button>
+            </div>
 
-              <Button
-                className="w-full"
-                style={{
-                  backgroundColor: 'var(--status-banned-bg)',
-                  color: 'var(--status-banned-text)',
-                }}
-              >
-                Reject
-              </Button>
+            <div
+              className="p-4 rounded-2xl border"
+              style={{
+                borderColor: 'var(--border)',
+              }}
+            >
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  className="w-full"
+                  style={{
+                    backgroundColor: 'var(--status-active-bg)',
+                    color: 'var(--status-active-text)',
+                  }}
+                >
+                  Approve
+                </Button>
+
+                <Button
+                  className="w-full"
+                  style={{
+                    backgroundColor: 'var(--status-banned-bg)',
+                    color: 'var(--status-banned-text)',
+                  }}
+                >
+                  Decline
+                </Button>
+              </div>
             </div>
           </section>
         </div>
@@ -263,7 +345,7 @@ export default function VenueDetailPage({
         </h2>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {data.photos.images.length > 0 ? (
+          {data.photos?.images?.length > 0 ? (
             data.photos.images.map((img: any, i: number) => (
               <img
                 key={i}

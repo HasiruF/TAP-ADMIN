@@ -80,11 +80,6 @@ function renderActions(status: UserStatus) {
             <ShieldMinus size={14} />
             Suspend
           </Button>
-
-          <Button variant="destructive" size="sm">
-            <Ban size={14} />
-            Ban
-          </Button>
         </div>
       )
 
@@ -109,11 +104,6 @@ function renderActions(status: UserStatus) {
           <Button size="sm">
             <ShieldCheck size={14} />
             Unsuspend
-          </Button>
-
-          <Button variant="destructive" size="sm">
-            <Ban size={14} />
-            Ban
           </Button>
         </div>
       )

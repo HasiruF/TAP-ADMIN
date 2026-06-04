@@ -134,6 +134,79 @@ export default function VenueDetailPage({
             </div>
           </section>
 
+          <section
+            className="p-6 rounded-3xl border"
+            style={{
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
+            }}
+          >
+            <h2 className="mb-4">Equipment & Support</h2>
+
+            <div className="space-y-2 text-sm">
+              <p>
+                Full Band Support:{' '}
+                {data.capacitySpecs.fullBandSupport ? 'Yes' : 'No'}
+              </p>
+
+              <p>
+                Audio Mixers:{' '}
+                {data.capacitySpecs.audioMixersAvailable
+                  ? 'Available'
+                  : 'Not Available'}
+              </p>
+
+              <p>
+                Sound Engineer:{' '}
+                {data.capacitySpecs.soundEngineerAvailable
+                  ? 'Available'
+                  : 'Not Available'}
+              </p>
+
+              <p>
+                Production Team:{' '}
+                {data.capacitySpecs.productionTeamAvailable
+                  ? 'Available'
+                  : 'Not Available'}
+              </p>
+
+              <p>
+                Equipment Provided:{' '}
+                {data.capacitySpecs.equipmentProvided.join(', ') || 'None'}
+              </p>
+            </div>
+          </section>
+
+          {data.venueHistory?.length > 0 && (
+            <section
+              className="p-6 rounded-3xl border"
+              style={{
+                backgroundColor: 'var(--card)',
+                borderColor: 'var(--border)',
+              }}
+            >
+              <h2 className="mb-4">Venue History</h2>
+
+              <div className="space-y-4">
+                {data.venueHistory.map((event: any) => (
+                  <div key={event.id} className="text-sm border p-3 rounded-xl">
+                    <p className="font-medium">{event.performanceName}</p>
+
+                    <p className="text-muted-foreground">
+                      {event.eventDescription}
+                    </p>
+
+                    {event.media && (
+                      <img
+                        src={event.media}
+                        className="mt-2 rounded-lg aspect-video object-cover"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
           {/* BOOKING PREFERENCES */}
           <section
             className="p-6 rounded-3xl border"
@@ -211,17 +284,6 @@ export default function VenueDetailPage({
 
               <Button
                 className="w-full"
-                style={{
-                  backgroundColor: 'var(--status-banned-bg)',
-                  color: 'var(--status-banned-text)',
-                }}
-              >
-                <Ban size={14} />
-                Ban Venue
-              </Button>
-
-              <Button
-                className="w-full"
                 variant="outline"
                 style={{
                   borderColor: 'var(--border)',
@@ -266,7 +328,7 @@ export default function VenueDetailPage({
         </h2>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {data.photos.images.length > 0 ? (
+          {data.photos?.images?.length > 0 ? (
             data.photos.images.map((img: any, i: number) => (
               <img
                 key={i}

@@ -35,7 +35,7 @@ export const mockUsers: User[] = [
     email: 'noirt@gmail.com',
     joined: 'Apr 19, 2026',
     lastlogin: 'Dec 14, 2026',
-    status: 'banned',
+    status: 'not-approved',
   },
   {
     id: '5',
