@@ -1,17 +1,37 @@
 import { NextResponse } from 'next/server'
-import { venues } from '@/data_mock/venues'
+import { backendFetch } from '@/lib/api/server/backendFetch'
 
 export async function GET(
-  req: Request,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
 
-  const venue = venues.find((v) => v.id === id)
-
-  if (!venue) {
-    return NextResponse.json({ message: 'Venue not found' }, { status: 404 })
+  // id is the userId — resolve to venueProfileId first
+  const profilesRes = await backendFetch(`/admin/user/${id}/profiles`)
+  if (!profilesRes.ok) {
+    return NextResponse.json({ message: 'User not found' }, { status: 404 })
   }
 
-  return NextResponse.json(venue)
+  const { venueProfileId } = await profilesRes.json()
+  if (!venueProfileId) {
+    return NextResponse.json(
+      { message: 'No venue profile for this user' },
+      { status: 404 }
+    )
+  }
+
+  const profileRes = await backendFetch(
+    `/admin/venue/profile/${venueProfileId}`
+  )
+  if (!profileRes.ok) {
+    const text = await profileRes.text()
+    return NextResponse.json(
+      { message: text || 'Venue profile not found' },
+      { status: profileRes.status }
+    )
+  }
+
+  const data = await profileRes.json()
+  return NextResponse.json(data)
 }

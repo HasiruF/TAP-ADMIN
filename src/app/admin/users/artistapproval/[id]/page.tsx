@@ -1,12 +1,8 @@
 'use client'
+import { useState } from 'react'
 import { ExternalLink } from 'lucide-react'
-import { artists } from '@/data_mock/artists'
 import { Button } from '@/components/ui/button'
 import {
-  Ban,
-  Shield,
-  RefreshCw,
-  Globe,
   MapPin,
   Music2,
   Video,
@@ -14,35 +10,86 @@ import {
   Image as ImageIcon,
 } from 'lucide-react'
 import { useAdminArtist } from '@/hooks/queries/useAdminArtists'
+import {
+  approveArtist,
+  rejectArtist,
+  requestArtistChanges,
+} from '@/lib/api/admin/artists'
 import { use } from 'react'
-export default function ArtistDetailPage({
+import { useRouter } from 'next/navigation'
+
+export default function ArtistApprovalPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
   const { id } = use(params)
+  const router = useRouter()
 
   const { data: artist, isLoading, error } = useAdminArtist(id)
+  const [feedback, setFeedback] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
 
-  if (isLoading) {
-    return <div className="p-6">Loading artist...</div>
-  }
-
-  if (error || !artist) {
+  if (isLoading) return <div className="p-6">Loading artist...</div>
+  if (error || !artist)
     return <div className="text-center py-20">Artist not found</div>
-  }
 
   const data = artist
-  const isYouTubeUrl = (url: string) => {
-    return /youtube\.com|youtu\.be/.test(url)
-  }
 
+  const isYouTubeUrl = (url: string) => /youtube\.com|youtu\.be/.test(url)
   const getYouTubeEmbedUrl = (url: string) => {
     const videoId = url.match(
       /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/
     )?.[1]
-
     return videoId ? `https://www.youtube.com/embed/${videoId}` : null
+  }
+
+  async function handleApprove() {
+    setBusy(true)
+    setActionError(null)
+    try {
+      await approveArtist(id)
+      router.push('/admin/users')
+    } catch (e: any) {
+      setActionError(e?.message ?? 'Approval failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleReject() {
+    if (!feedback.trim()) {
+      setActionError('Please provide feedback before rejecting.')
+      return
+    }
+    setBusy(true)
+    setActionError(null)
+    try {
+      await rejectArtist(id, feedback)
+      router.push('/admin/users')
+    } catch (e: any) {
+      setActionError(e?.message ?? 'Rejection failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleRequestChanges() {
+    if (!feedback.trim()) {
+      setActionError('Please provide feedback before requesting changes.')
+      return
+    }
+    setBusy(true)
+    setActionError(null)
+    try {
+      await requestArtistChanges(id, feedback)
+      router.push('/admin/users')
+    } catch (e: any) {
+      setActionError(e?.message ?? 'Request changes failed')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -60,7 +107,6 @@ export default function ArtistDetailPage({
         >
           Admin • Artist Approval
         </p>
-
         <h1
           style={{
             fontFamily: 'var(--font-display)',
@@ -72,6 +118,7 @@ export default function ArtistDetailPage({
           {data.basicInfo.stageName}
         </h1>
       </div>
+
       {/* GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* LEFT */}
@@ -85,7 +132,6 @@ export default function ArtistDetailPage({
             }}
           >
             <h2 className="mb-4">Basic Info</h2>
-
             <div className="space-y-2 text-sm">
               <p>
                 <strong>Stage Name:</strong> {data.basicInfo.stageName}
@@ -93,7 +139,6 @@ export default function ArtistDetailPage({
               <p>
                 <strong>Artist Type:</strong> {data.basicInfo.artistType}
               </p>
-
               <p>
                 <strong>Phone Number:</strong> {data.basicInfo.phoneNumber}
               </p>
@@ -103,7 +148,6 @@ export default function ArtistDetailPage({
                   ? data.basicInfo.location
                   : data.basicInfo.location.city}
               </p>
-
               <p>
                 <strong>Location Regions:</strong>{' '}
                 {typeof data.basicInfo.location === 'string'
@@ -111,7 +155,6 @@ export default function ArtistDetailPage({
                   : data.basicInfo.location.regions.join(', ')}
               </p>
             </div>
-
             <div
               className="mt-4 text-sm"
               style={{ color: 'var(--muted-foreground)' }}
@@ -119,29 +162,30 @@ export default function ArtistDetailPage({
               {data.basicInfo.shortBio}
             </div>
           </section>
-          {/* MEMBERS AND INSTRUMENTS*/}
+
+          {/* MEMBERS */}
           {data.members && (
             <section className="p-6 rounded-3xl border">
               <h2 className="mb-4">Members</h2>
-
               <p className="text-sm">
                 Number of Members: {data.members.numberOfMembers}
               </p>
-
               <p className="text-sm">
                 Names: {data.members.memberNames.join(', ')}
               </p>
             </section>
           )}
+
+          {/* INSTRUMENTS */}
           {data.instruments && (
             <section className="p-6 rounded-3xl border">
               <h2 className="mb-4">Instruments</h2>
-
               <p className="text-sm">
                 {data.instruments.instruments.join(', ')}
               </p>
             </section>
           )}
+
           {/* GENRES */}
           <section
             className="p-6 rounded-3xl border"
@@ -151,7 +195,6 @@ export default function ArtistDetailPage({
             }}
           >
             <h2 className="mb-4">Genres & Style</h2>
-
             <div className="flex flex-wrap gap-2 mb-4">
               {data.genres.genres.map((g: string) => (
                 <span
@@ -166,15 +209,13 @@ export default function ArtistDetailPage({
                 </span>
               ))}
             </div>
-
             <div className="text-sm space-y-1">
               <p>Performance Type: {data.genres.performanceType}</p>
-
               <p>Act Type: {data.genres.actType?.join(', ') || '-'}</p>
-
               <p>Energy: {data.genres.energyLevel}</p>
             </div>
           </section>
+
           {/* MEDIA */}
           <section
             className="p-6 rounded-3xl border"
@@ -186,8 +227,6 @@ export default function ArtistDetailPage({
             <h2 className="mb-4 flex items-center gap-2">
               <Video size={16} /> Media
             </h2>
-
-            {/* Video Preview */}
             {data.media.videoUrl &&
               isYouTubeUrl(data.media.videoUrl) &&
               getYouTubeEmbedUrl(data.media.videoUrl) && (
@@ -202,17 +241,14 @@ export default function ArtistDetailPage({
                   />
                 </div>
               )}
-
-            {/* Live Performances (NEW) */}
             {data.media.livePerformance?.length > 0 && (
               <div className="space-y-3 mb-4">
                 <h3 className="text-sm font-medium">Live Performances</h3>
-
                 {data.media.livePerformance.map((lp: any) => (
                   <div key={lp.id} className="text-sm flex items-center gap-2">
                     <ExternalLink size={12} />
                     <a href={lp.url} target="_blank" className="underline">
-                      {lp.name || lp.url}
+                      {lp.title || lp.url}
                     </a>
                   </div>
                 ))}
@@ -238,13 +274,24 @@ export default function ArtistDetailPage({
             <h2 className="mb-4 flex items-center gap-2">
               <Music2 size={16} /> Music Links
             </h2>
-
             <div className="space-y-2 text-sm">
               {data.musicLinks.links.map(
-                (l: { id: string; platform: string; url: string }) => (
-                  <div key={l.id} className="flex items-center gap-2">
-                    <LinkIcon size={12} style={{ color: 'var(--gold)' }} />
-                    {l.platform}: {l.url}
+                (l: {
+                  id: string
+                  title: string
+                  releaseType: string
+                  links: Array<{ platform: string; url: string }>
+                }) => (
+                  <div key={l.id} className="mb-2">
+                    <p className="font-medium">
+                      {l.title} ({l.releaseType})
+                    </p>
+                    {l.links.map((link, i) => (
+                      <div key={i} className="flex items-center gap-2 ml-4">
+                        <LinkIcon size={12} style={{ color: 'var(--gold)' }} />
+                        {link.platform}: {link.url}
+                      </div>
+                    ))}
                   </div>
                 )
               )}
@@ -254,19 +301,15 @@ export default function ArtistDetailPage({
           {/* BOOKING */}
           <section className="p-6 rounded-3xl border">
             <h2 className="mb-4">Booking</h2>
-
             <p className="text-sm">Fee: {data.bookingInfo.performanceFee}</p>
-
             <p className="text-sm">
               Availability: {data.bookingInfo.availability.join(', ')}
             </p>
-
             <p className="text-sm">
               Payment: {data.bookingInfo.paymentPreferences}
             </p>
-
             <p className="text-sm">
-              Set Lengths: {data.bookingInfo.setLengths}
+              Set Lengths: {data.bookingInfo.setLengths.join(', ')} min
             </p>
           </section>
 
@@ -279,28 +322,23 @@ export default function ArtistDetailPage({
             }}
           >
             <h2 className="mb-4">Live Setup</h2>
-
             <p className="text-sm">Type: {data.liveSetup.setupType}</p>
             <p className="text-sm">
               Equipment Provided: {data.liveSetup.equipmentProvided.join(', ')}
             </p>
-
             <p className="text-sm">
               Equipment Required: {data.liveSetup.equipmentRequired.join(', ')}
             </p>
-
             <p className="text-sm">
               Tech Rider Tags: {data.liveSetup.techRiderTags.join(', ') || '-'}
             </p>
-
-            <p className="text-sm mt-2">{data.liveSetup.technicalNotes}</p>
             <p className="text-sm mt-2">{data.liveSetup.technicalNotes}</p>
           </section>
-          {/*PAST GIGS*/}
+
+          {/* PAST GIGS */}
           {data.pastGigs && data.pastGigs.length > 0 && (
             <section className="p-6 rounded-3xl border">
               <h2 className="mb-4">Past Gigs</h2>
-
               <div className="space-y-4">
                 {data.pastGigs.map((gig: any) => (
                   <div key={gig.id} className="text-sm border p-3 rounded-xl">
@@ -308,7 +346,6 @@ export default function ArtistDetailPage({
                       <strong>{gig.venueName}</strong>
                     </p>
                     <p>{gig.date}</p>
-
                     {gig.media && (
                       <img
                         src={gig.media}
@@ -316,7 +353,6 @@ export default function ArtistDetailPage({
                         className="mt-2 rounded-lg aspect-video object-cover"
                       />
                     )}
-
                     {gig.testimonial && (
                       <p className="mt-2 italic text-muted-foreground">
                         &quot;{gig.testimonial}&quot;
@@ -355,6 +391,10 @@ export default function ArtistDetailPage({
           >
             <h2 className="mb-6">Approval Decision</h2>
 
+            {actionError && (
+              <div className="mb-4 text-sm text-red-400">{actionError}</div>
+            )}
+
             <div className="mb-5">
               <label
                 className="text-xs uppercase tracking-widest mb-2 block"
@@ -362,8 +402,9 @@ export default function ArtistDetailPage({
               >
                 Write Feedback to User
               </label>
-
               <textarea
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
                 placeholder="Explain what needs to be improved or clarified..."
                 className="w-full min-h-[140px] p-3 rounded-2xl outline-none resize-none"
                 style={{
@@ -377,66 +418,66 @@ export default function ArtistDetailPage({
             <div className="mb-5">
               <Button
                 className="w-full"
+                disabled={busy}
+                onClick={handleRequestChanges}
                 style={{
                   backgroundColor: 'var(--foreground)',
                   color: 'var(--muted)',
                   border: '1px solid var(--status-warning-bg)',
                 }}
               >
-                Request Changes
+                {busy ? 'Sending...' : 'Request Changes'}
               </Button>
             </div>
 
             <div
               className="p-4 rounded-2xl border"
-              style={{
-                borderColor: 'var(--border)',
-              }}
+              style={{ borderColor: 'var(--border)' }}
             >
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   className="w-full"
+                  disabled={busy}
+                  onClick={handleApprove}
                   style={{
                     backgroundColor: 'var(--status-active-bg)',
                     color: 'var(--status-active-text)',
                   }}
                 >
-                  Approve
+                  {busy ? '...' : 'Approve'}
                 </Button>
-
                 <Button
                   className="w-full"
+                  disabled={busy}
+                  onClick={handleReject}
                   style={{
                     backgroundColor: 'var(--status-banned-bg)',
                     color: 'var(--status-banned-text)',
                   }}
                 >
-                  Decline
+                  {busy ? '...' : 'Decline'}
                 </Button>
               </div>
             </div>
           </section>
         </div>
       </div>
+
       {/* PHOTOS */}
       <section
         className="p-6 rounded-3xl border"
-        style={{
-          backgroundColor: 'var(--card)',
-          borderColor: 'var(--border)',
-        }}
+        style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
       >
         <h2 className="mb-4 flex items-center gap-2">
           <ImageIcon size={16} /> Artist Photos
         </h2>
-
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {data.media.images.length > 0 ? (
-            data.media.images.map((img: any, i: number) => (
+            data.media.images.map((img: string, i: number) => (
               <img
                 key={i}
-                src={img.url}
-                alt="image"
+                src={img}
+                alt="Artist photo"
                 className="rounded-xl aspect-square object-cover"
               />
             ))

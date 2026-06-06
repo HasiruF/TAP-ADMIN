@@ -329,10 +329,10 @@ export default function VenueDetailPage({
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {data.photos?.images?.length > 0 ? (
-            data.photos.images.map((img: any, i: number) => (
+            data.photos.images.map((img: string, i: number) => (
               <img
                 key={i}
-                src={img.url}
+                src={img}
                 className="rounded-xl aspect-square object-cover"
               />
             ))

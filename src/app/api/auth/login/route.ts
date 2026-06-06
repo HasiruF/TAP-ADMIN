@@ -1,34 +1,28 @@
 import { NextResponse } from 'next/server'
 
+const BACKEND_URL = process.env.BACKEND_API_URL ?? 'http://localhost:3001/v1'
+
 export async function POST(req: Request) {
   const body = await req.json()
 
-  const { email, password } = body
+  const backendRes = await fetch(`${BACKEND_URL}/auth/email/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
 
-  // MOCK validation
-  if (email !== 'admin@tap.com' || password !== '123456') {
-    return NextResponse.json(
-      { message: 'Invalid credentials' },
-      { status: 401 }
-    )
+  if (!backendRes.ok) {
+    const text = await backendRes.text()
+    try {
+      return NextResponse.json(JSON.parse(text), { status: backendRes.status })
+    } catch {
+      return NextResponse.json(
+        { message: text || 'Invalid credentials' },
+        { status: backendRes.status }
+      )
+    }
   }
 
-  const res = NextResponse.json({
-    user: {
-      id: 'usr_1',
-      name: 'Admin',
-      email,
-      role: 'admin',
-    },
-  })
-
-  // httpOnly cookie
-  res.cookies.set('token', 'mock-jwt-token', {
-    httpOnly: true,
-    secure: false, // set true in prod
-    sameSite: 'lax',
-    path: '/',
-  })
-
-  return res
+  const data = await backendRes.json()
+  return NextResponse.json(data)
 }

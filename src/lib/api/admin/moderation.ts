@@ -7,3 +7,20 @@ export async function fetchModerationQueue() {
 
   return res.json()
 }
+
+export async function moderationAction(
+  contentModId: string,
+  action: 'approve' | 'reject'
+) {
+  const res = await fetch('/api/admin/moderation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contentModId, action }),
+  })
+
+  if (!res.ok) {
+    throw new Error('Moderation action failed')
+  }
+
+  return res.json()
+}
