@@ -4,20 +4,22 @@ import { useState } from 'react'
 import { ModerationQueueTable } from '@/components/admin/moderation/ModerationQueueTable'
 import { ModerationPreviewDialog } from '@/components/admin/moderation/ModerationPreviewDialog'
 import { useModerationQueue } from '@/hooks/queries/useModerationQueue'
+import { useModerationActions } from '@/hooks/queries/useModerationActions'
 
 export default function ContentModerationPage() {
   const { data: moderationData = [], isLoading, error } = useModerationQueue()
 
+  const tableData = moderationData.map((item: any) => ({
+    id: item.contentModId,
+    userId: item.userId,
+    name: item.name ?? '-',
+    type: item.type,
+    role: item.role ?? '-',
+    date: item.date,
+  }))
+  const { approveModeration, rejectModeration } = useModerationActions()
   const [selectedItem, setSelectedItem] = useState<any | null>(null)
   const [open, setOpen] = useState(false)
-
-  const handleApprove = (id: string) => {
-    console.log('approve', id)
-  }
-
-  const handleReject = (id: string) => {
-    console.log('reject', id)
-  }
 
   if (isLoading) {
     return <div className="p-6">Loading moderation queue...</div>
@@ -59,9 +61,9 @@ export default function ContentModerationPage() {
       </div>
 
       <ModerationQueueTable
-        data={moderationData}
-        onApprove={handleApprove}
-        onReject={handleReject}
+        data={tableData}
+        onApprove={approveModeration}
+        onReject={rejectModeration}
         onRowClick={(item) => {
           setSelectedItem(item)
           setOpen(true)
@@ -71,8 +73,8 @@ export default function ContentModerationPage() {
         open={open}
         onOpenChange={setOpen}
         item={selectedItem}
-        onApprove={handleApprove}
-        onReject={handleReject}
+        onApprove={approveModeration}
+        onReject={rejectModeration}
       />
     </div>
   )

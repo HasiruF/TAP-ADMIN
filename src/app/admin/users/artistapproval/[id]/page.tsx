@@ -294,7 +294,6 @@ export default function ArtistDetailPage({
             </p>
 
             <p className="text-sm mt-2">{data.liveSetup.technicalNotes}</p>
-            <p className="text-sm mt-2">{data.liveSetup.technicalNotes}</p>
           </section>
           {/*PAST GIGS*/}
           {data.pastGigs && data.pastGigs.length > 0 && (

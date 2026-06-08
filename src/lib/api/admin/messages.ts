@@ -1,9 +1,26 @@
-export async function fetchAdminMessages() {
-  const res = await fetch('/api/admin/messages')
+import { api } from '@/lib/api/client'
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch messages')
-  }
+export interface Conversation {
+  conversationId: string
+  artistId: string
+  venueId: string
+  lastMessageAt: string
+}
 
-  return res.json()
+export interface ConversationQuery {
+  id?: string
+  artistId?: string
+  venueId?: string
+}
+
+export function fetchAdminConversations(params: ConversationQuery = {}) {
+  const searchParams = new URLSearchParams()
+
+  if (params.id) searchParams.append('id', params.id)
+  if (params.artistId) searchParams.append('artistId', params.artistId)
+  if (params.venueId) searchParams.append('venueId', params.venueId)
+
+  const query = searchParams.toString()
+
+  return api(`/admin/conversations${query ? `?${query}` : ''}`)
 }

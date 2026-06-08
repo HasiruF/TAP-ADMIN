@@ -1,32 +1,37 @@
 // src/app/admin/page.tsx
-
+'use client'
 import { Music2, Building2, BadgeCheck, Clock3 } from 'lucide-react'
 import { GrowthChart } from '@/components/admin/overview/GrowthChart'
-
-const stats = [
-  {
-    title: 'Artists',
-    value: '1,284',
-    icon: Music2,
-  },
-  {
-    title: 'Venues',
-    value: '148',
-    icon: Building2,
-  },
-  {
-    title: 'Pending Artist Approvals',
-    value: '23',
-    icon: BadgeCheck,
-  },
-  {
-    title: 'Pending Venue Approvals',
-    value: '11',
-    icon: Clock3,
-  },
-]
+import { useAdminOverview } from '@/hooks/queries/useAdminOverview'
 
 export default function AdminOverviewPage() {
+  const { data, isLoading } = useAdminOverview()
+  const stats = [
+    {
+      title: 'Artists',
+      value: isLoading ? '...' : (data?.totArtists?.toLocaleString() ?? '0'),
+      icon: Music2,
+    },
+    {
+      title: 'Venues',
+      value: isLoading ? '...' : (data?.totVenues?.toLocaleString() ?? '0'),
+      icon: Building2,
+    },
+    {
+      title: 'Pending Artist Approvals',
+      value: isLoading
+        ? '...'
+        : (data?.totPendingArtist?.toLocaleString() ?? '0'),
+      icon: BadgeCheck,
+    },
+    {
+      title: 'Pending Venue Approvals',
+      value: isLoading
+        ? '...'
+        : (data?.totPendingVenue?.toLocaleString() ?? '0'),
+      icon: Clock3,
+    },
+  ]
   return (
     <div className="space-y-10">
       {/* Header */}

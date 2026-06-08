@@ -41,7 +41,7 @@ export function ModerationQueueTable({
 
   onRowClick,
 }: Props) {
-  const [roleFilter, setRoleFilter] = useState('artist')
+  const [roleFilter, setRoleFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
 
   const filteredData = data.filter((item) => {

@@ -3,16 +3,28 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useAdminMessages } from '@/hooks/queries/useAdminMessages'
 import { MessageThread } from '@/components/admin/messages/MessageThread'
-
+import { useConversationThread } from '@/hooks/queries/useAdminConversations'
 import { Conversation } from '@/types/conversation'
 export default function MessagesPage() {
-  const { data: conversations = [], isLoading, error } = useAdminMessages()
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const { data: raw = [], isLoading, error } = useAdminMessages()
+
+  const conversations = raw.map((c: any) => ({
+    id: c.conversationId,
+    artistId: c.artistId,
+    venueId: c.venueId,
+    lastMessageAt: c.lastMessageAt,
+
+    // temporary placeholders
+    artist: { name: c.artistId },
+    venue: { name: c.venueId },
+  }))
+  const [selectedId, setSelectedId] = useState<string | undefined>(undefined)
   const [search, setSearch] = useState('')
   const [searchFilter, setSearchFilter] = useState('all')
 
-  const effectiveSelectedId = selectedId ?? conversations?.[0]?.id ?? null
-  const selected = conversations.find((c) => c.id === effectiveSelectedId)
+  const effectiveSelectedId = selectedId || undefined
+  const { data: thread } = useConversationThread(effectiveSelectedId)
+  const selected = conversations.find((c: any) => c.id === effectiveSelectedId)
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim()
 
@@ -33,13 +45,47 @@ export default function MessagesPage() {
           c.venue.name.toLowerCase().includes(q)
         )
       })
-      .sort((a: any, b: any) => {
-        const aLast = a.messages?.[a.messages.length - 1]?.timestamp
-        const bLast = b.messages?.[b.messages.length - 1]?.timestamp
-
-        return new Date(bLast).getTime() - new Date(aLast).getTime()
-      })
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.lastMessageAt).getTime() -
+          new Date(a.lastMessageAt).getTime()
+      )
   }, [conversations, search, searchFilter])
+
+  const conversation = useMemo(() => {
+    if (!selected || !thread) return null
+
+    return {
+      id: selected.id,
+
+      artist: {
+        id: selected.artistId,
+        name: selected.artist.name,
+        avatar: selected.artist?.avatar,
+      },
+
+      venue: {
+        id: selected.venueId,
+        name: selected.venue.name,
+        avatar: selected.venue?.avatar,
+      },
+
+      messages: thread.messages.map((m: any, idx: number) => ({
+        id: `${idx}`, // id
+        senderId: m.senderId,
+        senderRole: m.senderRole,
+        content: m.message,
+        timestamp: m.timestamp,
+
+        attachments: (m.attachments || []).map((url: string) => ({
+          id: url,
+          type: 'image', // default assumption
+          url,
+          name: 'attachment',
+        })),
+      })),
+    }
+  }, [selected, thread])
 
   if (isLoading) return <div className="p-6">Loading messages...</div>
 
@@ -119,9 +165,8 @@ export default function MessagesPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {filtered.map((c) => {
-              const lastMessage = c.messages[c.messages.length - 1]
-
+            {filtered.map((c: any) => {
+              const lastMessageAt = c.lastMessageAt
               return (
                 <button
                   key={c.id}
@@ -193,8 +238,8 @@ export default function MessagesPage() {
                         className="text-[12px]"
                         style={{ color: 'var(--muted-foreground)' }}
                       >
-                        {lastMessage?.timestamp
-                          ? new Date(lastMessage.timestamp).toLocaleString([], {
+                        {lastMessageAt
+                          ? new Date(lastMessageAt).toLocaleString([], {
                               year: 'numeric',
                               month: 'short',
                               day: '2-digit',
@@ -213,8 +258,10 @@ export default function MessagesPage() {
 
         {/* RIGHT */}
         <div className="flex-1 border rounded-2xl overflow-hidden">
-          {selected ? (
-            <MessageThread conversation={selected} />
+          {selectedId && !thread ? (
+            <div className="p-6">Loading conversation...</div>
+          ) : conversation ? (
+            <MessageThread conversation={conversation} />
           ) : (
             <div className="p-6 text-sm text-muted-foreground">
               Select a conversation
