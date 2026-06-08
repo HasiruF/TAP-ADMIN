@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { resourceSchema, ResourceInput } from '@/lib/schemas/resourceSchema'
-
+import { useState } from 'react'
 import { Plus, Upload } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -26,13 +26,18 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
-export function CreateResourceDialog() {
+export function CreateResourceDialog({
+  onCreate,
+}: {
+  onCreate: (data: ResourceInput) => void
+}) {
   const {
     register,
     handleSubmit,
     setValue,
     control,
     watch,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<ResourceInput>({
     resolver: zodResolver(resourceSchema),
@@ -40,18 +45,30 @@ export function CreateResourceDialog() {
       type: 'youtube',
     } as any,
   })
+  const [open, setOpen] = useState(false)
+  const handleClose = () => {
+    reset({
+      type: 'youtube',
+      title: '',
+      description: '',
+      url: '',
+    })
+    setOpen(false)
+  }
 
   const type = useWatch({
     control,
     name: 'type',
   })
   const onSubmit = async (data: ResourceInput) => {
-    console.log('CREATE RESOURCE:', data)
+    await onCreate(data)
+    reset()
+    setOpen(false)
   }
   const pdfFile = watch('pdfFile')
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           style={{
@@ -251,7 +268,9 @@ export function CreateResourceDialog() {
               )}
               {/* ACTIONS */}
               <div className="flex justify-end gap-2 pt-6">
-                <Button variant="outline">Cancel</Button>
+                <Button onClick={handleClose} type="button" variant="outline">
+                  Cancel
+                </Button>
 
                 <Button
                   type="submit"

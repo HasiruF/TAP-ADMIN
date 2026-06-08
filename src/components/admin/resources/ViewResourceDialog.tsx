@@ -30,10 +30,12 @@ export function ViewResourceDialog({
   open,
   onOpenChange,
   resource,
+  onSave,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
-  resource: ResourceInput
+  resource: Resource & ResourceInput
+  onSave: (id: string, data: ResourceInput) => void
 }) {
   const { register, watch, handleSubmit, setValue } = useForm<ResourceInput>({
     resolver: zodResolver(resourceSchema),
@@ -54,8 +56,10 @@ export function ViewResourceDialog({
     return id ? `https://www.youtube.com/embed/${id}` : null
   }, [type, url])
 
-  const onSubmit = (data: ResourceInput) => {
-    console.log('SAVE:', data)
+  const onSubmit = async (data: ResourceInput) => {
+    await onSave(resource.id, data)
+
+    onOpenChange(false)
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -169,7 +173,13 @@ export function ViewResourceDialog({
 
             {/* ACTIONS */}
             <div className="flex justify-end gap-4 pt-4">
-              <Button variant="outline">Close</Button>
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                type="button"
+              >
+                Close
+              </Button>
 
               <Button
                 type="submit"

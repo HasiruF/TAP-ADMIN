@@ -10,7 +10,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
-
+import { useUpdateResources } from '@/hooks/queries/useUpdateResources'
 import {
   arrayMove,
   SortableContext,
@@ -25,12 +25,24 @@ import SortableRow from './SortableRow'
 
 export default function ResourcesPage() {
   const { data: resources = [] } = useResources()
-
+  const { mutate: updateResources } = useUpdateResources()
   const [items, setItems] = useState<Resource[]>([])
   // this is needed for rearranging the order. need to sync local state with the query
   useEffect(() => {
+    if (!resources?.length) return
+
+    const sorted = [...resources].sort((a, b) => a.index - b.index)
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setItems(resources)
+    setItems((prev) => {
+      // prevent infinite loop
+      const same =
+        prev.length === sorted.length &&
+        prev.every((p, i) => p.id === sorted[i].id)
+
+      if (same) return prev
+
+      return sorted
+    })
   }, [resources])
   const [selectedResource, setSelectedResource] = useState<any>(null)
   const [open, setOpen] = useState(false)
@@ -46,7 +58,61 @@ export default function ResourcesPage() {
     setItems((prev) => {
       const oldIndex = prev.findIndex((i) => i.id === active.id)
       const newIndex = prev.findIndex((i) => i.id === over.id)
-      return arrayMove(prev, oldIndex, newIndex)
+
+      const newItems = arrayMove(prev, oldIndex, newIndex)
+
+      const payload = newItems.map((item, index) => ({
+        ...item,
+        index,
+      }))
+
+      // sync backend
+      updateResources(payload)
+
+      return newItems
+    })
+  }
+
+  function handleDelete(id: string) {
+    setItems((prev) => {
+      const newItems = prev.filter((i) => i.id !== id)
+
+      // sync with backend
+      updateResources(newItems)
+
+      return newItems
+    })
+  }
+
+  function handleCreate(data: any) {
+    setItems((prev) => {
+      const newItem = {
+        id: crypto.randomUUID(),
+        index: prev.length,
+        type: data.type,
+        title: data.title,
+        description: data.description,
+        url: data.url,
+      }
+
+      const updated = [...prev, newItem]
+
+      updateResources(updated)
+
+      return updated
+    })
+  }
+
+  function handleUpdate(id: string, updated: any) {
+    console.log('UPDATED OBJECT:', updated)
+
+    setItems((prev) => {
+      const newItems = prev.map((item) => {
+        return item.id === id ? { ...item, ...updated } : item
+      })
+
+      updateResources(newItems)
+      return newItems
     })
   }
 
@@ -64,7 +130,7 @@ export default function ResourcesPage() {
         </h1>
       </div>
 
-      <CreateResourceDialog />
+      <CreateResourceDialog onCreate={handleCreate} />
 
       {/* TABLE */}
       <DndContext
@@ -95,6 +161,7 @@ export default function ResourcesPage() {
                     setSelectedResource(res)
                     setOpen(true)
                   }}
+                  onDelete={handleDelete}
                 />
               ))}
             </tbody>
@@ -109,6 +176,7 @@ export default function ResourcesPage() {
           open={open}
           onOpenChange={setOpen}
           resource={selectedResource}
+          onSave={handleUpdate}
         />
       )}
     </div>

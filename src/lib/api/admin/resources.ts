@@ -1,9 +1,11 @@
-export async function fetchResources() {
-  const res = await fetch('/api/admin/resources')
+import { api } from '@/lib/api/client'
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch resources')
-  }
-
-  return res.json()
+export function fetchResources() {
+  return api('/admin/resources')
+}
+export function updateResources(items: any[]) {
+  return api('/admin/resources', {
+    method: 'PUT',
+    body: JSON.stringify({ items }),
+  })
 }
