@@ -24,3 +24,10 @@ export function requestArtistChanges(userId: string, feedback: string) {
     body: JSON.stringify({ id: userId, feedback }),
   })
 }
+
+export function suspendArtist(userId: string) {
+  return api('/admin/user/suspend', {
+    method: 'POST',
+    body: JSON.stringify({ id: userId }),
+  })
+}

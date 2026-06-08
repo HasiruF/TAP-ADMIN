@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Shield,
@@ -12,6 +13,8 @@ import {
 } from 'lucide-react'
 import { ExternalLink } from 'lucide-react'
 import { useAdminArtist } from '@/hooks/queries/useAdminArtists'
+import { suspendArtist } from '@/lib/api/admin/artists'
+import { useRouter } from 'next/navigation'
 import { use } from 'react'
 export default function ArtistDetailPage({
   params,
@@ -19,8 +22,20 @@ export default function ArtistDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = use(params)
+  const router = useRouter()
+  const [busy, setBusy] = useState(false)
 
   const { data: artist, isLoading, error } = useAdminArtist(id)
+
+  async function handleSuspend() {
+    setBusy(true)
+    try {
+      await suspendArtist(id)
+      router.push('/admin/users')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   if (isLoading) {
     return <div className="p-6">Loading artist...</div>
@@ -367,20 +382,35 @@ export default function ArtistDetailPage({
 
         {/* RIGHT — ADMIN ACTIONS */}
         <div className="space-y-6">
-          <Button
-            className="w-full"
-            onClick={() =>
-              window.open('https://civic-sauna-76601524.figma.site/', '_blank')
-            }
-            style={{
-              backgroundColor: 'var(--muted)',
-              color: 'var(--foreground)',
-              border: '1px solid var(--border)',
-            }}
-          >
-            <ExternalLink size={14} />
-            Show Preview
-          </Button>
+          <div className="space-y-1">
+            <Button
+              className="w-full"
+              disabled={!data.slug || data.approvalStatus !== 'APPROVED'}
+              onClick={() =>
+                window.open(
+                  `${process.env.NEXT_PUBLIC_PLATFORM_URL}/artists/${data.slug}`,
+                  '_blank'
+                )
+              }
+              style={{
+                backgroundColor: 'var(--muted)',
+                color: 'var(--foreground)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <ExternalLink size={14} />
+              Show Preview
+            </Button>
+            {data.approvalStatus !== 'APPROVED' && (
+              <p
+                className="text-center text-xs"
+                style={{ color: 'var(--muted-foreground)' }}
+              >
+                Profile status: {data.approvalStatus?.toLowerCase() ?? 'draft'}{' '}
+                — not yet public
+              </p>
+            )}
+          </div>
           <section
             className="p-6 rounded-3xl border"
             style={{
@@ -393,13 +423,15 @@ export default function ArtistDetailPage({
             <div className="space-y-3">
               <Button
                 className="w-full"
+                disabled={busy}
+                onClick={handleSuspend}
                 style={{
                   backgroundColor: 'var(--status-active-bg)',
                   color: 'var(--status-active-text)',
                 }}
               >
                 <Shield size={14} />
-                Suspend
+                {busy ? 'Suspending...' : 'Suspend'}
               </Button>
 
               <Button

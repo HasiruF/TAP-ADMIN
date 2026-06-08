@@ -245,20 +245,34 @@ export default function VenueDetailPage({
 
         {/* RIGHT */}
         <div className="space-y-6">
-          <Button
-            className="w-full"
-            onClick={() =>
-              window.open('https://civic-sauna-76601524.figma.site/', '_blank')
-            }
-            style={{
-              backgroundColor: 'var(--muted)',
-              color: 'var(--foreground)',
-              border: '1px solid var(--border)',
-            }}
-          >
-            <ExternalLink size={14} />
-            Show Preview
-          </Button>
+          <div className="space-y-1">
+            <Button
+              className="w-full"
+              disabled={!data.slug || !data.marketplaceUnlocked}
+              onClick={() =>
+                window.open(
+                  `${process.env.NEXT_PUBLIC_PLATFORM_URL}/venues/${data.slug}`,
+                  '_blank'
+                )
+              }
+              style={{
+                backgroundColor: 'var(--muted)',
+                color: 'var(--foreground)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <ExternalLink size={14} />
+              Show Preview
+            </Button>
+            {!data.marketplaceUnlocked && (
+              <p
+                className="text-center text-xs"
+                style={{ color: 'var(--muted-foreground)' }}
+              >
+                Venue not yet approved — not publicly visible
+              </p>
+            )}
+          </div>
 
           {/* ADMIN ACTIONS */}
           <section

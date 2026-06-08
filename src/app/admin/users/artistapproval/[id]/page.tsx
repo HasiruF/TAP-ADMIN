@@ -367,20 +367,27 @@ export default function ArtistApprovalPage({
 
         {/* RIGHT — ADMIN APPROVAL PANEL */}
         <div className="space-y-6">
-          <Button
-            className="w-full"
-            onClick={() =>
-              window.open('https://civic-sauna-76601524.figma.site/', '_blank')
-            }
-            style={{
-              backgroundColor: 'var(--muted)',
-              color: 'var(--foreground)',
-              border: '1px solid var(--border)',
-            }}
-          >
-            <ExternalLink size={14} />
-            Show Preview
-          </Button>
+          <div className="space-y-1">
+            <Button
+              className="w-full"
+              disabled
+              style={{
+                backgroundColor: 'var(--muted)',
+                color: 'var(--foreground)',
+                border: '1px solid var(--border)',
+                opacity: 0.5,
+              }}
+            >
+              <ExternalLink size={14} />
+              Show Preview
+            </Button>
+            <p
+              className="text-center text-xs"
+              style={{ color: 'var(--muted-foreground)' }}
+            >
+              Public profile available after approval
+            </p>
+          </div>
 
           <section
             className="p-6 rounded-3xl border"
