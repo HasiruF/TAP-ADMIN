@@ -20,11 +20,12 @@ import { Resource } from '@/types/resource'
 import { resourcesMock } from '@/data_mock/resources'
 import { CreateResourceDialog } from '@/components/admin/resources/CreateResourceDialog'
 import { ViewResourceDialog } from '@/components/admin/resources/ViewResourceDialog'
-
+import { useUploadFile } from '@/hooks/queries/useUploadFiles'
 import SortableRow from './SortableRow'
 
 export default function ResourcesPage() {
   const { data: resources = [] } = useResources()
+  const { mutateAsync: uploadFile } = useUploadFile()
   const { mutate: updateResources } = useUpdateResources()
   const [items, setItems] = useState<Resource[]>([])
   // this is needed for rearranging the order. need to sync local state with the query
@@ -50,6 +51,13 @@ export default function ResourcesPage() {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   )
+
+  async function handleFileUpload(file?: File) {
+    if (!file) return null
+
+    const res = await uploadFile(file)
+    return res.file.path
+  }
 
   function handleDragEnd(event: any) {
     const { active, over } = event
@@ -84,7 +92,7 @@ export default function ResourcesPage() {
     })
   }
 
-  function handleCreate(data: any) {
+  async function handleCreate(data: any) {
     setItems((prev) => {
       const newItem = {
         id: crypto.randomUUID(),
@@ -97,7 +105,24 @@ export default function ResourcesPage() {
 
       const updated = [...prev, newItem]
 
-      updateResources(updated)
+      ;(async () => {
+        let finalUrl = data.url
+
+        if (data.type === 'document' && data.pdfFile) {
+          const res = await uploadFile(data.pdfFile)
+          finalUrl = res.file.path
+
+          const fixed = updated.map((item) =>
+            item.id === newItem.id ? { ...item, url: finalUrl } : item
+          )
+
+          setItems(fixed)
+          updateResources(fixed)
+          return
+        }
+
+        updateResources(updated)
+      })()
 
       return updated
     })
