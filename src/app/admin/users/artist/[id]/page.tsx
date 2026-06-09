@@ -212,7 +212,12 @@ export default function ArtistDetailPage({
             <div className="text-sm space-y-1">
               <p>Performance Type: {data.genres.performanceType ?? '-'}</p>
 
-              <p>Act Type: {data.genres.actType ?? '-'}</p>
+              <p>
+                Act Type:{' '}
+                {data.genres.actType?.length
+                  ? data.genres.actType.join(', ')
+                  : '-'}
+              </p>
 
               <p>Energy: {data.genres.energyLevel ?? '-'}</p>
             </div>
