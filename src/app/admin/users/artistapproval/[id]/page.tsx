@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import NextImage from 'next/image'
 import { ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -36,6 +37,11 @@ export default function ArtistApprovalPage({
     return <div className="text-center py-20">Artist not found</div>
 
   const data = artist
+  const API_BASE = (
+    process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'
+  ).replace('/api/v1', '')
+  const resolveImg = (url: string) =>
+    url.startsWith('http') ? url : `${API_BASE}${url}`
 
   const isYouTubeUrl = (url: string) => /youtube\.com|youtu\.be/.test(url)
   const getYouTubeEmbedUrl = (url: string) => {
@@ -152,7 +158,7 @@ export default function ArtistApprovalPage({
                 <strong>Location Regions:</strong>{' '}
                 {typeof data.basicInfo.location === 'string'
                   ? '-'
-                  : data.basicInfo.location.regions.join(', ')}
+                  : data.basicInfo.location.regions.join(', ') || '-'}
               </p>
             </div>
             <div
@@ -347,11 +353,14 @@ export default function ArtistApprovalPage({
                     </p>
                     <p>{gig.date}</p>
                     {gig.media && (
-                      <img
-                        src={gig.media}
-                        alt="Venue image"
-                        className="mt-2 rounded-lg aspect-video object-cover"
-                      />
+                      <div className="relative mt-2 rounded-lg aspect-video overflow-hidden">
+                        <NextImage
+                          src={gig.media}
+                          alt="Venue image"
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
                     )}
                     {gig.testimonial && (
                       <p className="mt-2 italic text-muted-foreground">
@@ -481,12 +490,17 @@ export default function ArtistApprovalPage({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {data.media.images.length > 0 ? (
             data.media.images.map((img: string, i: number) => (
-              <img
+              <div
                 key={i}
-                src={img}
-                alt="Artist photo"
-                className="rounded-xl aspect-square object-cover"
-              />
+                className="relative rounded-xl aspect-square overflow-hidden"
+              >
+                <NextImage
+                  src={resolveImg(img)}
+                  alt="Artist photo"
+                  fill
+                  className="object-cover"
+                />
+              </div>
             ))
           ) : (
             <p className="text-sm text-muted-foreground">No images uploaded</p>

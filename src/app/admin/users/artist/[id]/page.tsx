@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import NextImage from 'next/image'
 import { Button } from '@/components/ui/button'
 import {
   Shield,
@@ -79,6 +80,11 @@ export default function ArtistDetailPage({
   }
 
   const data = artist
+  const API_BASE = (
+    process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'
+  ).replace('/api/v1', '')
+  const resolveImg = (url: string) =>
+    url.startsWith('http') ? url : `${API_BASE}${url}`
   const isYouTubeUrl = (url: string) => {
     return /youtube\.com|youtu\.be/.test(url)
   }
@@ -150,7 +156,7 @@ export default function ArtistDetailPage({
 
               <p>
                 <strong>Location Regions:</strong>{' '}
-                {data.basicInfo.location?.regions.join(', ') ?? '-'}
+                {data.basicInfo.location?.regions.join(', ') || '-'}
               </p>
             </div>
 
@@ -368,11 +374,14 @@ export default function ArtistDetailPage({
                       <p>{gig.date}</p>
 
                       {gig.media && (
-                        <img
-                          src={gig.media}
-                          alt="Venue image"
-                          className="mt-2 rounded-lg aspect-video object-cover"
-                        />
+                        <div className="relative mt-2 rounded-lg aspect-video overflow-hidden">
+                          <NextImage
+                            src={gig.media}
+                            alt="Venue image"
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
                       )}
 
                       {gig.testimonial && (
@@ -472,12 +481,17 @@ export default function ArtistDetailPage({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {data.media.images.length > 0 ? (
             data.media.images.map((img: string, i: number) => (
-              <img
+              <div
                 key={i}
-                src={img}
-                alt="image"
-                className="rounded-xl aspect-square object-cover"
-              />
+                className="relative rounded-xl aspect-square overflow-hidden"
+              >
+                <NextImage
+                  src={resolveImg(img)}
+                  alt="Artist photo"
+                  fill
+                  className="object-cover"
+                />
+              </div>
             ))
           ) : (
             <p className="text-sm text-muted-foreground">No images uploaded</p>
