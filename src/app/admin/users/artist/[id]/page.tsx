@@ -140,6 +140,9 @@ export default function ArtistDetailPage({
               <p>
                 <strong>Artist Type:</strong> {data.basicInfo.artistType ?? '-'}
               </p>
+              <p>
+                <strong>Phone:</strong> {data.basicInfo.phoneNumber ?? '-'}
+              </p>
               <p className="flex items-center gap-2">
                 <MapPin size={14} style={{ color: 'var(--gold)' }} />
                 {data.basicInfo.location?.city ?? '-'}
