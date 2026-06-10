@@ -37,6 +37,19 @@ export default function ArtistApprovalPage({
     return <div className="text-center py-20">Artist not found</div>
 
   const data = artist
+
+  const formatSetLength = (minutes: string): string => {
+    const map: Record<string, string> = {
+      '30': '30 min',
+      '45': '45 min',
+      '60': '1 hr',
+      '90': '1.5 hr',
+      '120': '2 hr',
+      '150': '2+ hr',
+    }
+    return map[minutes] ?? `${minutes} min`
+  }
+
   const API_BASE = (
     process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'
   ).replace('/api/v1', '')
@@ -315,7 +328,10 @@ export default function ArtistApprovalPage({
               Payment: {data.bookingInfo.paymentPreferences}
             </p>
             <p className="text-sm">
-              Set Lengths: {data.bookingInfo.setLengths.join(', ')} min
+              Set Lengths:{' '}
+              {(data.bookingInfo.setLengths ?? [])
+                .map(formatSetLength)
+                .join(', ') || '-'}
             </p>
           </section>
 
@@ -328,15 +344,9 @@ export default function ArtistApprovalPage({
             }}
           >
             <h2 className="mb-4">Live Setup</h2>
-            <p className="text-sm">Type: {data.liveSetup.setupType}</p>
+            <p className="text-sm">Type: {data.liveSetup.setupType ?? '-'}</p>
             <p className="text-sm">
-              Equipment Provided: {data.liveSetup.equipmentProvided.join(', ')}
-            </p>
-            <p className="text-sm">
-              Equipment Required: {data.liveSetup.equipmentRequired.join(', ')}
-            </p>
-            <p className="text-sm">
-              Tech Rider Tags: {data.liveSetup.techRiderTags.join(', ') || '-'}
+              Equipment: {(data.liveSetup.equipment ?? []).join(', ') || '-'}
             </p>
             <p className="text-sm mt-2">{data.liveSetup.technicalNotes}</p>
           </section>

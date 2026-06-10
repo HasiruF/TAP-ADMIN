@@ -5,7 +5,7 @@
 import { useState } from 'react'
 import { getAdminUserRoute } from '@/utils/AdminRoutes'
 import { getAdminLogRoute } from '@/utils/AdminRoutes'
-import { Check, Ban, ShieldMinus, ShieldCheck, X, Search } from 'lucide-react'
+import { Ban, ShieldMinus, ShieldCheck, Check } from 'lucide-react'
 import { MoreVertical } from 'lucide-react'
 import {
   Select,
@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-
 import {
   Table,
   TableBody,
@@ -25,15 +24,12 @@ import {
 } from '@/components/ui/table'
 import { User } from '@/types/user'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { useAdminUsers } from '@/hooks/queries/useAdminUsers'
 import { useRouter } from 'next/navigation'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { mapUserToBe } from '@/types/user'
-import { Label } from '@/components/ui/label'
-import { label } from 'framer-motion/client'
-
-type UserStatus = 'active' | 'not-approved' | 'suspended' | 'banned'
+import { useQueryClient } from '@tanstack/react-query'
+import { suspendUser, unsuspendUser } from '@/lib/api/admin/users'
+import { approveArtist } from '@/lib/api/admin/artists'
 
 function getStatusStyles(status: string) {
   switch (status) {
@@ -76,113 +72,48 @@ const filterOptions = [
   { label: 'Last Login Date', value: 'lastlogin' },
 ]
 
-function renderActions(status: string) {
-  switch (status) {
-    case 'Active':
-      return (
-        <div className="flex items-center justify-center gap-2">
-          <Button variant="outline" size="sm">
-            <ShieldMinus size={14} />
-            Suspend
-          </Button>
-
-          <Button variant="destructive" size="sm">
-            <Ban size={14} />
-            Ban
-          </Button>
-        </div>
-      )
-    case 'Inactive':
-      return (
-        <div className="flex items-center justify-center gap-2">
-          <Button variant="outline" size="sm">
-            <ShieldMinus size={14} />
-            Suspend
-          </Button>
-        </div>
-      )
-
-    case 'Not-approved':
-      return (
-        <div className="flex items-center justify-center gap-2">
-          <Button size="sm">
-            <Check size={14} />
-            Approve
-          </Button>
-
-          <Button variant="destructive" size="sm">
-            <X size={14} />
-            Reject
-          </Button>
-        </div>
-      )
-
-    case 'Suspended':
-      return (
-        <div className="flex items-center justify-center gap-2">
-          <Button size="sm">
-            <ShieldCheck size={14} />
-            Unsuspend
-          </Button>
-        </div>
-      )
-
-    case 'Banned':
-      return (
-        <div className="flex justify-center">
-          <Button size="sm">
-            <ShieldCheck size={14} />
-            Unban
-          </Button>
-        </div>
-      )
-  }
-}
 const statusOptions = [
   { label: 'All', value: 'all' },
   { label: 'Active', value: 'active' },
   { label: 'Not Approved', value: 'not-approved' },
+  { label: 'Inactive', value: 'inactive' },
   { label: 'Suspended', value: 'suspended' },
   { label: 'Banned', value: 'banned' },
 ]
 
 export function UserManagementTable() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('name')
   const [roleFilter, setRoleFilter] = useState('artist')
   const [statusFilter, setStatusFilter] = useState('all')
-  const ITEMS_PER_PAGE = 50
+  const [actionBusy, setActionBusy] = useState<string | null>(null)
 
   const [currentPage, setCurrentPage] = useState(1)
-  const { data, isLoading, error } = useAdminUsers(currentPage)
+
+  // Role filter is passed to the backend so pagination reflects the correct role
+  const { data, isLoading, error } = useAdminUsers(currentPage, roleFilter)
 
   const usersBe = data?.data ?? []
   const hasNextPage = data?.hasNextPage ?? false
   const users = usersBe.map(mapUserToBe)
-  if (isLoading) {
-    return <div className="p-6">Loading users...</div>
-  }
 
-  if (error) {
-    return <div className="p-6 text-red-500">Failed to load users</div>
-  }
+  if (isLoading) return <div className="p-6">Loading users...</div>
+  if (error) return <div className="p-6 text-red-500">Failed to load users</div>
+
+  // Client-side filters: search + status only (role is already handled server-side)
   const filteredUsers = users.filter((user: User) => {
     const value = search.toLowerCase()
-
-    // SEARCH FILTER
     let matchesSearch = true
-
     if (value) {
       switch (filter) {
         case 'name':
           matchesSearch = user.name.toLowerCase().includes(value)
           break
-
         case 'email':
           matchesSearch = user.email.toLowerCase().includes(value)
           break
-
         case 'id':
           matchesSearch = String(user.id).toLowerCase().includes(value)
           break
@@ -194,35 +125,176 @@ export function UserManagementTable() {
           break
       }
     }
-
-    const matchesRole =
-      roleFilter === 'all' ||
-      user.role.toLowerCase() === roleFilter.toLowerCase()
-
     const matchesStatus =
       statusFilter === 'all' ||
       user.status.toLowerCase() === statusFilter.toLowerCase()
-    return matchesSearch && matchesRole && matchesStatus
+    return matchesSearch && matchesStatus
   })
+
   const totalPages = hasNextPage ? currentPage + 1 : currentPage
-  const paginatedUsers = filteredUsers.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  )
+
+  const invalidateUsers = () =>
+    queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+
+  async function handleSuspend(userId: string) {
+    setActionBusy(userId)
+    try {
+      await suspendUser(userId)
+      await invalidateUsers()
+    } catch {
+      /* error surfaced via table state */
+    } finally {
+      setActionBusy(null)
+    }
+  }
+
+  async function handleUnsuspend(userId: string) {
+    setActionBusy(userId)
+    try {
+      await unsuspendUser(userId)
+      await invalidateUsers()
+    } catch {
+      /* error surfaced via table state */
+    } finally {
+      setActionBusy(null)
+    }
+  }
+
+  async function handleApprove(userId: string) {
+    setActionBusy(userId)
+    try {
+      await approveArtist(userId)
+      await invalidateUsers()
+    } catch {
+      /* error surfaced via table state */
+    } finally {
+      setActionBusy(null)
+    }
+  }
+
+  function renderActions(user: User) {
+    const busy = actionBusy === user.id
+    switch (user.status) {
+      case 'Not-approved':
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              size="sm"
+              disabled={busy}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleApprove(user.id)
+              }}
+              style={{
+                backgroundColor: 'var(--status-active-bg)',
+                color: 'var(--status-active-text)',
+              }}
+            >
+              <Check size={14} />
+              {busy ? '...' : 'Approve'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              onClick={(e) => {
+                e.stopPropagation()
+                router.push(getAdminUserRoute(user))
+              }}
+            >
+              Review
+            </Button>
+          </div>
+        )
+      case 'Active':
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleSuspend(user.id)
+              }}
+            >
+              <ShieldMinus size={14} />
+              {busy ? '...' : 'Suspend'}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={busy}
+              onClick={(e) => {
+                e.stopPropagation()
+                router.push(getAdminUserRoute(user))
+              }}
+            >
+              <Ban size={14} />
+              Ban
+            </Button>
+          </div>
+        )
+      case 'Inactive':
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                router.push(getAdminUserRoute(user))
+              }}
+            >
+              View
+            </Button>
+          </div>
+        )
+      case 'Suspended':
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              size="sm"
+              disabled={busy}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleUnsuspend(user.id)
+              }}
+            >
+              <ShieldCheck size={14} />
+              {busy ? '...' : 'Unsuspend'}
+            </Button>
+          </div>
+        )
+      case 'Banned':
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                router.push(getAdminUserRoute(user))
+              }}
+            >
+              View
+            </Button>
+          </div>
+        )
+      default:
+        return null
+    }
+  }
+
   return (
     <div
       className="rounded-[32px] border overflow-hidden"
-      style={{
-        backgroundColor: 'var(--card)',
-        borderColor: 'var(--border)',
-      }}
+      style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
     >
-      {/* SEARCH */}
+      {/* SEARCH & FILTERS */}
       <div
         className="p-6 border-b flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5"
-        style={{
-          borderColor: 'var(--border)',
-        }}
+        style={{ borderColor: 'var(--border)' }}
       >
         {/* LEFT */}
         <div className="flex flex-wrap items-center gap-3">
@@ -240,7 +312,6 @@ export function UserManagementTable() {
               >
                 <SelectValue placeholder="Filter by" />
               </SelectTrigger>
-
               <SelectContent>
                 {filterOptions.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
@@ -266,7 +337,7 @@ export function UserManagementTable() {
             />
           </div>
 
-          {/* STATUS */}
+          {/* STATUS FILTER */}
           <div className="w-[190px]">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger
@@ -280,11 +351,10 @@ export function UserManagementTable() {
               >
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
-
               <SelectContent>
-                {statusOptions.map((status) => (
-                  <SelectItem key={status.value} value={status.value}>
-                    {status.label}
+                {statusOptions.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -292,12 +362,15 @@ export function UserManagementTable() {
           </div>
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT — ROLE TOGGLE */}
         <div className="flex items-center gap-3">
           <Button
             className="h-11 px-5 rounded-full"
             variant={roleFilter === 'artist' ? 'default' : 'outline'}
-            onClick={() => setRoleFilter('artist')}
+            onClick={() => {
+              setRoleFilter('artist')
+              setCurrentPage(1)
+            }}
             style={
               roleFilter === 'artist'
                 ? {
@@ -310,11 +383,13 @@ export function UserManagementTable() {
           >
             Artists
           </Button>
-
           <Button
             className="h-11 px-5 rounded-full"
             variant={roleFilter === 'venue' ? 'default' : 'outline'}
-            onClick={() => setRoleFilter('venue')}
+            onClick={() => {
+              setRoleFilter('venue')
+              setCurrentPage(1)
+            }}
             style={
               roleFilter === 'venue'
                 ? {
@@ -333,98 +408,65 @@ export function UserManagementTable() {
       {/* TABLE */}
       <Table>
         <TableHeader>
-          <TableRow
-            style={{
-              borderColor: 'var(--border)',
-            }}
-          >
+          <TableRow style={{ borderColor: 'var(--border)' }}>
             <TableHead className="text-center w-[5%]">UserId</TableHead>
             <TableHead className="text-center w-[20%]">Name</TableHead>
-
             <TableHead className="text-center w-[20%]">Email</TableHead>
-
             <TableHead className="text-center w-[18%]">Joined Date</TableHead>
-
             <TableHead className="text-center w-[18%]">
               Last Login Date
             </TableHead>
-
             <TableHead className="text-center w-[15%]">Status</TableHead>
-
             <TableHead className="text-center w-[20%]">Actions</TableHead>
-
             <TableHead className="text-center w-[5%]"></TableHead>
           </TableRow>
         </TableHeader>
 
         <TableBody>
-          {paginatedUsers.map((user: User) => (
+          {filteredUsers.map((user: User) => (
             <TableRow
               key={user.id}
-              className="transition-colors"
-              style={{
-                borderColor: 'var(--border)',
-              }}
+              className="transition-colors cursor-pointer"
+              style={{ borderColor: 'var(--border)' }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = 'var(--table-hover)'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent'
               }}
+              onClick={() => router.push(getAdminUserRoute(user))}
             >
               <TableCell
                 className="text-center"
-                onClick={() => router.push(getAdminUserRoute(user))}
-                style={{
-                  color: 'var(--muted-foreground)',
-                }}
+                style={{ color: 'var(--muted-foreground)' }}
               >
                 {user.id}
               </TableCell>
-              <TableCell
-                className="text-center cursor-pointer"
-                onClick={() => router.push(getAdminUserRoute(user))}
-              >
-                <p
-                  style={{
-                    color: 'var(--foreground)',
-                    fontWeight: 500,
-                  }}
-                >
+              <TableCell className="text-center">
+                <p style={{ color: 'var(--foreground)', fontWeight: 500 }}>
                   {user.name}
                 </p>
               </TableCell>
-              {/* EMAIL */}
               <TableCell
                 className="text-center"
-                onClick={() => router.push(getAdminUserRoute(user))}
-                style={{
-                  color: 'var(--muted-foreground)',
-                }}
+                style={{ color: 'var(--muted-foreground)' }}
               >
                 {user.email}
               </TableCell>
-
-              {/* DATE */}
               <TableCell
                 className="text-center"
-                style={{
-                  color: 'var(--muted-foreground)',
-                }}
+                style={{ color: 'var(--muted-foreground)' }}
               >
                 {user.joined}
               </TableCell>
-
               <TableCell
                 className="text-center"
-                style={{
-                  color: 'var(--muted-foreground)',
-                }}
+                style={{ color: 'var(--muted-foreground)' }}
               >
                 {user.lastLogin}
               </TableCell>
 
-              {/* STATUS */}
+              {/* STATUS BADGE */}
               <TableCell className="text-center">
                 <div
                   className="inline-flex items-center px-3 py-1 rounded-full text-xs capitalize"
@@ -436,13 +478,13 @@ export function UserManagementTable() {
 
               {/* ACTIONS */}
               <TableCell className="text-center">
-                {renderActions(user.status)}
+                {renderActions(user)}
               </TableCell>
+
+              {/* LOG */}
               <TableCell
                 className="text-center"
-                style={{
-                  color: 'var(--muted-foreground)',
-                }}
+                style={{ color: 'var(--muted-foreground)' }}
               >
                 <button
                   onClick={(e) => {
@@ -461,49 +503,33 @@ export function UserManagementTable() {
           ))}
         </TableBody>
       </Table>
+
+      {/* PAGINATION */}
       <div
         className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-5 border-t"
-        style={{
-          borderColor: 'var(--border)',
-        }}
+        style={{ borderColor: 'var(--border)' }}
       >
-        {/* INFO */}
-        <p
-          className="text-sm"
-          style={{
-            color: 'var(--muted-foreground)',
-          }}
-        >
+        <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
           Showing{' '}
           <span style={{ color: 'var(--foreground)' }}>
-            {(currentPage - 1) * ITEMS_PER_PAGE + 1}
-          </span>
-          –
-          <span style={{ color: 'var(--foreground)' }}>
-            {Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)}
-          </span>{' '}
-          of{' '}
-          <span style={{ color: 'var(--foreground)' }}>
             {filteredUsers.length}
-          </span>
+          </span>{' '}
+          users on page{' '}
+          <span style={{ color: 'var(--foreground)' }}>{currentPage}</span>
         </p>
 
-        {/* CONTROLS */}
         <div className="flex items-center gap-2">
-          {/* PREVIOUS */}
           <Button
             variant="outline"
             size="sm"
             disabled={currentPage === 1}
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
           >
             Previous
           </Button>
 
-          {/* PAGE NUMBERS */}
-          {Array.from({ length: totalPages }).map((_, index) => {
-            const page = index + 1
-
+          {Array.from({ length: totalPages }).map((_, i) => {
+            const page = i + 1
             return (
               <Button
                 key={page}
@@ -524,14 +550,11 @@ export function UserManagementTable() {
             )
           })}
 
-          {/* NEXT */}
           <Button
             variant="outline"
             size="sm"
             disabled={currentPage === totalPages}
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
           >
             Next
           </Button>
