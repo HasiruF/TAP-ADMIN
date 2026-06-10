@@ -53,13 +53,16 @@ export const mapUserToBe = (user: UserBe): User => {
     status = 'Suspended'
   } else if (user.accountStatus === 'ANONYMISED') {
     status = 'Banned'
+  } else if (user.accountStatus === 'PENDING_VERIFICATION') {
+    // Email not yet confirmed — treat same as not-approved regardless of role
+    status = 'Not-approved'
   } else if (user.profileApprovalStatus) {
     // Profile exists — derive status from profile approval state
     status =
       PROFILE_APPROVAL_STATUS_MAP[user.profileApprovalStatus] ??
       user.profileApprovalStatus
   } else if (isProfileRole) {
-    // Artist/venue with no profile yet — account is verified but not submitted
+    // Artist/venue with verified account but no profile submitted yet
     status = 'Inactive'
   } else {
     // Admin or other non-profile roles — use account status directly
