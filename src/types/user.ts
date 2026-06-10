@@ -5,30 +5,16 @@ export interface FileType {
 
 export interface UserBe {
   id: string
-
-  email: string
-  provider: string
-  socialId: string | null
-
-  firstName: string
-  lastName: string
-
-  photo?: FileType | null
-
-  role: {
-    id: number
-    name: string
-  }
-
-  status: {
-    id: number
-    name: string
-  }
-
+  email: string | null
+  firstName: string | null
+  lastName: string | null
+  role: { id: number; name: string }
+  accountStatus: string
   createdAt: string
   updatedAt: string
-  deletedAt: string | null
+  lastLoginAt: string | null
 }
+
 export interface User {
   id: string
   name: string
@@ -39,12 +25,20 @@ export interface User {
   lastLogin: string
 }
 
+const ACCOUNT_STATUS_MAP: Record<string, string> = {
+  ACTIVE: 'Active',
+  PENDING_VERIFICATION: 'Not-approved',
+  SUSPENDED: 'Suspended',
+  ANONYMISED: 'Banned',
+  LOCKED: 'Suspended',
+}
+
 export const mapUserToBe = (user: UserBe): User => ({
   id: user.id,
-  name: `${user.firstName} ${user.lastName}`.trim(),
-  email: user.email,
-  role: user.role?.name,
-  status: user.status?.name,
+  name: `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
+  email: user.email ?? '',
+  role: user.role?.name ?? '',
+  status: ACCOUNT_STATUS_MAP[user.accountStatus] ?? user.accountStatus,
   joined: user.createdAt,
-  lastLogin: user.updatedAt,
+  lastLogin: user.lastLoginAt ?? user.updatedAt,
 })

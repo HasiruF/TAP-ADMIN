@@ -72,18 +72,13 @@ export default function AdminOverviewPage() {
               borderColor: 'var(--border)',
             }}
           >
-            {/* subtle glow */}
             <div
               className="absolute -top-10 -right-10 w-24 h-24 rounded-full blur-2xl opacity-10"
-              style={{
-                backgroundColor: 'var(--gold)',
-              }}
+              style={{ backgroundColor: 'var(--gold)' }}
             />
 
             <div className="relative z-10 flex items-start justify-between">
-              {/* LEFT */}
               <div>
-                {/* label */}
                 <p
                   className="mb-1"
                   style={{
@@ -96,7 +91,6 @@ export default function AdminOverviewPage() {
                   {stat.title}
                 </p>
 
-                {/* number */}
                 <h2
                   style={{
                     fontFamily: 'var(--font-body)',
@@ -110,7 +104,6 @@ export default function AdminOverviewPage() {
                 </h2>
               </div>
 
-              {/* ICON */}
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{

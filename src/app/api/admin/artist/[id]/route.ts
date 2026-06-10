@@ -1,17 +1,37 @@
 import { NextResponse } from 'next/server'
-import { artists } from '@/data_mock/artists'
+import { backendFetch } from '@/lib/api/server/backendFetch'
 
 export async function GET(
-  req: Request,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
 
-  const artist = artists.find((a) => a.id === id)
-
-  if (!artist) {
-    return NextResponse.json({ message: 'Artist not found' }, { status: 404 })
+  // id is the userId — resolve to artistProfileId first
+  const profilesRes = await backendFetch(`/admin/user/${id}/profiles`)
+  if (!profilesRes.ok) {
+    return NextResponse.json({ message: 'User not found' }, { status: 404 })
   }
 
-  return NextResponse.json(artist)
+  const { artistProfileId } = await profilesRes.json()
+  if (!artistProfileId) {
+    return NextResponse.json(
+      { message: 'No artist profile for this user' },
+      { status: 404 }
+    )
+  }
+
+  const profileRes = await backendFetch(
+    `/admin/artist/profile/${artistProfileId}`
+  )
+  if (!profileRes.ok) {
+    const text = await profileRes.text()
+    return NextResponse.json(
+      { message: text || 'Artist profile not found' },
+      { status: profileRes.status }
+    )
+  }
+
+  const data = await profileRes.json()
+  return NextResponse.json(data)
 }
