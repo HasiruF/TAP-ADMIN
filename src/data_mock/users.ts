@@ -7,7 +7,7 @@ export const mockUsers: User[] = [
     email: 'Luna@gmail.com',
     role: 'artist',
     joined: 'Jan 14, 2026',
-    lastlogin: 'Jan 14, 2026',
+    lastLogin: 'Jan 14, 2026',
     status: 'active',
   },
   {
@@ -16,7 +16,7 @@ export const mockUsers: User[] = [
     role: 'venue',
     email: 'velvet@gmail.com',
     joined: 'Feb 02, 2026',
-    lastlogin: 'Jan 14, 2026',
+    lastLogin: 'Jan 14, 2026',
     status: 'suspended',
   },
   {
@@ -25,7 +25,7 @@ export const mockUsers: User[] = [
     role: 'artist',
     email: 'echo@gmail.com',
     joined: 'Mar 08, 2026',
-    lastlogin: 'Aug 14, 2026',
+    lastLogin: 'Aug 14, 2026',
     status: 'not-approved',
   },
   {
@@ -34,7 +34,7 @@ export const mockUsers: User[] = [
     role: 'venue',
     email: 'noirt@gmail.com',
     joined: 'Apr 19, 2026',
-    lastlogin: 'Dec 14, 2026',
+    lastLogin: 'Dec 14, 2026',
     status: 'not-approved',
   },
   {
@@ -43,7 +43,7 @@ export const mockUsers: User[] = [
     role: 'venue',
     email: 'fft@gmail.com',
     joined: 'Apr 19, 2026',
-    lastlogin: 'Jun 14, 2026',
+    lastLogin: 'Jun 14, 2026',
     status: 'not-approved',
   },
 ]

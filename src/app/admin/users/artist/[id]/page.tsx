@@ -80,6 +80,19 @@ export default function ArtistDetailPage({
   }
 
   const data = artist
+
+  const formatSetLength = (minutes: string): string => {
+    const map: Record<string, string> = {
+      '30': '30 min',
+      '45': '45 min',
+      '60': '1 hr',
+      '90': '1.5 hr',
+      '120': '2 hr',
+      '150': '2+ hr',
+    }
+    return map[minutes] ?? `${minutes} min`
+  }
+
   const API_BASE = (
     process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'
   ).replace('/api/v1', '')
@@ -332,7 +345,9 @@ export default function ArtistDetailPage({
             </p>
 
             <p className="text-sm">
-              Set Lengths: {data.bookingInfo.setLengths.join(', ') || '-'}
+              Set Lengths:{' '}
+              {data.bookingInfo.setLengths.map(formatSetLength).join(', ') ||
+                '-'}
             </p>
           </section>
 
