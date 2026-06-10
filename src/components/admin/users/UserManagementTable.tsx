@@ -67,7 +67,6 @@ function getStatusStyles(status: string) {
 
 const filterOptions = [
   { label: 'Name', value: 'name' },
-  { label: 'UserId', value: 'id' },
   { label: 'Email', value: 'email' },
   { label: 'Joined Date', value: 'joined' },
   { label: 'Last Login Date', value: 'lastlogin' },
@@ -411,19 +410,18 @@ export function UserManagementTable() {
       </div>
 
       {/* TABLE */}
-      <Table>
+      <Table className="table-fixed">
         <TableHeader>
           <TableRow style={{ borderColor: 'var(--border)' }}>
-            <TableHead className="text-center w-[5%]">UserId</TableHead>
-            <TableHead className="text-center w-[20%]">Name</TableHead>
-            <TableHead className="text-center w-[20%]">Email</TableHead>
-            <TableHead className="text-center w-[18%]">Joined Date</TableHead>
-            <TableHead className="text-center w-[18%]">
+            <TableHead className="text-center w-[18%]">Name</TableHead>
+            <TableHead className="text-center w-[22%]">Email</TableHead>
+            <TableHead className="text-center w-[15%]">Joined Date</TableHead>
+            <TableHead className="text-center w-[15%]">
               Last Login Date
             </TableHead>
-            <TableHead className="text-center w-[15%]">Status</TableHead>
-            <TableHead className="text-center w-[20%]">Actions</TableHead>
-            <TableHead className="text-center w-[5%]"></TableHead>
+            <TableHead className="text-center w-[10%]">Status</TableHead>
+            <TableHead className="text-center w-[16%]">Actions</TableHead>
+            <TableHead className="text-center w-[4%]"></TableHead>
           </TableRow>
         </TableHeader>
 
@@ -441,31 +439,25 @@ export function UserManagementTable() {
               }}
               onClick={() => router.push(getAdminUserRoute(user))}
             >
-              <TableCell
-                className="text-center"
-                style={{ color: 'var(--muted-foreground)' }}
-              >
-                {user.id}
-              </TableCell>
-              <TableCell className="text-center">
+              <TableCell className="text-center break-words whitespace-normal">
                 <p style={{ color: 'var(--foreground)', fontWeight: 500 }}>
                   {user.name}
                 </p>
               </TableCell>
               <TableCell
-                className="text-center"
+                className="text-center break-words whitespace-normal"
                 style={{ color: 'var(--muted-foreground)' }}
               >
                 {user.email}
               </TableCell>
               <TableCell
-                className="text-center"
+                className="text-center break-words whitespace-normal"
                 style={{ color: 'var(--muted-foreground)' }}
               >
                 {user.joined}
               </TableCell>
               <TableCell
-                className="text-center"
+                className="text-center break-words whitespace-normal"
                 style={{ color: 'var(--muted-foreground)' }}
               >
                 {user.lastLogin}
