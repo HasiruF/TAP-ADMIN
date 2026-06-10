@@ -30,6 +30,7 @@ import { mapUserToBe } from '@/types/user'
 import { useQueryClient } from '@tanstack/react-query'
 import { suspendUser, unsuspendUser } from '@/lib/api/admin/users'
 import { approveArtist } from '@/lib/api/admin/artists'
+import { approveVenue } from '@/lib/api/admin/venues'
 
 function getStatusStyles(status: string) {
   switch (status) {
@@ -160,10 +161,14 @@ export function UserManagementTable() {
     }
   }
 
-  async function handleApprove(userId: string) {
-    setActionBusy(userId)
+  async function handleApprove(user: User) {
+    setActionBusy(user.id)
     try {
-      await approveArtist(userId)
+      if (user.role.toLowerCase() === 'venue') {
+        await approveVenue(user.id)
+      } else {
+        await approveArtist(user.id)
+      }
       await invalidateUsers()
     } catch {
       /* error surfaced via table state */
@@ -183,7 +188,7 @@ export function UserManagementTable() {
               disabled={busy}
               onClick={(e) => {
                 e.stopPropagation()
-                handleApprove(user.id)
+                handleApprove(user)
               }}
               style={{
                 backgroundColor: 'var(--status-active-bg)',

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import NextImage from 'next/image'
 import { Button } from '@/components/ui/button'
 import {
   MapPin,
@@ -33,6 +34,12 @@ export default function VenueApprovalPage({
     return <div className="text-center py-20">Venue not found</div>
 
   const data = venue
+
+  const API_BASE = (
+    process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'
+  ).replace('/api/v1', '')
+  const resolveImg = (url: string) =>
+    url.startsWith('http') ? url : `${API_BASE}${url}`
 
   async function handleApprove() {
     setBusy(true)
@@ -212,10 +219,14 @@ export default function VenueApprovalPage({
                       {event.eventDescription}
                     </p>
                     {event.media && (
-                      <img
-                        src={event.media}
-                        className="mt-2 rounded-lg aspect-video object-cover"
-                      />
+                      <div className="relative mt-2 rounded-lg aspect-video overflow-hidden">
+                        <NextImage
+                          src={resolveImg(event.media)}
+                          alt={event.performanceName || 'Venue history'}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
                     )}
                   </div>
                 ))}
@@ -355,11 +366,17 @@ export default function VenueApprovalPage({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {data.photos?.images?.length > 0 ? (
             data.photos.images.map((img: string, i: number) => (
-              <img
+              <div
                 key={i}
-                src={img}
-                className="rounded-xl aspect-square object-cover"
-              />
+                className="relative rounded-xl aspect-square overflow-hidden"
+              >
+                <NextImage
+                  src={resolveImg(img)}
+                  alt="Venue photo"
+                  fill
+                  className="object-cover"
+                />
+              </div>
             ))
           ) : (
             <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
