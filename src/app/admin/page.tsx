@@ -1,32 +1,52 @@
-// src/app/admin/page.tsx
+'use client'
 
+import { useQuery } from '@tanstack/react-query'
 import { Music2, Building2, BadgeCheck, Clock3 } from 'lucide-react'
 import { GrowthChart } from '@/components/admin/overview/GrowthChart'
 
-const stats = [
-  {
-    title: 'Artists',
-    value: '1,284',
-    icon: Music2,
-  },
-  {
-    title: 'Venues',
-    value: '148',
-    icon: Building2,
-  },
-  {
-    title: 'Pending Artist Approvals',
-    value: '23',
-    icon: BadgeCheck,
-  },
-  {
-    title: 'Pending Venue Approvals',
-    value: '11',
-    icon: Clock3,
-  },
-]
+interface AdminOverview {
+  totArtists: number
+  totVenues: number
+  totPendingArtist: number
+  totPendingVenue: number
+}
+
+async function fetchOverview(): Promise<AdminOverview> {
+  const res = await fetch('/api/admin/overview')
+  if (!res.ok) throw new Error('Failed to fetch overview')
+  return res.json()
+}
 
 export default function AdminOverviewPage() {
+  const { data, isLoading } = useQuery<AdminOverview>({
+    queryKey: ['admin-overview'],
+    queryFn: fetchOverview,
+    staleTime: 1000 * 60,
+  })
+
+  const stats = [
+    {
+      title: 'Artists',
+      value: isLoading ? '—' : String(data?.totArtists ?? 0),
+      icon: Music2,
+    },
+    {
+      title: 'Venues',
+      value: isLoading ? '—' : String(data?.totVenues ?? 0),
+      icon: Building2,
+    },
+    {
+      title: 'Pending Artist Approvals',
+      value: isLoading ? '—' : String(data?.totPendingArtist ?? 0),
+      icon: BadgeCheck,
+    },
+    {
+      title: 'Pending Venue Approvals',
+      value: isLoading ? '—' : String(data?.totPendingVenue ?? 0),
+      icon: Clock3,
+    },
+  ]
+
   return (
     <div className="space-y-10">
       {/* Header */}
@@ -67,18 +87,13 @@ export default function AdminOverviewPage() {
               borderColor: 'var(--border)',
             }}
           >
-            {/* subtle glow */}
             <div
               className="absolute -top-10 -right-10 w-24 h-24 rounded-full blur-2xl opacity-10"
-              style={{
-                backgroundColor: 'var(--gold)',
-              }}
+              style={{ backgroundColor: 'var(--gold)' }}
             />
 
             <div className="relative z-10 flex items-start justify-between">
-              {/* LEFT */}
               <div>
-                {/* label */}
                 <p
                   className="mb-1"
                   style={{
@@ -91,7 +106,6 @@ export default function AdminOverviewPage() {
                   {stat.title}
                 </p>
 
-                {/* number */}
                 <h2
                   style={{
                     fontFamily: 'var(--font-body)',
@@ -105,7 +119,6 @@ export default function AdminOverviewPage() {
                 </h2>
               </div>
 
-              {/* ICON */}
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{

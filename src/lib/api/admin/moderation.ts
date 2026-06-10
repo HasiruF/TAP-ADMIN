@@ -1,9 +1,14 @@
+import { api } from '@/lib/api/client'
+
 export async function fetchModerationQueue() {
-  const res = await fetch('/api/admin/moderation')
+  return api('/admin/moderation')
+}
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch moderation queue')
-  }
-
-  return res.json()
+export async function moderationAction(
+  contentModId: string,
+  action: 'approve' | 'reject'
+) {
+  return api(`/admin/moderation/${contentModId}/${action}`, {
+    method: 'POST',
+  })
 }

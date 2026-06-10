@@ -1,11 +1,11 @@
 'use client'
 
+import { useState } from 'react'
+import NextImage from 'next/image'
 import { Button } from '@/components/ui/button'
 import {
-  Ban,
   Shield,
   RefreshCw,
-  Globe,
   MapPin,
   Music2,
   Video,
@@ -14,6 +14,8 @@ import {
 } from 'lucide-react'
 import { ExternalLink } from 'lucide-react'
 import { useAdminArtist } from '@/hooks/queries/useAdminArtists'
+import { suspendArtist } from '@/lib/api/admin/artists'
+import { useRouter } from 'next/navigation'
 import { use } from 'react'
 export default function ArtistDetailPage({
   params,
@@ -21,8 +23,20 @@ export default function ArtistDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = use(params)
+  const router = useRouter()
+  const [busy, setBusy] = useState(false)
 
   const { data: artist, isLoading, error } = useAdminArtist(id)
+
+  async function handleSuspend() {
+    setBusy(true)
+    try {
+      await suspendArtist(id)
+      router.push('/admin/users')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   if (isLoading) {
     return <div className="p-6">Loading artist...</div>
@@ -32,7 +46,45 @@ export default function ArtistDetailPage({
     return <div className="text-center py-20">Artist not found</div>
   }
 
+  if (!artist.hasProfile) {
+    return (
+      <div className="p-6 space-y-4">
+        <p
+          style={{
+            color: 'var(--muted-foreground)',
+            fontSize: '11px',
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+          }}
+        >
+          Admin • Artist Inspection
+        </p>
+        <h1
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '40px',
+            fontWeight: 500,
+            color: 'var(--foreground)',
+          }}
+        >
+          No Profile Set Up
+        </h1>
+        <p style={{ color: 'var(--muted-foreground)' }}>
+          This artist has registered but has not completed their profile setup.
+        </p>
+        <p className="text-sm">
+          <strong>Account Status:</strong> {artist.accountStatus}
+        </p>
+      </div>
+    )
+  }
+
   const data = artist
+  const API_BASE = (
+    process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'
+  ).replace('/api/v1', '')
+  const resolveImg = (url: string) =>
+    url.startsWith('http') ? url : `${API_BASE}${url}`
   const isYouTubeUrl = (url: string) => {
     return /youtube\.com|youtu\.be/.test(url)
   }
@@ -92,24 +144,19 @@ export default function ArtistDetailPage({
                 <strong>Stage Name:</strong> {data.basicInfo.stageName}
               </p>
               <p>
-                <strong>Artist Type:</strong> {data.basicInfo.artistType}
+                <strong>Artist Type:</strong> {data.basicInfo.artistType ?? '-'}
               </p>
-
               <p>
-                <strong>Phone Number:</strong> {data.basicInfo.phoneNumber}
+                <strong>Phone:</strong> {data.basicInfo.phoneNumber ?? '-'}
               </p>
               <p className="flex items-center gap-2">
                 <MapPin size={14} style={{ color: 'var(--gold)' }} />
-                {typeof data.basicInfo.location === 'string'
-                  ? data.basicInfo.location
-                  : data.basicInfo.location.city}
+                {data.basicInfo.location?.city ?? '-'}
               </p>
 
               <p>
                 <strong>Location Regions:</strong>{' '}
-                {typeof data.basicInfo.location === 'string'
-                  ? '-'
-                  : data.basicInfo.location.regions.join(', ')}
+                {data.basicInfo.location?.regions.join(', ') || '-'}
               </p>
             </div>
 
@@ -126,11 +173,11 @@ export default function ArtistDetailPage({
               <h2 className="mb-4">Members</h2>
 
               <p className="text-sm">
-                Number of Members: {data.members.numberOfMembers}
+                Number of Members: {data.members.numberOfMembers ?? '-'}
               </p>
 
               <p className="text-sm">
-                Names: {data.members.memberNames.join(', ')}
+                Names: {data.members.memberNames.join(', ') || '-'}
               </p>
             </section>
           )}
@@ -139,7 +186,7 @@ export default function ArtistDetailPage({
               <h2 className="mb-4">Instruments</h2>
 
               <p className="text-sm">
-                {data.instruments.instruments.join(', ')}
+                {data.instruments.instruments.join(', ') || '-'}
               </p>
             </section>
           )}
@@ -169,11 +216,16 @@ export default function ArtistDetailPage({
             </div>
 
             <div className="text-sm space-y-1">
-              <p>Performance Type: {data.genres.performanceType}</p>
+              <p>Performance Type: {data.genres.performanceType ?? '-'}</p>
 
-              <p>Act Type: {data.genres.actType?.join(', ') || '-'}</p>
+              <p>
+                Act Type:{' '}
+                {data.genres.actType?.length
+                  ? data.genres.actType.join(', ')
+                  : '-'}
+              </p>
 
-              <p>Energy: {data.genres.energyLevel}</p>
+              <p>Energy: {data.genres.energyLevel ?? '-'}</p>
             </div>
           </section>
           {/* MEDIA */}
@@ -204,27 +256,32 @@ export default function ArtistDetailPage({
                 </div>
               )}
 
-            {/* Live Performances (NEW) */}
-            {data.media.livePerformance?.length > 0 && (
+            {/* Live Performances */}
+            {data.media.livePerformance.length > 0 && (
               <div className="space-y-3 mb-4">
                 <h3 className="text-sm font-medium">Live Performances</h3>
 
-                {data.media.livePerformance.map((lp: any) => (
-                  <div key={lp.id} className="text-sm flex items-center gap-2">
-                    <ExternalLink size={12} />
-                    <a href={lp.url} target="_blank" className="underline">
-                      {lp.name || lp.url}
-                    </a>
-                  </div>
-                ))}
+                {data.media.livePerformance.map(
+                  (lp: { id: string; url: string; name: string | null }) => (
+                    <div
+                      key={lp.id}
+                      className="text-sm flex items-center gap-2"
+                    >
+                      <ExternalLink size={12} />
+                      <a href={lp.url} target="_blank" className="underline">
+                        {lp.name || lp.url}
+                      </a>
+                    </div>
+                  )
+                )}
               </div>
             )}
             <div className="space-y-1 text-sm">
-              <p>Instagram: {data.media.socialMedia.instagram}</p>
-              <p>TikTok: {data.media.socialMedia.tiktok}</p>
-              <p>YouTube: {data.media.socialMedia.youtube}</p>
-              <p>Facebook: {data.media.socialMedia.facebook}</p>
-              <p>X: {data.media.socialMedia.x}</p>
+              <p>Instagram: {data.media.socialMedia.instagram ?? '-'}</p>
+              <p>TikTok: {data.media.socialMedia.tiktok ?? '-'}</p>
+              <p>YouTube: {data.media.socialMedia.youtube ?? '-'}</p>
+              <p>Facebook: {data.media.socialMedia.facebook ?? '-'}</p>
+              <p>X: {data.media.socialMedia.x ?? '-'}</p>
             </div>
           </section>
 
@@ -241,13 +298,17 @@ export default function ArtistDetailPage({
             </h2>
 
             <div className="space-y-2 text-sm">
-              {data.musicLinks.links.map(
-                (l: { id: string; platform: string; url: string }) => (
-                  <div key={l.id} className="flex items-center gap-2">
-                    <LinkIcon size={12} style={{ color: 'var(--gold)' }} />
-                    {l.platform}: {l.url}
-                  </div>
+              {data.musicLinks.links.length > 0 ? (
+                data.musicLinks.links.map(
+                  (l: { id: string; platform: string; url: string }) => (
+                    <div key={l.id} className="flex items-center gap-2">
+                      <LinkIcon size={12} style={{ color: 'var(--gold)' }} />
+                      {l.platform}: {l.url}
+                    </div>
+                  )
                 )
+              ) : (
+                <p className="text-muted-foreground">No music links</p>
               )}
             </div>
           </section>
@@ -256,18 +317,22 @@ export default function ArtistDetailPage({
           <section className="p-6 rounded-3xl border">
             <h2 className="mb-4">Booking</h2>
 
-            <p className="text-sm">Fee: {data.bookingInfo.performanceFee}</p>
-
             <p className="text-sm">
-              Availability: {data.bookingInfo.availability.join(', ')}
+              Fee:{' '}
+              {data.bookingInfo.performanceFee ??
+                `${data.bookingInfo.feeRange.min ?? '-'} – ${data.bookingInfo.feeRange.max ?? '-'} ${data.bookingInfo.feeRange.currency}`}
             </p>
 
             <p className="text-sm">
-              Payment: {data.bookingInfo.paymentPreferences}
+              Availability: {data.bookingInfo.availability.join(', ') || '-'}
             </p>
 
             <p className="text-sm">
-              Set Lengths: {data.bookingInfo.setLengths}
+              Payment: {data.bookingInfo.paymentPreferences ?? '-'}
+            </p>
+
+            <p className="text-sm">
+              Set Lengths: {data.bookingInfo.setLengths.join(', ') || '-'}
             </p>
           </section>
 
@@ -281,20 +346,11 @@ export default function ArtistDetailPage({
           >
             <h2 className="mb-4">Live Setup</h2>
 
-            <p className="text-sm">Type: {data.liveSetup.setupType}</p>
+            <p className="text-sm">Type: {data.liveSetup.setupType ?? '-'}</p>
             <p className="text-sm">
-              Equipment Provided: {data.liveSetup.equipmentProvided.join(', ')}
+              Equipment: {data.liveSetup.equipment.join(', ') || '-'}
             </p>
 
-            <p className="text-sm">
-              Equipment Required: {data.liveSetup.equipmentRequired.join(', ')}
-            </p>
-
-            <p className="text-sm">
-              Tech Rider Tags: {data.liveSetup.techRiderTags.join(', ') || '-'}
-            </p>
-
-            <p className="text-sm mt-2">{data.liveSetup.technicalNotes}</p>
             <p className="text-sm mt-2">{data.liveSetup.technicalNotes}</p>
           </section>
           {/*PAST GIGS*/}
@@ -303,28 +359,39 @@ export default function ArtistDetailPage({
               <h2 className="mb-4">Past Gigs</h2>
 
               <div className="space-y-4">
-                {data.pastGigs.map((gig: any) => (
-                  <div key={gig.id} className="text-sm border p-3 rounded-xl">
-                    <p>
-                      <strong>{gig.venueName}</strong>
-                    </p>
-                    <p>{gig.date}</p>
-
-                    {gig.media && (
-                      <img
-                        src={gig.media}
-                        alt="Venue image"
-                        className="mt-2 rounded-lg aspect-video object-cover"
-                      />
-                    )}
-
-                    {gig.testimonial && (
-                      <p className="mt-2 italic text-muted-foreground">
-                        &quot;{gig.testimonial}&quot;
+                {data.pastGigs.map(
+                  (gig: {
+                    id: string
+                    venueName: string
+                    date: string | null
+                    media: string | null
+                    testimonial: string | null
+                  }) => (
+                    <div key={gig.id} className="text-sm border p-3 rounded-xl">
+                      <p>
+                        <strong>{gig.venueName}</strong>
                       </p>
-                    )}
-                  </div>
-                ))}
+                      <p>{gig.date}</p>
+
+                      {gig.media && (
+                        <div className="relative mt-2 rounded-lg aspect-video overflow-hidden">
+                          <NextImage
+                            src={gig.media}
+                            alt="Venue image"
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      )}
+
+                      {gig.testimonial && (
+                        <p className="mt-2 italic text-muted-foreground">
+                          &quot;{gig.testimonial}&quot;
+                        </p>
+                      )}
+                    </div>
+                  )
+                )}
               </div>
             </section>
           )}
@@ -332,20 +399,35 @@ export default function ArtistDetailPage({
 
         {/* RIGHT — ADMIN ACTIONS */}
         <div className="space-y-6">
-          <Button
-            className="w-full"
-            onClick={() =>
-              window.open('https://civic-sauna-76601524.figma.site/', '_blank')
-            }
-            style={{
-              backgroundColor: 'var(--muted)',
-              color: 'var(--foreground)',
-              border: '1px solid var(--border)',
-            }}
-          >
-            <ExternalLink size={14} />
-            Show Preview
-          </Button>
+          <div className="space-y-1">
+            <Button
+              className="w-full"
+              disabled={!data.slug || data.approvalStatus !== 'APPROVED'}
+              onClick={() =>
+                window.open(
+                  `${process.env.NEXT_PUBLIC_PLATFORM_URL}/artists/${data.slug}`,
+                  '_blank'
+                )
+              }
+              style={{
+                backgroundColor: 'var(--muted)',
+                color: 'var(--foreground)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <ExternalLink size={14} />
+              Show Preview
+            </Button>
+            {data.approvalStatus !== 'APPROVED' && (
+              <p
+                className="text-center text-xs"
+                style={{ color: 'var(--muted-foreground)' }}
+              >
+                Profile status: {data.approvalStatus?.toLowerCase() ?? 'draft'}{' '}
+                — not yet public
+              </p>
+            )}
+          </div>
           <section
             className="p-6 rounded-3xl border"
             style={{
@@ -358,13 +440,15 @@ export default function ArtistDetailPage({
             <div className="space-y-3">
               <Button
                 className="w-full"
+                disabled={busy}
+                onClick={handleSuspend}
                 style={{
                   backgroundColor: 'var(--status-active-bg)',
                   color: 'var(--status-active-text)',
                 }}
               >
                 <Shield size={14} />
-                Suspend
+                {busy ? 'Suspending...' : 'Suspend'}
               </Button>
 
               <Button
@@ -396,13 +480,18 @@ export default function ArtistDetailPage({
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {data.media.images.length > 0 ? (
-            data.media.images.map((img: any, i: number) => (
-              <img
+            data.media.images.map((img: string, i: number) => (
+              <div
                 key={i}
-                src={img.url}
-                alt="image"
-                className="rounded-xl aspect-square object-cover"
-              />
+                className="relative rounded-xl aspect-square overflow-hidden"
+              >
+                <NextImage
+                  src={resolveImg(img)}
+                  alt="Artist photo"
+                  fill
+                  className="object-cover"
+                />
+              </div>
             ))
           ) : (
             <p className="text-sm text-muted-foreground">No images uploaded</p>

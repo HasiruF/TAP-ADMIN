@@ -1,9 +1,6 @@
-export async function fetchAdminLogs() {
-  const res = await fetch('/api/admin/logs')
+import { api } from '@/lib/api/client'
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch logs')
-  }
-
-  return res.json()
+export async function fetchAdminLogs(userId?: string) {
+  const query = userId ? `?userId=${userId}` : ''
+  return api(`/admin/logs${query}`)
 }
