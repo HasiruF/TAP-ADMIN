@@ -1,52 +1,37 @@
+// src/app/admin/page.tsx
 'use client'
-
-import { useQuery } from '@tanstack/react-query'
 import { Music2, Building2, BadgeCheck, Clock3 } from 'lucide-react'
 import { GrowthChart } from '@/components/admin/overview/GrowthChart'
-
-interface AdminOverview {
-  totArtists: number
-  totVenues: number
-  totPendingArtist: number
-  totPendingVenue: number
-}
-
-async function fetchOverview(): Promise<AdminOverview> {
-  const res = await fetch('/api/admin/overview')
-  if (!res.ok) throw new Error('Failed to fetch overview')
-  return res.json()
-}
+import { useAdminOverview } from '@/hooks/queries/useAdminOverview'
 
 export default function AdminOverviewPage() {
-  const { data, isLoading } = useQuery<AdminOverview>({
-    queryKey: ['admin-overview'],
-    queryFn: fetchOverview,
-    staleTime: 1000 * 60,
-  })
-
+  const { data, isLoading } = useAdminOverview()
   const stats = [
     {
       title: 'Artists',
-      value: isLoading ? '—' : String(data?.totArtists ?? 0),
+      value: isLoading ? '...' : (data?.totArtists?.toLocaleString() ?? '0'),
       icon: Music2,
     },
     {
       title: 'Venues',
-      value: isLoading ? '—' : String(data?.totVenues ?? 0),
+      value: isLoading ? '...' : (data?.totVenues?.toLocaleString() ?? '0'),
       icon: Building2,
     },
     {
       title: 'Pending Artist Approvals',
-      value: isLoading ? '—' : String(data?.totPendingArtist ?? 0),
+      value: isLoading
+        ? '...'
+        : (data?.totPendingArtist?.toLocaleString() ?? '0'),
       icon: BadgeCheck,
     },
     {
       title: 'Pending Venue Approvals',
-      value: isLoading ? '—' : String(data?.totPendingVenue ?? 0),
+      value: isLoading
+        ? '...'
+        : (data?.totPendingVenue?.toLocaleString() ?? '0'),
       icon: Clock3,
     },
   ]
-
   return (
     <div className="space-y-10">
       {/* Header */}

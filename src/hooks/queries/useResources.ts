@@ -3,7 +3,8 @@ import { fetchResources } from '@/lib/api/admin/resources'
 
 export function useResources() {
   return useQuery({
-    queryKey: ['admin-resources'],
+    queryKey: ['resources'],
     queryFn: fetchResources,
+    staleTime: 1000 * 60 * 5,
   })
 }

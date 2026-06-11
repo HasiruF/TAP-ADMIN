@@ -8,9 +8,11 @@ import { Button } from '@/components/ui/button'
 export default function SortableRow({
   item,
   onView,
+  onDelete,
 }: {
   item: any
   onView: (item: any) => void
+  onDelete: (id: string) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: item.id })
@@ -52,7 +54,10 @@ export default function SortableRow({
             View
           </Button>
 
-          <button className="text-red-400 flex items-center gap-1">
+          <button
+            onClick={() => onDelete(item.id)}
+            className="text-red-400 flex items-center gap-1"
+          >
             <Trash2 size={14} />
             Delete
           </button>

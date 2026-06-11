@@ -10,7 +10,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
-
+import { useUpdateResources } from '@/hooks/queries/useUpdateResources'
 import {
   arrayMove,
   SortableContext,
@@ -20,17 +20,30 @@ import { Resource } from '@/types/resource'
 import { resourcesMock } from '@/data_mock/resources'
 import { CreateResourceDialog } from '@/components/admin/resources/CreateResourceDialog'
 import { ViewResourceDialog } from '@/components/admin/resources/ViewResourceDialog'
-
+import { useUploadFile } from '@/hooks/queries/useUploadFiles'
 import SortableRow from './SortableRow'
 
 export default function ResourcesPage() {
   const { data: resources = [] } = useResources()
-
+  const { mutateAsync: uploadFile } = useUploadFile()
+  const { mutate: updateResources } = useUpdateResources()
   const [items, setItems] = useState<Resource[]>([])
   // this is needed for rearranging the order. need to sync local state with the query
   useEffect(() => {
+    if (!resources?.length) return
+
+    const sorted = [...resources].sort((a, b) => a.index - b.index)
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setItems(resources)
+    setItems((prev) => {
+      // prevent infinite loop
+      const same =
+        prev.length === sorted.length &&
+        prev.every((p, i) => p.id === sorted[i].id)
+
+      if (same) return prev
+
+      return sorted
+    })
   }, [resources])
   const [selectedResource, setSelectedResource] = useState<any>(null)
   const [open, setOpen] = useState(false)
@@ -39,6 +52,13 @@ export default function ResourcesPage() {
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   )
 
+  async function handleFileUpload(file?: File) {
+    if (!file) return null
+
+    const res = await uploadFile(file)
+    return res.file.path
+  }
+
   function handleDragEnd(event: any) {
     const { active, over } = event
     if (!over || active.id === over.id) return
@@ -46,7 +66,78 @@ export default function ResourcesPage() {
     setItems((prev) => {
       const oldIndex = prev.findIndex((i) => i.id === active.id)
       const newIndex = prev.findIndex((i) => i.id === over.id)
-      return arrayMove(prev, oldIndex, newIndex)
+
+      const newItems = arrayMove(prev, oldIndex, newIndex)
+
+      const payload = newItems.map((item, index) => ({
+        ...item,
+        index,
+      }))
+
+      // sync backend
+      updateResources(payload)
+
+      return newItems
+    })
+  }
+
+  function handleDelete(id: string) {
+    setItems((prev) => {
+      const newItems = prev.filter((i) => i.id !== id)
+
+      // sync with backend
+      updateResources(newItems)
+
+      return newItems
+    })
+  }
+
+  async function handleCreate(data: any) {
+    setItems((prev) => {
+      const newItem = {
+        id: crypto.randomUUID(),
+        index: prev.length,
+        type: data.type,
+        title: data.title,
+        description: data.description,
+        url: data.url,
+      }
+
+      const updated = [...prev, newItem]
+
+      ;(async () => {
+        let finalUrl = data.url
+
+        if (data.type === 'document' && data.pdfFile) {
+          const res = await uploadFile(data.pdfFile)
+          finalUrl = res.file.path
+
+          const fixed = updated.map((item) =>
+            item.id === newItem.id ? { ...item, url: finalUrl } : item
+          )
+
+          setItems(fixed)
+          updateResources(fixed)
+          return
+        }
+
+        updateResources(updated)
+      })()
+
+      return updated
+    })
+  }
+
+  function handleUpdate(id: string, updated: any) {
+    console.log('UPDATED OBJECT:', updated)
+
+    setItems((prev) => {
+      const newItems = prev.map((item) => {
+        return item.id === id ? { ...item, ...updated } : item
+      })
+
+      updateResources(newItems)
+      return newItems
     })
   }
 
@@ -64,7 +155,7 @@ export default function ResourcesPage() {
         </h1>
       </div>
 
-      <CreateResourceDialog />
+      <CreateResourceDialog onCreate={handleCreate} />
 
       {/* TABLE */}
       <DndContext
@@ -95,6 +186,7 @@ export default function ResourcesPage() {
                     setSelectedResource(res)
                     setOpen(true)
                   }}
+                  onDelete={handleDelete}
                 />
               ))}
             </tbody>
@@ -109,6 +201,7 @@ export default function ResourcesPage() {
           open={open}
           onOpenChange={setOpen}
           resource={selectedResource}
+          onSave={handleUpdate}
         />
       )}
     </div>

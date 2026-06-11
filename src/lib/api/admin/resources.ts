@@ -1,10 +1,9 @@
 import { api } from '@/lib/api/client'
 
-export async function fetchResources() {
+export function fetchResources() {
   return api('/admin/resources')
 }
-
-export async function updateResources(items: unknown[]) {
+export function updateResources(items: any[]) {
   return api('/admin/resources', {
     method: 'PUT',
     body: JSON.stringify({ items }),
