@@ -1,10 +1,14 @@
 'use client'
 
-import { useForm } from 'react-hook-form'
+import { useState } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { resourceSchema, ResourceInput } from '@/lib/schemas/resourceSchema'
+import { toResourceItemInput } from '@/types/resource'
+import { useResources, useUpdateResources } from '@/hooks/queries/useResources'
+import { uploadMedia } from '@/lib/api/media'
 
-import { Plus, Upload } from 'lucide-react'
+import { Plus, Upload, ImagePlus } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -14,7 +18,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { useWatch } from 'react-hook-form'
 import {
   Select,
   SelectContent,
@@ -27,12 +30,19 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
 export function CreateResourceDialog() {
+  const [open, setOpen] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const { data: resources = [] } = useResources()
+  const updateMutation = useUpdateResources()
+
   const {
     register,
     handleSubmit,
     setValue,
     control,
     watch,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<ResourceInput>({
     resolver: zodResolver(resourceSchema),
@@ -45,13 +55,61 @@ export function CreateResourceDialog() {
     control,
     name: 'type',
   })
-  const onSubmit = async (data: ResourceInput) => {
-    console.log('CREATE RESOURCE:', data)
-  }
   const pdfFile = watch('pdfFile')
+  const thumbnailFile = watch('thumbnailFile')
+
+  const onSubmit = async (data: ResourceInput) => {
+    setSubmitError(null)
+    try {
+      let url = 'url' in data && data.url ? data.url : ''
+
+      if (data.type === 'pdf') {
+        if (!(data.pdfFile instanceof File)) {
+          setSubmitError('Please upload a PDF file')
+          return
+        }
+        const media = await uploadMedia(data.pdfFile)
+        url = media.storageKey
+      }
+
+      let thumbnailUrl: string | undefined
+      if (data.thumbnailFile instanceof File) {
+        const media = await uploadMedia(data.thumbnailFile)
+        thumbnailUrl = media.storageKey
+      }
+
+      await updateMutation.mutateAsync([
+        ...resources.map(toResourceItemInput),
+        {
+          index: resources.length,
+          type: data.type,
+          title: data.title,
+          description: data.description,
+          url,
+          category: data.category,
+          thumbnailUrl,
+        },
+      ])
+
+      reset({ type: 'youtube' } as any)
+      setOpen(false)
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : 'Failed to create resource'
+      )
+    }
+  }
+
+  const handleOpenChange = (v: boolean) => {
+    setOpen(v)
+    if (!v) {
+      setSubmitError(null)
+      reset({ type: 'youtube' } as any)
+    }
+  }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
           style={{
@@ -148,7 +206,7 @@ export function CreateResourceDialog() {
                   <SelectContent>
                     <SelectItem value="youtube">YouTube</SelectItem>
                     <SelectItem value="website">Website</SelectItem>
-                    <SelectItem value="document">Document</SelectItem>
+                    <SelectItem value="pdf">Document</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -166,8 +224,31 @@ export function CreateResourceDialog() {
                   }}
                   {...register('title')}
                 />
+                {errors.title && (
+                  <p className="text-xs text-red-400">{errors.title.message}</p>
+                )}
               </div>
-              {errors.title && <p>{errors.title.message}</p>}
+
+              {/* CATEGORY */}
+              <div className="space-y-1">
+                <label className="text-sm">Category</label>
+
+                <Input
+                  className="h-12"
+                  placeholder="e.g. Artist Development, Legal & Rights"
+                  style={{
+                    backgroundColor: 'var(--muted)',
+                    borderColor: 'var(--border)',
+                  }}
+                  {...register('category')}
+                />
+                {errors.category && (
+                  <p className="text-xs text-red-400">
+                    {errors.category.message}
+                  </p>
+                )}
+              </div>
+
               {/* DESCRIPTION */}
               <div className="space-y-1">
                 <label className="text-sm">Description</label>
@@ -181,6 +262,11 @@ export function CreateResourceDialog() {
                     borderColor: 'var(--border)',
                   }}
                 />
+                {errors.description && (
+                  <p className="text-xs text-red-400">
+                    {errors.description.message}
+                  </p>
+                )}
               </div>
 
               {/* URL */}
@@ -199,11 +285,14 @@ export function CreateResourceDialog() {
                       borderColor: 'var(--border)',
                     }}
                   />
+                  {'url' in errors && errors.url && (
+                    <p className="text-xs text-red-400">{errors.url.message}</p>
+                  )}
                 </div>
               )}
 
               {/* PDF */}
-              {type === 'document' && (
+              {type === 'pdf' && (
                 <div className="space-y-1">
                   <label className="text-sm">Upload PDF</label>
 
@@ -249,9 +338,68 @@ export function CreateResourceDialog() {
                   </label>
                 </div>
               )}
+
+              {/* THUMBNAIL (optional — youtube thumbnails are auto-derived) */}
+              {(type === 'website' || type === 'pdf') && (
+                <div className="space-y-1">
+                  <label className="text-sm">Thumbnail (optional)</label>
+
+                  <label
+                    className="border rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition"
+                    style={{ borderColor: 'var(--border)' }}
+                  >
+                    <ImagePlus
+                      size={24}
+                      style={{
+                        color: 'var(--gold)',
+                        marginBottom: '8px',
+                      }}
+                    />
+
+                    <p className="text-sm">
+                      {thumbnailFile?.name ?? 'Click to upload thumbnail image'}
+                    </p>
+
+                    <p
+                      className="text-xs mt-2"
+                      style={{
+                        color: 'var(--muted-foreground)',
+                      }}
+                    >
+                      Shown on the resource card. Falls back to an icon if
+                      omitted.
+                    </p>
+
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          setValue('thumbnailFile', file, {
+                            shouldDirty: true,
+                          })
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              )}
+
+              {submitError && (
+                <p className="text-sm text-red-400">{submitError}</p>
+              )}
+
               {/* ACTIONS */}
               <div className="flex justify-end gap-2 pt-6">
-                <Button variant="outline">Cancel</Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleOpenChange(false)}
+                >
+                  Cancel
+                </Button>
 
                 <Button
                   type="submit"
@@ -261,7 +409,7 @@ export function CreateResourceDialog() {
                     color: 'black',
                   }}
                 >
-                  Create Resource
+                  {isSubmitting ? 'Creating…' : 'Create Resource'}
                 </Button>
               </div>
             </div>

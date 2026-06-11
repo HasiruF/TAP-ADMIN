@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useResources } from '@/hooks/queries/useResources'
+import { useResources, useUpdateResources } from '@/hooks/queries/useResources'
 
 import {
   DndContext,
@@ -16,15 +16,15 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { Resource } from '@/types/resource'
-import { resourcesMock } from '@/data_mock/resources'
+import { Resource, toResourceItemInput } from '@/types/resource'
 import { CreateResourceDialog } from '@/components/admin/resources/CreateResourceDialog'
 import { ViewResourceDialog } from '@/components/admin/resources/ViewResourceDialog'
 
 import SortableRow from './SortableRow'
 
 export default function ResourcesPage() {
-  const { data: resources = [] } = useResources()
+  const { data: resources = [], isLoading } = useResources()
+  const updateMutation = useUpdateResources()
 
   const [items, setItems] = useState<Resource[]>([])
   // this is needed for rearranging the order. need to sync local state with the query
@@ -32,12 +32,18 @@ export default function ResourcesPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setItems(resources)
   }, [resources])
-  const [selectedResource, setSelectedResource] = useState<any>(null)
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(
+    null
+  )
   const [open, setOpen] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   )
+
+  function persistOrder(next: Resource[]) {
+    updateMutation.mutate(next.map(toResourceItemInput))
+  }
 
   function handleDragEnd(event: any) {
     const { active, over } = event
@@ -46,8 +52,17 @@ export default function ResourcesPage() {
     setItems((prev) => {
       const oldIndex = prev.findIndex((i) => i.id === active.id)
       const newIndex = prev.findIndex((i) => i.id === over.id)
-      return arrayMove(prev, oldIndex, newIndex)
+      const next = arrayMove(prev, oldIndex, newIndex)
+      persistOrder(next)
+      return next
     })
+  }
+
+  function handleDelete(resource: Resource) {
+    if (!window.confirm(`Delete "${resource.title}"?`)) return
+    const next = items.filter((i) => i.id !== resource.id)
+    setItems(next)
+    persistOrder(next)
   }
 
   return (
@@ -95,8 +110,19 @@ export default function ResourcesPage() {
                     setSelectedResource(res)
                     setOpen(true)
                   }}
+                  onDelete={handleDelete}
                 />
               ))}
+              {!isLoading && items.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="p-8 text-center text-muted-foreground"
+                  >
+                    No resources yet. Create the first one above.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </SortableContext>
@@ -105,7 +131,7 @@ export default function ResourcesPage() {
       {/* GLOBAL DIALOG */}
       {selectedResource && (
         <ViewResourceDialog
-          key={selectedResource?.id}
+          key={selectedResource.id}
           open={open}
           onOpenChange={setOpen}
           resource={selectedResource}

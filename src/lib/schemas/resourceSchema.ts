@@ -1,25 +1,32 @@
 import { z } from 'zod'
 
+const baseFields = {
+  title: z.string().min(2),
+  description: z.string().min(5),
+  category: z.string().min(2, 'Category is required'),
+  // optional thumbnail image, validated manually (File)
+  thumbnailFile: z.any().optional(),
+}
+
 export const resourceSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('youtube'),
-    title: z.string().min(2),
-    description: z.string().min(5),
+    ...baseFields,
     url: z.url(),
   }),
 
   z.object({
     type: z.literal('website'),
-    title: z.string().min(2),
-    description: z.string().min(5),
+    ...baseFields,
     url: z.url(),
   }),
 
   z.object({
-    type: z.literal('document'),
-    title: z.string().min(2),
-    description: z.string().min(5),
-    pdfFile: z.any(), // file validation manual
+    type: z.literal('pdf'),
+    ...baseFields,
+    // existing file URL when editing; new uploads validated manually
+    url: z.string().optional(),
+    pdfFile: z.any().optional(),
   }),
 ])
 
