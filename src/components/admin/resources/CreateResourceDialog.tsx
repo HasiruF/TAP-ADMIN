@@ -50,6 +50,16 @@ export function CreateResourceDialog() {
       type: 'youtube',
     } as any,
   })
+  const [open, setOpen] = useState(false)
+  const handleClose = () => {
+    reset({
+      type: 'youtube',
+      title: '',
+      description: '',
+      url: '',
+    })
+    setOpen(false)
+  }
 
   const type = useWatch({
     control,

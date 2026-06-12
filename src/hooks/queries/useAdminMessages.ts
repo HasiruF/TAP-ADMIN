@@ -1,10 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchAdminMessages } from '@/lib/api/admin/messages'
-import { Conversation } from '@/types/conversation'
+import {
+  fetchAdminConversations,
+  ConversationQuery,
+} from '@/lib/api/admin/messages'
 
-export function useAdminMessages() {
-  return useQuery<Conversation[]>({
-    queryKey: ['admin-messages'],
-    queryFn: fetchAdminMessages,
+export function useAdminMessages(filters: ConversationQuery = {}) {
+  return useQuery({
+    queryKey: ['admin-conversations', filters], // 🔥 critical
+    queryFn: () => fetchAdminConversations(filters),
+    staleTime: 1000 * 60 * 2,
   })
 }

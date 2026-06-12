@@ -33,6 +33,7 @@ export function ViewResourceDialog({
   open,
   onOpenChange,
   resource,
+  onSave,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void

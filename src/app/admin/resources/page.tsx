@@ -10,7 +10,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
-
+import { useUpdateResources } from '@/hooks/queries/useUpdateResources'
 import {
   arrayMove,
   SortableContext,
@@ -19,7 +19,7 @@ import {
 import { Resource, toResourceItemInput } from '@/types/resource'
 import { CreateResourceDialog } from '@/components/admin/resources/CreateResourceDialog'
 import { ViewResourceDialog } from '@/components/admin/resources/ViewResourceDialog'
-
+import { useUploadFile } from '@/hooks/queries/useUploadFiles'
 import SortableRow from './SortableRow'
 
 export default function ResourcesPage() {
@@ -29,8 +29,20 @@ export default function ResourcesPage() {
   const [items, setItems] = useState<Resource[]>([])
   // this is needed for rearranging the order. need to sync local state with the query
   useEffect(() => {
+    if (!resources?.length) return
+
+    const sorted = [...resources].sort((a, b) => a.index - b.index)
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setItems(resources)
+    setItems((prev) => {
+      // prevent infinite loop
+      const same =
+        prev.length === sorted.length &&
+        prev.every((p, i) => p.id === sorted[i].id)
+
+      if (same) return prev
+
+      return sorted
+    })
   }, [resources])
   const [selectedResource, setSelectedResource] = useState<Resource | null>(
     null
@@ -79,7 +91,7 @@ export default function ResourcesPage() {
         </h1>
       </div>
 
-      <CreateResourceDialog />
+      <CreateResourceDialog onCreate={handleCreate} />
 
       {/* TABLE */}
       <DndContext
@@ -135,6 +147,7 @@ export default function ResourcesPage() {
           open={open}
           onOpenChange={setOpen}
           resource={selectedResource}
+          onSave={handleUpdate}
         />
       )}
     </div>
