@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useResources } from '@/hooks/queries/useResources'
+import { useResources, useUpdateResources } from '@/hooks/queries/useResources'
 
 import {
   DndContext,
@@ -16,17 +16,16 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { Resource } from '@/types/resource'
-import { resourcesMock } from '@/data_mock/resources'
+import { Resource, toResourceItemInput } from '@/types/resource'
 import { CreateResourceDialog } from '@/components/admin/resources/CreateResourceDialog'
 import { ViewResourceDialog } from '@/components/admin/resources/ViewResourceDialog'
 import { useUploadFile } from '@/hooks/queries/useUploadFiles'
 import SortableRow from './SortableRow'
 
 export default function ResourcesPage() {
-  const { data: resources = [] } = useResources()
-  const { mutateAsync: uploadFile } = useUploadFile()
-  const { mutate: updateResources } = useUpdateResources()
+  const { data: resources = [], isLoading } = useResources()
+  const updateMutation = useUpdateResources()
+
   const [items, setItems] = useState<Resource[]>([])
   // this is needed for rearranging the order. need to sync local state with the query
   useEffect(() => {
@@ -45,18 +44,17 @@ export default function ResourcesPage() {
       return sorted
     })
   }, [resources])
-  const [selectedResource, setSelectedResource] = useState<any>(null)
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(
+    null
+  )
   const [open, setOpen] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   )
 
-  async function handleFileUpload(file?: File) {
-    if (!file) return null
-
-    const res = await uploadFile(file)
-    return res.file.path
+  function persistOrder(next: Resource[]) {
+    updateMutation.mutate(next.map(toResourceItemInput))
   }
 
   function handleDragEnd(event: any) {
@@ -66,79 +64,17 @@ export default function ResourcesPage() {
     setItems((prev) => {
       const oldIndex = prev.findIndex((i) => i.id === active.id)
       const newIndex = prev.findIndex((i) => i.id === over.id)
-
-      const newItems = arrayMove(prev, oldIndex, newIndex)
-
-      const payload = newItems.map((item, index) => ({
-        ...item,
-        index,
-      }))
-
-      // sync backend
-      updateResources(payload)
-
-      return newItems
+      const next = arrayMove(prev, oldIndex, newIndex)
+      persistOrder(next)
+      return next
     })
   }
 
-  function handleDelete(id: string) {
-    setItems((prev) => {
-      const newItems = prev.filter((i) => i.id !== id)
-
-      // sync with backend
-      updateResources(newItems)
-
-      return newItems
-    })
-  }
-
-  async function handleCreate(data: any) {
-    setItems((prev) => {
-      const newItem = {
-        id: crypto.randomUUID(),
-        index: prev.length,
-        type: data.type,
-        title: data.title,
-        description: data.description,
-        url: data.url,
-      }
-
-      const updated = [...prev, newItem]
-
-      ;(async () => {
-        let finalUrl = data.url
-
-        if (data.type === 'document' && data.pdfFile) {
-          const res = await uploadFile(data.pdfFile)
-          finalUrl = res.file.path
-
-          const fixed = updated.map((item) =>
-            item.id === newItem.id ? { ...item, url: finalUrl } : item
-          )
-
-          setItems(fixed)
-          updateResources(fixed)
-          return
-        }
-
-        updateResources(updated)
-      })()
-
-      return updated
-    })
-  }
-
-  function handleUpdate(id: string, updated: any) {
-    console.log('UPDATED OBJECT:', updated)
-
-    setItems((prev) => {
-      const newItems = prev.map((item) => {
-        return item.id === id ? { ...item, ...updated } : item
-      })
-
-      updateResources(newItems)
-      return newItems
-    })
+  function handleDelete(resource: Resource) {
+    if (!window.confirm(`Delete "${resource.title}"?`)) return
+    const next = items.filter((i) => i.id !== resource.id)
+    setItems(next)
+    persistOrder(next)
   }
 
   return (
@@ -189,6 +125,16 @@ export default function ResourcesPage() {
                   onDelete={handleDelete}
                 />
               ))}
+              {!isLoading && items.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="p-8 text-center text-muted-foreground"
+                  >
+                    No resources yet. Create the first one above.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </SortableContext>
@@ -197,7 +143,7 @@ export default function ResourcesPage() {
       {/* GLOBAL DIALOG */}
       {selectedResource && (
         <ViewResourceDialog
-          key={selectedResource?.id}
+          key={selectedResource.id}
           open={open}
           onOpenChange={setOpen}
           resource={selectedResource}

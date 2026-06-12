@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Select,
   SelectContent,
@@ -20,11 +20,14 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
-import { Resource } from '@/types/resource'
+import { Resource, toResourceItemInput } from '@/types/resource'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import { resourceSchema, ResourceInput } from '@/lib/schemas/resourceSchema'
+import { useResources, useUpdateResources } from '@/hooks/queries/useResources'
+import { uploadMedia } from '@/lib/api/media'
+import { Upload, ImagePlus } from 'lucide-react'
 
 export function ViewResourceDialog({
   open,
@@ -34,17 +37,34 @@ export function ViewResourceDialog({
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
-  resource: Resource & ResourceInput
-  onSave: (id: string, data: ResourceInput) => void
+  resource: Resource
 }) {
-  const { register, watch, handleSubmit, setValue } = useForm<ResourceInput>({
+  const { data: resources = [] } = useResources()
+  const updateMutation = useUpdateResources()
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const {
+    register,
+    watch,
+    handleSubmit,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<ResourceInput>({
     resolver: zodResolver(resourceSchema),
-    defaultValues: resource,
+    defaultValues: {
+      type: resource.type,
+      title: resource.title,
+      description: resource.description ?? '',
+      category: resource.category ?? '',
+      url: resource.url,
+    } as any,
   })
 
   const type = watch('type')
   const url = watch('url')
   const title = watch('title')
+  const pdfFile = watch('pdfFile')
+  const thumbnailFile = watch('thumbnailFile')
 
   const embed = useMemo(() => {
     if (type !== 'youtube' || !url) return null
@@ -57,10 +77,45 @@ export function ViewResourceDialog({
   }, [type, url])
 
   const onSubmit = async (data: ResourceInput) => {
-    await onSave(resource.id, data)
+    setSubmitError(null)
+    try {
+      let nextUrl = 'url' in data && data.url ? data.url : resource.url
 
-    onOpenChange(false)
+      if (data.type === 'pdf' && data.pdfFile instanceof File) {
+        const media = await uploadMedia(data.pdfFile)
+        nextUrl = media.storageKey
+      }
+
+      let thumbnailUrl = resource.thumbnailUrl ?? undefined
+      if (data.thumbnailFile instanceof File) {
+        const media = await uploadMedia(data.thumbnailFile)
+        thumbnailUrl = media.storageKey
+      }
+
+      const items = resources.map((r, i) =>
+        r.id === resource.id
+          ? {
+              id: r.id,
+              index: i,
+              type: data.type,
+              title: data.title,
+              description: data.description,
+              url: nextUrl,
+              category: data.category,
+              thumbnailUrl,
+            }
+          : toResourceItemInput(r, i)
+      )
+
+      await updateMutation.mutateAsync(items)
+      onOpenChange(false)
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : 'Failed to save changes'
+      )
+    }
   }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -97,7 +152,7 @@ export function ViewResourceDialog({
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="px-10 py-10 grid grid-cols-2 gap-10"
+          className="px-10 py-10 grid grid-cols-2 gap-10 max-h-[70vh] overflow-y-auto"
         >
           {/* LEFT - EDIT FORM */}
           <div className="space-y-8">
@@ -122,7 +177,7 @@ export function ViewResourceDialog({
                 <SelectContent>
                   <SelectItem value="youtube">YouTube</SelectItem>
                   <SelectItem value="website">Website</SelectItem>
-                  <SelectItem value="document">Document</SelectItem>
+                  <SelectItem value="pdf">Document</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -139,6 +194,29 @@ export function ViewResourceDialog({
                   borderColor: 'var(--border)',
                 }}
               />
+              {errors.title && (
+                <p className="text-xs text-red-400">{errors.title.message}</p>
+              )}
+            </div>
+
+            {/* CATEGORY */}
+            <div className="space-y-2">
+              <label className="text-sm">Category</label>
+
+              <Input
+                className="h-12"
+                placeholder="e.g. Artist Development, Legal & Rights"
+                {...register('category')}
+                style={{
+                  backgroundColor: 'var(--muted)',
+                  borderColor: 'var(--border)',
+                }}
+              />
+              {errors.category && (
+                <p className="text-xs text-red-400">
+                  {errors.category.message}
+                </p>
+              )}
             </div>
 
             {/* DESCRIPTION */}
@@ -153,6 +231,11 @@ export function ViewResourceDialog({
                   borderColor: 'var(--border)',
                 }}
               />
+              {errors.description && (
+                <p className="text-xs text-red-400">
+                  {errors.description.message}
+                </p>
+              )}
             </div>
 
             {/* URL */}
@@ -168,27 +251,111 @@ export function ViewResourceDialog({
                     borderColor: 'var(--border)',
                   }}
                 />
+                {'url' in errors && errors.url && (
+                  <p className="text-xs text-red-400">{errors.url.message}</p>
+                )}
               </div>
+            )}
+
+            {/* PDF REPLACE */}
+            {type === 'pdf' && (
+              <div className="space-y-2">
+                <label className="text-sm">PDF File</label>
+
+                <label
+                  className="border rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition"
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  <Upload
+                    size={24}
+                    style={{ color: 'var(--gold)', marginBottom: '8px' }}
+                  />
+
+                  <p className="text-sm">
+                    {pdfFile?.name ?? 'Click to replace PDF'}
+                  </p>
+
+                  <p
+                    className="text-xs mt-2"
+                    style={{ color: 'var(--muted-foreground)' }}
+                  >
+                    Leave empty to keep the current file
+                  </p>
+
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        setValue('pdfFile', file, { shouldDirty: true })
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            )}
+
+            {/* THUMBNAIL REPLACE */}
+            {(type === 'website' || type === 'pdf') && (
+              <div className="space-y-2">
+                <label className="text-sm">Thumbnail (optional)</label>
+
+                <label
+                  className="border rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition"
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  <ImagePlus
+                    size={24}
+                    style={{ color: 'var(--gold)', marginBottom: '8px' }}
+                  />
+
+                  <p className="text-sm">
+                    {thumbnailFile?.name ??
+                      (resource.thumbnailUrl
+                        ? 'Click to replace thumbnail'
+                        : 'Click to upload thumbnail image')}
+                  </p>
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        setValue('thumbnailFile', file, { shouldDirty: true })
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            )}
+
+            {submitError && (
+              <p className="text-sm text-red-400">{submitError}</p>
             )}
 
             {/* ACTIONS */}
             <div className="flex justify-end gap-4 pt-4">
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                type="button"
               >
                 Close
               </Button>
 
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 style={{
                   backgroundColor: 'var(--gold)',
                   color: 'black',
                 }}
               >
-                Save Changes
+                {isSubmitting ? 'Saving…' : 'Save Changes'}
               </Button>
             </div>
           </div>
@@ -228,17 +395,17 @@ export function ViewResourceDialog({
             )}
 
             {/* PDF */}
-            {type === 'document' && (
+            {type === 'pdf' && (
               <div
                 className="p-6 rounded-2xl border text-center"
                 style={{ borderColor: 'var(--border)' }}
               >
                 <p className="text-sm">PDF Document</p>
                 <p
-                  className="text-xs mt-2"
+                  className="text-xs mt-2 break-all"
                   style={{ color: 'var(--muted-foreground)' }}
                 >
-                  {'Pdf File'}
+                  {pdfFile?.name ?? resource.url}
                 </p>
               </div>
             )}

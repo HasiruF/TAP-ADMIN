@@ -4,15 +4,22 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Resource } from '@/types/resource'
+
+const TYPE_LABELS: Record<Resource['type'], string> = {
+  youtube: 'YouTube',
+  website: 'Website',
+  pdf: 'Document',
+}
 
 export default function SortableRow({
   item,
   onView,
   onDelete,
 }: {
-  item: any
-  onView: (item: any) => void
-  onDelete: (id: string) => void
+  item: Resource
+  onView: (item: Resource) => void
+  onDelete: (item: Resource) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: item.id })
@@ -32,7 +39,7 @@ export default function SortableRow({
       </td>
 
       {/* TYPE */}
-      <td className="p-3 capitalize">{item.type}</td>
+      <td className="p-3">{TYPE_LABELS[item.type] ?? item.type}</td>
 
       {/* TITLE */}
       <td className="p-3">
@@ -43,20 +50,14 @@ export default function SortableRow({
       {/* ACTIONS */}
       <td className="p-3 text-right">
         <div className="flex justify-end gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              console.log('ROW CLICK:', item.id, item.title)
-              onView(item)
-            }}
-          >
+          <Button size="sm" variant="outline" onClick={() => onView(item)}>
             View
           </Button>
 
           <button
-            onClick={() => onDelete(item.id)}
+            type="button"
             className="text-red-400 flex items-center gap-1"
+            onClick={() => onDelete(item)}
           >
             <Trash2 size={14} />
             Delete
