@@ -29,7 +29,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
-export function CreateResourceDialog() {
+type Props = {
+  onSuccess?: () => any
+}
+
+export function CreateResourceDialog({ onSuccess }: Props) {
   const [open, setOpen] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -50,7 +54,6 @@ export function CreateResourceDialog() {
       type: 'youtube',
     } as any,
   })
-  const [open, setOpen] = useState(false)
   const handleClose = () => {
     reset({
       type: 'youtube',
@@ -100,7 +103,7 @@ export function CreateResourceDialog() {
           thumbnailUrl,
         },
       ])
-
+      await onSuccess?.()
       reset({ type: 'youtube' } as any)
       setOpen(false)
     } catch (err) {

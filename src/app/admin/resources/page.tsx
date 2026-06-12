@@ -10,7 +10,6 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
-import { useUpdateResources } from '@/hooks/queries/useUpdateResources'
 import {
   arrayMove,
   SortableContext,
@@ -23,7 +22,7 @@ import { useUploadFile } from '@/hooks/queries/useUploadFiles'
 import SortableRow from './SortableRow'
 
 export default function ResourcesPage() {
-  const { data: resources = [], isLoading } = useResources()
+  const { data: resources = [], isLoading, refetch } = useResources()
   const updateMutation = useUpdateResources()
 
   const [items, setItems] = useState<Resource[]>([])
@@ -91,7 +90,7 @@ export default function ResourcesPage() {
         </h1>
       </div>
 
-      <CreateResourceDialog onCreate={handleCreate} />
+      <CreateResourceDialog onSuccess={refetch} />
 
       {/* TABLE */}
       <DndContext
@@ -147,7 +146,7 @@ export default function ResourcesPage() {
           open={open}
           onOpenChange={setOpen}
           resource={selectedResource}
-          onSave={handleUpdate}
+          onSuccess={refetch}
         />
       )}
     </div>

@@ -29,16 +29,20 @@ import { useResources, useUpdateResources } from '@/hooks/queries/useResources'
 import { uploadMedia } from '@/lib/api/media'
 import { Upload, ImagePlus } from 'lucide-react'
 
+type Props = {
+  onSuccess?: () => any
+}
+
 export function ViewResourceDialog({
   open,
   onOpenChange,
   resource,
-  onSave,
+  onSuccess,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
   resource: Resource
-}) {
+} & Props) {
   const { data: resources = [] } = useResources()
   const updateMutation = useUpdateResources()
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -108,6 +112,8 @@ export function ViewResourceDialog({
       )
 
       await updateMutation.mutateAsync(items)
+
+      await onSuccess?.()
       onOpenChange(false)
     } catch (err) {
       setSubmitError(
