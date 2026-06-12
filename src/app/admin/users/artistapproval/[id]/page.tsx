@@ -165,13 +165,13 @@ export default function ArtistApprovalPage({
                 <MapPin size={14} style={{ color: 'var(--gold)' }} />
                 {typeof data.basicInfo.location === 'string'
                   ? data.basicInfo.location
-                  : data.basicInfo.location.city}
+                  : (data.basicInfo.location?.city ?? '-')}
               </p>
               <p>
                 <strong>Location Regions:</strong>{' '}
                 {typeof data.basicInfo.location === 'string'
                   ? '-'
-                  : data.basicInfo.location.regions.join(', ') || '-'}
+                  : data.basicInfo.location?.regions.join(', ') || '-'}
               </p>
             </div>
             <div
@@ -267,7 +267,7 @@ export default function ArtistApprovalPage({
                   <div key={lp.id} className="text-sm flex items-center gap-2">
                     <ExternalLink size={12} />
                     <a href={lp.url} target="_blank" className="underline">
-                      {lp.title || lp.url}
+                      {lp.name || lp.url}
                     </a>
                   </div>
                 ))}
@@ -294,25 +294,17 @@ export default function ArtistApprovalPage({
               <Music2 size={16} /> Music Links
             </h2>
             <div className="space-y-2 text-sm">
-              {data.musicLinks.links.map(
-                (l: {
-                  id: string
-                  title: string
-                  releaseType: string
-                  links: Array<{ platform: string; url: string }>
-                }) => (
-                  <div key={l.id} className="mb-2">
-                    <p className="font-medium">
-                      {l.title} ({l.releaseType})
-                    </p>
-                    {l.links.map((link, i) => (
-                      <div key={i} className="flex items-center gap-2 ml-4">
-                        <LinkIcon size={12} style={{ color: 'var(--gold)' }} />
-                        {link.platform}: {link.url}
-                      </div>
-                    ))}
-                  </div>
+              {data.musicLinks.links.length > 0 ? (
+                data.musicLinks.links.map(
+                  (l: { id: string; platform: string; url: string }) => (
+                    <div key={l.id} className="flex items-center gap-2">
+                      <LinkIcon size={12} style={{ color: 'var(--gold)' }} />
+                      {l.platform}: {l.url}
+                    </div>
+                  )
                 )
+              ) : (
+                <p className="text-muted-foreground">No music links</p>
               )}
             </div>
           </section>
