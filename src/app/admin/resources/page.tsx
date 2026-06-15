@@ -29,7 +29,11 @@ export default function ResourcesPage() {
   // this is needed for rearranging the order. need to sync local state with the query
   useEffect(() => {
     if (!resources?.length) return
-
+    console.log('resources changed, length:', resources.length)
+    console.log(
+      'resources ids:',
+      resources.map((r) => r.id)
+    )
     const sorted = [...resources].sort((a, b) => a.index - b.index)
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setItems((prev) => {
@@ -59,14 +63,20 @@ export default function ResourcesPage() {
   function handleDragEnd(event: any) {
     const { active, over } = event
     if (!over || active.id === over.id) return
-
+    let next: Resource[] = []
     setItems((prev) => {
+      console.log('resources changed, length:', resources.length)
+      console.log(
+        'resources ids:',
+        resources.map((r) => r.id)
+      )
       const oldIndex = prev.findIndex((i) => i.id === active.id)
       const newIndex = prev.findIndex((i) => i.id === over.id)
-      const next = arrayMove(prev, oldIndex, newIndex)
-      persistOrder(next)
+      next = arrayMove(prev, oldIndex, newIndex)
+
       return next
     })
+    persistOrder(next)
   }
 
   function handleDelete(resource: Resource) {
