@@ -356,12 +356,20 @@ export default function ArtistApprovalPage({
                     <p>{gig.date}</p>
                     {gig.media && (
                       <div className="relative mt-2 rounded-lg aspect-video overflow-hidden">
-                        <NextImage
-                          src={gig.media}
-                          alt="Venue image"
-                          fill
-                          className="object-cover"
-                        />
+                        {/\.(mp4|webm|mov|ogg)(\?|$)/i.test(gig.media) ? (
+                          <video
+                            src={resolveImg(gig.media)}
+                            controls
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                        ) : (
+                          <NextImage
+                            src={resolveImg(gig.media)}
+                            alt="Venue image"
+                            fill
+                            className="object-cover"
+                          />
+                        )}
                       </div>
                     )}
                     {gig.testimonial && (
