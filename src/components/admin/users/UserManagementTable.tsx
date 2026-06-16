@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getAdminUserRoute } from '@/utils/AdminRoutes'
 import { getAdminLogRoute } from '@/utils/AdminRoutes'
 import { Ban, ShieldMinus, ShieldCheck, Check } from 'lucide-react'
@@ -81,16 +81,66 @@ const statusOptions = [
   { label: 'Banned', value: 'banned' },
 ]
 
+// Persist the User Management filters across navigation (e.g. going into a
+// user/venue detail page and coming back) using sessionStorage.
+const FILTERS_STORAGE_KEY = 'user-management-filters'
+
+type StoredFilters = {
+  search: string
+  filter: string
+  roleFilter: string
+  statusFilter: string
+  currentPage: number
+}
+
+function loadStoredFilters(): Partial<StoredFilters> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const raw = window.sessionStorage.getItem(FILTERS_STORAGE_KEY)
+    return raw ? (JSON.parse(raw) as Partial<StoredFilters>) : {}
+  } catch {
+    return {}
+  }
+}
+
 export function UserManagementTable() {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState('name')
-  const [roleFilter, setRoleFilter] = useState('artist')
-  const [statusFilter, setStatusFilter] = useState('all')
+
+  const [search, setSearch] = useState(() => loadStoredFilters().search ?? '')
+  const [filter, setFilter] = useState(
+    () => loadStoredFilters().filter ?? 'name'
+  )
+  const [roleFilter, setRoleFilter] = useState(
+    () => loadStoredFilters().roleFilter ?? 'artist'
+  )
+  const [statusFilter, setStatusFilter] = useState(
+    () => loadStoredFilters().statusFilter ?? 'all'
+  )
   const [actionBusy, setActionBusy] = useState<string | null>(null)
 
-  const [currentPage, setCurrentPage] = useState(1)
+  const [currentPage, setCurrentPage] = useState(
+    () => loadStoredFilters().currentPage ?? 1
+  )
+
+  // Persist filters whenever they change so they survive remounts.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      window.sessionStorage.setItem(
+        FILTERS_STORAGE_KEY,
+        JSON.stringify({
+          search,
+          filter,
+          roleFilter,
+          statusFilter,
+          currentPage,
+        })
+      )
+    } catch {
+      /* ignore persistence errors */
+    }
+  }, [search, filter, roleFilter, statusFilter, currentPage])
 
   // Role filter is passed to the backend so pagination reflects the correct role
   const { data, isLoading, error } = useAdminUsers(currentPage, roleFilter)
