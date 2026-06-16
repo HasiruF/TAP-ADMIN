@@ -19,3 +19,10 @@ export function unsuspendUser(userId: string) {
     body: JSON.stringify({ id: userId }),
   })
 }
+
+export function banUser(userId: string, reason?: string) {
+  return api('/admin/user/ban', {
+    method: 'POST',
+    body: JSON.stringify({ id: userId, ...(reason ? { reason } : {}) }),
+  })
+}

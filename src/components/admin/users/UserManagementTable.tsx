@@ -28,7 +28,7 @@ import { useAdminUsers } from '@/hooks/queries/useAdminUsers'
 import { useRouter } from 'next/navigation'
 import { mapUserToBe } from '@/types/user'
 import { useQueryClient } from '@tanstack/react-query'
-import { suspendUser, unsuspendUser } from '@/lib/api/admin/users'
+import { suspendUser, unsuspendUser, banUser } from '@/lib/api/admin/users'
 import { approveArtist } from '@/lib/api/admin/artists'
 import { approveVenue } from '@/lib/api/admin/venues'
 
@@ -210,6 +210,23 @@ export function UserManagementTable() {
     }
   }
 
+  async function handleBan(user: User) {
+    const label = user.name?.trim() || user.email || user.id
+    const confirmed = window.confirm(
+      `Permanently ban ${label}?\n\nThis removes the account from the platform and blocks this email from ever registering again. This action cannot be undone.`
+    )
+    if (!confirmed) return
+    setActionBusy(user.id)
+    try {
+      await banUser(user.id)
+      await invalidateUsers()
+    } catch {
+      /* error surfaced via table state */
+    } finally {
+      setActionBusy(null)
+    }
+  }
+
   async function handleApprove(user: User) {
     setActionBusy(user.id)
     try {
@@ -281,11 +298,11 @@ export function UserManagementTable() {
               disabled={busy}
               onClick={(e) => {
                 e.stopPropagation()
-                router.push(getAdminUserRoute(user))
+                handleBan(user)
               }}
             >
               <Ban size={14} />
-              Ban
+              {busy ? '...' : 'Ban'}
             </Button>
           </div>
         )
