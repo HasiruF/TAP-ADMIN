@@ -59,14 +59,15 @@ export default function ResourcesPage() {
   function handleDragEnd(event: any) {
     const { active, over } = event
     if (!over || active.id === over.id) return
-
+    let next: Resource[] = []
     setItems((prev) => {
       const oldIndex = prev.findIndex((i) => i.id === active.id)
       const newIndex = prev.findIndex((i) => i.id === over.id)
-      const next = arrayMove(prev, oldIndex, newIndex)
-      persistOrder(next)
+      next = arrayMove(prev, oldIndex, newIndex)
+
       return next
     })
+    persistOrder(next)
   }
 
   function handleDelete(resource: Resource) {
