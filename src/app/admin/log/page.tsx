@@ -1,6 +1,7 @@
 'use client'
-import React, { Suspense } from 'react'
+import React, { Suspense, useMemo, useState } from 'react'
 import { format } from 'date-fns'
+import { Search } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { useAdminLogs } from '@/hooks/queries/useAdminLogs'
 import type { ActivityLog, EventType } from '@/types/logs'
@@ -47,6 +48,29 @@ function LogsView() {
   const name = searchParams.get('name') ?? undefined
 
   const { data: logs = [], isLoading, error } = useAdminLogs(userId)
+
+  const [search, setSearch] = useState('')
+
+  // Filter by email (actor or target), action/event, the change text, or name.
+  const filteredLogs = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return logs
+    return logs.filter((log) => {
+      const haystack = [
+        log.targetEmail,
+        log.actorEmail,
+        log.targetName,
+        log.actorName,
+        log.event,
+        log.action,
+        log.change,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(q)
+    })
+  }, [logs, search])
 
   if (isLoading) {
     return <div className="p-6">Loading logs...</div>
@@ -101,6 +125,29 @@ function LogsView() {
             <span style={{ color: 'var(--foreground)' }}>{userId}</span>
           </p>
         )}
+
+        {/* SEARCH */}
+        <div className="mt-6 flex items-center gap-3 flex-wrap">
+          <div
+            className="flex items-center gap-2 rounded-full border px-4 py-2 w-full max-w-md"
+            style={{
+              backgroundColor: 'var(--background)',
+              borderColor: 'var(--border)',
+            }}
+          >
+            <Search size={15} style={{ color: 'var(--muted-foreground)' }} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by email, action or event…"
+              className="bg-transparent outline-none text-sm w-full"
+              style={{ color: 'var(--foreground)' }}
+            />
+          </div>
+          <span style={{ color: 'var(--muted-foreground)', fontSize: '12px' }}>
+            {filteredLogs.length} of {logs.length}
+          </span>
+        </div>
       </div>
 
       <div
@@ -123,18 +170,20 @@ function LogsView() {
 
           {/* BODY */}
           <tbody>
-            {logs.length === 0 && (
+            {filteredLogs.length === 0 && (
               <tr>
                 <td
                   colSpan={4}
                   className="p-8 text-center"
                   style={{ color: 'var(--muted-foreground)' }}
                 >
-                  No activity recorded yet.
+                  {search.trim()
+                    ? 'No activity matches your search.'
+                    : 'No activity recorded yet.'}
                 </td>
               </tr>
             )}
-            {logs.map((log: ActivityLog) => {
+            {filteredLogs.map((log: ActivityLog) => {
               const hasDiff = log.changeFrom || log.changeTo
               const style = eventStyle(log.event)
 
