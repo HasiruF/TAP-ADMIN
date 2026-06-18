@@ -25,6 +25,7 @@ import {
   MessageSquare,
   LogOut,
   BookOpen,
+  ScrollText,
 } from 'lucide-react'
 const navMain = [
   {
@@ -41,6 +42,11 @@ const navMain = [
     title: 'Content Moderation',
     url: '/admin/moderation',
     icon: ShieldAlert,
+  },
+  {
+    title: 'Activity Logs',
+    url: '/admin/log',
+    icon: ScrollText,
   },
   {
     title: 'Message Moderation',

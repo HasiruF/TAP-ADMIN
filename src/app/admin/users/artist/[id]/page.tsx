@@ -11,6 +11,7 @@ import {
   Video,
   Link as LinkIcon,
   Image as ImageIcon,
+  ScrollText,
 } from 'lucide-react'
 import { ExternalLink } from 'lucide-react'
 import { useAdminArtist } from '@/hooks/queries/useAdminArtists'
@@ -484,6 +485,25 @@ export default function ArtistDetailPage({
               >
                 <RefreshCw size={14} />
                 Reset Password
+              </Button>
+
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={() =>
+                  router.push(
+                    `/admin/log?userId=${id}&name=${encodeURIComponent(
+                      data.basicInfo.stageName ?? 'User Activity'
+                    )}`
+                  )
+                }
+                style={{
+                  borderColor: 'var(--border)',
+                  color: 'var(--foreground)',
+                }}
+              >
+                <ScrollText size={14} />
+                Activity Logs
               </Button>
             </div>
           </section>

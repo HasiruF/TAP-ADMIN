@@ -1,15 +1,52 @@
 'use client'
-import React from 'react'
-import { activityLogsMock } from '@/data_mock/activityLogs'
+import React, { Suspense } from 'react'
 import { format } from 'date-fns'
+import { useSearchParams } from 'next/navigation'
 import { useAdminLogs } from '@/hooks/queries/useAdminLogs'
-export default function LogsPage() {
-  const { data: logs = [], isLoading, error } = useAdminLogs()
+import type { ActivityLog, EventType } from '@/types/logs'
 
-  const user = {
-    name: 'Aria Stone',
-    id: 'usr_1001',
-  }
+// Visual treatment per event category. Falls back to the gold "other" style.
+const EVENT_STYLES: Record<string, { bg: string; color: string }> = {
+  'account-created': { bg: 'rgba(99,179,237,0.14)', color: '#63b3ed' },
+  'go-live': { bg: 'rgba(159,122,234,0.16)', color: '#b794f4' },
+  approval: {
+    bg: 'var(--status-active-bg)',
+    color: 'var(--status-active-text)',
+  },
+  rejection: {
+    bg: 'var(--status-banned-bg)',
+    color: 'var(--status-banned-text)',
+  },
+  'profile-picture': { bg: 'rgba(201,168,76,0.12)', color: 'var(--gold)' },
+  'media-upload': { bg: 'rgba(72,187,120,0.14)', color: '#48bb78' },
+  'media-delete': { bg: 'rgba(245,101,101,0.14)', color: '#f56565' },
+  'media-accepted': {
+    bg: 'var(--status-active-bg)',
+    color: 'var(--status-active-text)',
+  },
+  'media-rejected': {
+    bg: 'var(--status-banned-bg)',
+    color: 'var(--status-banned-text)',
+  },
+  'password-reset': { bg: 'rgba(237,137,54,0.14)', color: '#ed8936' },
+  suspension: {
+    bg: 'var(--status-banned-bg)',
+    color: 'var(--status-banned-text)',
+  },
+  'account-deleted': { bg: 'rgba(245,101,101,0.18)', color: '#f56565' },
+  other: { bg: 'rgba(201,168,76,0.12)', color: 'var(--gold)' },
+}
+
+function eventStyle(event: EventType) {
+  return EVENT_STYLES[event] ?? EVENT_STYLES.other
+}
+
+function LogsView() {
+  const searchParams = useSearchParams()
+  const userId = searchParams.get('userId') ?? undefined
+  const name = searchParams.get('name') ?? undefined
+
+  const { data: logs = [], isLoading, error } = useAdminLogs(userId)
 
   if (isLoading) {
     return <div className="p-6">Loading logs...</div>
@@ -49,18 +86,21 @@ export default function LogsPage() {
             marginTop: '6px',
           }}
         >
-          {user.name}
+          {name ?? (userId ? 'User Activity' : 'All Activity')}
         </h1>
 
-        <p
-          style={{
-            marginTop: '8px',
-            color: 'var(--muted-foreground)',
-            fontSize: '13px',
-          }}
-        >
-          User ID: <span style={{ color: 'var(--foreground)' }}>{user.id}</span>
-        </p>
+        {userId && (
+          <p
+            style={{
+              marginTop: '8px',
+              color: 'var(--muted-foreground)',
+              fontSize: '13px',
+            }}
+          >
+            User ID:{' '}
+            <span style={{ color: 'var(--foreground)' }}>{userId}</span>
+          </p>
+        )}
       </div>
 
       <div
@@ -74,16 +114,45 @@ export default function LogsPage() {
           {/* HEADER */}
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
-              <th className="p-4 text-left w-[220px]">Date & Time</th>
-              <th className="p-4 text-left w-[180px]">Event</th>
+              <th className="p-4 text-left w-[180px]">Date &amp; Time</th>
+              <th className="p-4 text-left w-[240px]">Account</th>
+              <th className="p-4 text-left w-[170px]">Event</th>
               <th className="p-4 text-left">Change</th>
             </tr>
           </thead>
 
           {/* BODY */}
           <tbody>
-            {logs.map((log) => {
+            {logs.length === 0 && (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="p-8 text-center"
+                  style={{ color: 'var(--muted-foreground)' }}
+                >
+                  No activity recorded yet.
+                </td>
+              </tr>
+            )}
+            {logs.map((log: ActivityLog) => {
               const hasDiff = log.changeFrom || log.changeTo
+              const style = eventStyle(log.event)
+
+              // The account this entry is about (the target the action affected,
+              // falling back to whoever performed it for self-actions).
+              const accountName =
+                log.targetName ?? log.actorName ?? 'Unknown user'
+              const accountEmail = log.targetEmail ?? log.actorEmail ?? null
+
+              // Show "by …" only when an admin acted on someone else's account.
+              const actorIsDifferent =
+                !!log.actorUserId &&
+                !!log.targetId &&
+                log.actorUserId !== log.targetId
+              const byLabel = actorIsDifferent
+                ? (log.actorName ??
+                  (log.actorRole === 'admin' ? 'Admin' : 'Another user'))
+                : null
 
               return (
                 <React.Fragment key={log.id}>
@@ -103,7 +172,26 @@ export default function LogsPage() {
                         color: 'var(--muted-foreground)',
                       }}
                     >
-                      {format(log.time, 'yyyy-MM-dd HH:mm')}
+                      {format(new Date(log.time), 'yyyy-MM-dd HH:mm')}
+                    </td>
+
+                    {/* ACCOUNT */}
+                    <td className="p-4 align-top">
+                      <div
+                        style={{ color: 'var(--foreground)', fontSize: '13px' }}
+                      >
+                        {accountName}
+                      </div>
+                      {accountEmail && (
+                        <div
+                          style={{
+                            color: 'var(--muted-foreground)',
+                            fontSize: '11px',
+                          }}
+                        >
+                          {accountEmail}
+                        </div>
+                      )}
                     </td>
 
                     {/* EVENT */}
@@ -111,11 +199,11 @@ export default function LogsPage() {
                       <span
                         className="px-2 py-[3px] rounded-full text-xs capitalize"
                         style={{
-                          backgroundColor: 'rgba(201,168,76,0.12)',
-                          color: 'var(--gold)',
+                          backgroundColor: style.bg,
+                          color: style.color,
                         }}
                       >
-                        {log.event.replace('-', ' ')}
+                        {log.event.replace(/-/g, ' ')}
                       </span>
                     </td>
 
@@ -133,7 +221,20 @@ export default function LogsPage() {
                             hasDiff ? 'cursor-pointer' : 'pointer-events-none'
                           }`}
                         >
-                          <span>{log.change}</span>
+                          <span>
+                            {log.change}
+                            {byLabel && (
+                              <span
+                                style={{
+                                  color: 'var(--muted-foreground)',
+                                  fontSize: '12px',
+                                  marginLeft: '6px',
+                                }}
+                              >
+                                · by {byLabel}
+                              </span>
+                            )}
+                          </span>
 
                           {hasDiff && (
                             <span
@@ -244,7 +345,7 @@ export default function LogsPage() {
                   {hasDiff && (
                     <tr>
                       <td
-                        colSpan={3}
+                        colSpan={4}
                         style={{
                           borderBottom: '1px solid var(--border)',
                         }}
@@ -258,5 +359,13 @@ export default function LogsPage() {
         </table>
       </div>
     </div>
+  )
+}
+
+export default function LogsPage() {
+  return (
+    <Suspense fallback={<div className="p-6">Loading logs...</div>}>
+      <LogsView />
+    </Suspense>
   )
 }

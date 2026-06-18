@@ -1,6 +1,7 @@
 'use client'
 
 import NextImage from 'next/image'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
   Shield,
@@ -10,6 +11,7 @@ import {
   Users,
   Music2,
   Image as ImageIcon,
+  ScrollText,
 } from 'lucide-react'
 import { ExternalLink } from 'lucide-react'
 import { use } from 'react'
@@ -315,6 +317,25 @@ export default function VenueDetailPage({
               >
                 <RefreshCw size={14} />
                 Reset Password
+              </Button>
+
+              <Button
+                asChild
+                className="w-full"
+                variant="outline"
+                style={{
+                  borderColor: 'var(--border)',
+                  color: 'var(--foreground)',
+                }}
+              >
+                <Link
+                  href={`/admin/log?userId=${id}&name=${encodeURIComponent(
+                    data.venueDetails.venueName ?? 'User Activity'
+                  )}`}
+                >
+                  <ScrollText size={14} />
+                  Activity Logs
+                </Link>
               </Button>
             </div>
           </section>
