@@ -243,6 +243,16 @@ export function UserManagementTable() {
     }
   }
 
+  function formatDate(date: string) {
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(date))
+  }
+
   function renderActions(user: User) {
     const busy = actionBusy === user.id
     switch (user.status) {
@@ -521,13 +531,13 @@ export function UserManagementTable() {
                 className="text-center break-words whitespace-normal"
                 style={{ color: 'var(--muted-foreground)' }}
               >
-                {user.joined}
+                {formatDate(user.joined)}
               </TableCell>
               <TableCell
                 className="text-center break-words whitespace-normal"
                 style={{ color: 'var(--muted-foreground)' }}
               >
-                {user.lastLogin}
+                {formatDate(user.lastLogin)}
               </TableCell>
 
               {/* STATUS BADGE */}
