@@ -72,6 +72,23 @@ const filterOptions = [
   { label: 'Last Login Date', value: 'lastlogin' },
 ]
 
+function formatDate(date?: string | null) {
+  if (!date) return '-'
+
+  const parsed = new Date(date)
+
+  if (isNaN(parsed.getTime())) return '-'
+
+  return new Intl.DateTimeFormat('en-AU', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(parsed)
+}
+
 const statusOptions = [
   { label: 'All', value: 'all' },
   { label: 'Active', value: 'active' },
@@ -168,10 +185,12 @@ export function UserManagementTable() {
           matchesSearch = String(user.id).toLowerCase().includes(value)
           break
         case 'joined':
-          matchesSearch = user.joined.toLowerCase().includes(value)
+          matchesSearch = formatDate(user.joined).toLowerCase().includes(value)
           break
         case 'lastlogin':
-          matchesSearch = user.lastLogin?.toLowerCase().includes(value)
+          matchesSearch = formatDate(user.lastLogin)
+            .toLowerCase()
+            .includes(value)
           break
       }
     }
@@ -243,22 +262,6 @@ export function UserManagementTable() {
     }
   }
 
-  function formatDate(date?: string | null) {
-    if (!date) return '-'
-
-    const parsed = new Date(date)
-
-    if (isNaN(parsed.getTime())) return '-'
-
-    return new Intl.DateTimeFormat('en-AU', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }).format(parsed)
-  }
   function renderActions(user: User) {
     const busy = actionBusy === user.id
     switch (user.status) {
