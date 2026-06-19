@@ -243,7 +243,13 @@ export function UserManagementTable() {
     }
   }
 
-  function formatDate(date: string) {
+  function formatDate(date?: string | null) {
+    if (!date) return '-'
+
+    const parsed = new Date(date)
+
+    if (isNaN(parsed.getTime())) return '-'
+
     return new Intl.DateTimeFormat('en-AU', {
       day: '2-digit',
       month: 'short',
@@ -251,9 +257,8 @@ export function UserManagementTable() {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
-    }).format(new Date(date))
+    }).format(parsed)
   }
-
   function renderActions(user: User) {
     const busy = actionBusy === user.id
     switch (user.status) {
