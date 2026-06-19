@@ -23,15 +23,8 @@ export function getAdminUserRoute(user: {
   return `/admin/users`
 }
 
-export function getAdminLogRoute(user: { role: string }) {
-  const role = user.role.toLowerCase()
-  if (user.role === 'venue') {
-    return `/admin/log`
-  }
-
-  if (user.role === 'artist') {
-    return `/admin/log`
-  }
-
-  return `/admin/log`
+export function getAdminLogRoute(user: { id: string; name?: string }) {
+  return `/admin/log?userId=${user.id}&name=${encodeURIComponent(
+    user.name ?? ''
+  )}`
 }
