@@ -71,7 +71,12 @@ export const mapUserToBe = (user: UserBe): User => {
 
   return {
     id: user.id,
-    name: `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
+    // Social/Google signups can have null firstName/lastName, which would
+    // leave the Name column blank — fall back to email, then id.
+    name:
+      `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() ||
+      (user.email ?? '') ||
+      user.id,
     email: user.email ?? '',
     role: user.role?.name ?? '',
     status,
