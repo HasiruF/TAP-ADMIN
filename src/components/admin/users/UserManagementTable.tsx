@@ -244,12 +244,13 @@ export function UserManagementTable() {
   }
 
   function formatDate(date: string) {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
+    return new Intl.DateTimeFormat('en-AU', {
+      day: '2-digit',
       month: 'short',
-      day: 'numeric',
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      hour12: false,
     }).format(new Date(date))
   }
 
