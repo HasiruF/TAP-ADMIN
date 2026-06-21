@@ -14,6 +14,8 @@ type ModerationItem = {
   userId: string
   name: string
   type: string
+  role?: string
+  reason?: string
   date: string
   content: string
 }
@@ -66,11 +68,22 @@ export function ModerationPreviewDialog({
         }
 
       case 'video':
+        // Uploaded media are direct video files; use a native player. Fall back
+        // to an iframe for embedded/external URLs (e.g. YouTube).
+        if (/youtube|youtu\.be|vimeo|\/embed\//i.test(item.content)) {
+          return (
+            <iframe
+              className="w-full h-[300px] rounded-xl"
+              src={item.content}
+              allowFullScreen
+            />
+          )
+        }
         return (
-          <iframe
-            className="w-full h-[300px] rounded-xl"
+          <video
+            className="w-full max-h-[300px] rounded-xl"
             src={item.content}
-            allowFullScreen
+            controls
           />
         )
 
@@ -173,14 +186,16 @@ export function ModerationPreviewDialog({
                 </p>
               </div>
 
-              {/* PREVIEW BUTTON */}
-              <a
-                href="https://civic-sauna-76601524.figma.site/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button variant="outline">View Profile</Button>
-              </a>
+              {/* PREVIEW BUTTON — deep-links to the owner's admin profile page */}
+              {item.userId && item.userId !== '-' && (
+                <a
+                  href={`/admin/users/${item.role === 'venue' ? 'venue' : 'artist'}/${item.userId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="outline">View Profile</Button>
+                </a>
+              )}
             </div>
           </DialogHeader>
         </div>
@@ -224,8 +239,20 @@ export function ModerationPreviewDialog({
                 marginTop: '4px',
               }}
             >
-              Submitted: {item.date}
+              Submitted: {item.date ? String(item.date).slice(0, 10) : '-'}
             </p>
+
+            {item.reason && (
+              <p
+                style={{
+                  color: 'var(--muted-foreground)',
+                  fontSize: '13px',
+                  marginTop: '4px',
+                }}
+              >
+                Reason: {item.reason.replace(/_/g, ' ').toLowerCase()}
+              </p>
+            )}
           </div>
 
           {/* ACTIONS */}

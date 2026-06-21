@@ -180,7 +180,7 @@ export function ModerationQueueTable({
                 className="text-center"
                 style={{ color: 'var(--muted-foreground)' }}
               >
-                {item.date}
+                {item.date ? String(item.date).slice(0, 10) : '-'}
               </TableCell>
 
               {/* ACTIONS */}

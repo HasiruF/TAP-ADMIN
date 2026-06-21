@@ -5,17 +5,20 @@ import { ModerationQueueTable } from '@/components/admin/moderation/ModerationQu
 import { ModerationPreviewDialog } from '@/components/admin/moderation/ModerationPreviewDialog'
 import { useModerationQueue } from '@/hooks/queries/useModerationQueue'
 import { useModerationActions } from '@/hooks/queries/useModerationActions'
+import { resolveContentUrl } from '@/lib/api/admin/moderation'
 
 export default function ContentModerationPage() {
   const { data: moderationData = [], isLoading, error } = useModerationQueue()
 
   const tableData = moderationData.map((item: any) => ({
     id: item.contentModId,
-    userId: item.userId,
+    userId: item.userId ?? '-',
     name: item.name ?? '-',
     type: item.type,
     role: item.role ?? '-',
+    reason: item.reason ?? '-',
     date: item.date,
+    content: resolveContentUrl(item.contentLink) ?? '',
   }))
   const { approveModeration, rejectModeration } = useModerationActions()
   const [selectedItem, setSelectedItem] = useState<any | null>(null)
