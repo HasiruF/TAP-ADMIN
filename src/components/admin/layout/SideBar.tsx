@@ -10,6 +10,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar'
+import { useAuthContext } from '@/lib/api/auth/AuthContext'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { useSidebar } from '@/components/ui/sidebar'
 import { usePathname } from 'next/navigation'
@@ -64,7 +65,7 @@ export function AppSidebar() {
   const pathname = usePathname()
   const { state } = useSidebar()
   const isCollapsed = state === 'collapsed'
-  const logout = useLogout()
+  const { logout } = useAuthContext()
   const queryClient = useQueryClient()
   const router = useRouter()
   const clearAuthCookies = () => {
@@ -73,17 +74,14 @@ export function AppSidebar() {
   }
   const handleLogout = async () => {
     try {
-      await logout.mutateAsync()
-
-      clearAuthCookies()
+      await logout()
 
       queryClient.removeQueries({ queryKey: ['me'] })
 
       router.push('/login')
     } catch (err) {
-      // even if API fails, stilll logout locally
-      clearAuthCookies()
       queryClient.removeQueries({ queryKey: ['me'] })
+
       router.push('/login')
     }
   }

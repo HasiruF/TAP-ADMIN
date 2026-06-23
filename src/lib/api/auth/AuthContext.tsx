@@ -1,17 +1,29 @@
 'use client'
-import { useEffect, useRef } from 'react'
-import { refresh } from '../auth'
-import React, { createContext, useCallback, useContext, useState } from 'react'
+
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 
 import Cookies from 'js-cookie'
+
 import { setAccessToken } from '../client'
+import { refresh } from '../auth'
+import { authApi } from '@/features/auth/api'
+
 import type { Authuser } from '@/types/authuser'
 
 interface AuthContextValue {
   user: Authuser | null
   accessToken: string | null
   isAuthenticated: boolean
+
   setSession: (token: string, user: Authuser, refreshToken?: string) => void
+
   logout: () => Promise<void>
 }
 
@@ -24,17 +36,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: false,
   })
 
+  const refreshAttempted = useRef(false)
+
+  // Restore session after browser refresh
+  useEffect(() => {
+    if (refreshAttempted.current) return
+
+    refreshAttempted.current = true
+
+    refresh()
+      .then(async (res) => {
+        setAccessToken(res.token)
+
+        localStorage.setItem('tap_refresh_token', res.refreshToken)
+
+        const me = await authApi.me()
+
+        setState({
+          user: me.user,
+          accessToken: res.token,
+          isAuthenticated: true,
+        })
+
+        Cookies.set('tap_session', '1', {
+          path: '/',
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+        })
+
+        if (me.user) {
+          Cookies.set('tap_role', me.user.role, {
+            path: '/',
+            sameSite: 'lax',
+          })
+        }
+      })
+      .catch(() => {
+        setAccessToken(null)
+
+        localStorage.removeItem('tap_refresh_token')
+
+        setState({
+          user: null,
+          accessToken: null,
+          isAuthenticated: false,
+        })
+      })
+  }, [])
+
   const setSession = useCallback(
     (token: string, user: Authuser, refreshToken?: string) => {
-      // access token only in memory
+      // access token only lives in memory
       setAccessToken(token)
 
-      // refresh token persists
+      // refresh token survives reload
       if (refreshToken) {
         localStorage.setItem('tap_refresh_token', refreshToken)
       }
 
-      // only presence flags
+      // middleware flags only
       Cookies.set('tap_session', '1', {
         path: '/',
         sameSite: 'lax',
@@ -56,20 +116,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 
   const logout = useCallback(async () => {
-    setAccessToken(null)
+    try {
+      await authApi.logout()
+    } catch {
+    } finally {
+      setAccessToken(null)
 
-    localStorage.removeItem('tap_refresh_token')
+      localStorage.removeItem('tap_refresh_token')
 
-    Cookies.remove('tap_session')
-    Cookies.remove('tap_role')
+      Cookies.remove('tap_session', {
+        path: '/',
+      })
 
-    setState({
-      user: null,
-      accessToken: null,
-      isAuthenticated: false,
-    })
+      Cookies.remove('tap_role', {
+        path: '/',
+      })
 
-    window.location.href = '/login'
+      setState({
+        user: null,
+        accessToken: null,
+        isAuthenticated: false,
+      })
+
+      window.location.href = '/login'
+    }
   }, [])
 
   return (
