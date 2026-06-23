@@ -2,16 +2,17 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(req: NextRequest) {
-  const token = req.cookies.get('token')?.value
+  const session = req.cookies.get('tap_session')?.value
 
   const isLoginPage = req.nextUrl.pathname.startsWith('/login')
-  //not logged in
-  if (!token && !isLoginPage) {
+
+  // not logged in
+  if (!session && !isLoginPage) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  //logging in
-  if (token && isLoginPage) {
+  // already logged in
+  if (session && isLoginPage) {
     return NextResponse.redirect(new URL('/admin', req.url))
   }
 

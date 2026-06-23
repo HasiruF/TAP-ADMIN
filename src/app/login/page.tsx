@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-
+import { useAuthContext } from '@/lib/api/auth/AuthContext'
 import { useLogin } from '@/features/auth/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 import { loginSchema, LoginInput } from '@/lib/schemas/loginSchema'
@@ -23,17 +23,25 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   })
 
-  const setCookie = (name: string, value: string) => {
-    // eslint-disable-next-line react-hooks/immutability
-    window.document.cookie = `${name}=${value}; path=/;`
-  }
+  const { setSession } = useAuthContext()
 
   const onSubmit = async (data: LoginInput) => {
     try {
       const res = await login.mutateAsync(data)
 
-      setCookie('token', res.token)
-      setCookie('refreshToken', res.refreshToken)
+      setSession(
+        res.token,
+        {
+          id: res.user.id,
+          name: `${res.user.firstName} ${res.user.lastName}`.trim(),
+          email: res.user.email,
+          role: res.user.role.name.toLowerCase() as
+            | 'admin'
+            | 'artist'
+            | 'venue',
+        },
+        res.refreshToken
+      )
 
       await queryClient.invalidateQueries({ queryKey: ['me'] })
 

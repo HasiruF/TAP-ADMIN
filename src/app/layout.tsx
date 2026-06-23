@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { Cormorant_Garamond, Inter } from 'next/font/google'
 import QueryProvider from '@/lib/providers/QueryProvider'
-
+import { AuthProvider } from '@/lib/api/auth/AuthContext'
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
@@ -31,7 +31,6 @@ export const metadata = {
     icon: '/Primary.svg',
   },
 }
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -45,7 +44,9 @@ export default function RootLayout({
       <body
         className={`${cormorant.variable} ${inter.variable} min-h-full flex flex-col`}
       >
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   )
