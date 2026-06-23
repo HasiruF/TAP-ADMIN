@@ -21,6 +21,7 @@ interface AuthContextValue {
   user: Authuser | null
   accessToken: string | null
   isAuthenticated: boolean
+  isLoading: boolean
 
   setSession: (token: string, user: Authuser, refreshToken?: string) => void
 
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: null as Authuser | null,
     accessToken: null as string | null,
     isAuthenticated: false,
+    isLoading: true,
   })
 
   const refreshAttempted = useRef(false)
@@ -56,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           user: me.user,
           accessToken: res.token,
           isAuthenticated: true,
+          isLoading: false,
         })
 
         Cookies.set('tap_session', '1', {
@@ -80,6 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           user: null,
           accessToken: null,
           isAuthenticated: false,
+          isLoading: false,
         })
       })
   }, [])
@@ -110,6 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         accessToken: token,
         isAuthenticated: true,
+        isLoading: false,
       })
     },
     []
@@ -136,6 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user: null,
         accessToken: null,
         isAuthenticated: false,
+        isLoading: false,
       })
 
       window.location.href = '/login'
