@@ -27,7 +27,21 @@ interface AuthContextValue {
 
   logout: () => Promise<void>
 }
-
+/**
+ * Session restoration flow:
+ *
+ * On application startup, the client checks for a stored refresh token
+ * and attempts to restore the user's session.
+ *
+ * Security notes:
+ * - Refresh tokens stored in localStorage can be compromised through XSS.
+ * - Access tokens are intentionally kept in memory only and are cleared on logout.
+ *
+ * For higher-security environments:
+ * - Backend should issue refresh tokens through HttpOnly Secure cookies.
+ * - Session validation should be handled server-side.
+ * - CSP and other XSS protections should be enabled.
+ */
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
