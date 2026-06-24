@@ -1,5 +1,7 @@
 # TAP Admin — Action Workflows
 
+> 🗂️ **AUDIT NOTE — 2026-06-24:** Several workflows marked "stubbed/console.log" below are now wired to the real backend (approval approve/reject/req-changes, moderation approve/reject, resources CRUD, user suspend/ban). Verify each "Stubbed" entry against current handlers. Consolidated state: `../tap-platform/projectUpdate24June.md`.
+
 > **Every interactive workflow that changes state, triggers navigation, or sends data.**
 > "Stubbed" means the button exists in the UI but the handler is a `console.log` or absent — no real API call is wired yet.
 

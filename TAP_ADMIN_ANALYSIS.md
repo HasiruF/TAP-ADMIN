@@ -1,5 +1,7 @@
 # TAP Admin — Codebase Analysis
 
+> 🗂️ **AUDIT NOTE — 2026-06-24:** Undated. The admin is **now connected to the real backend** via Next.js BFF routes (`src/app/api/**` → `backendFetch` → `${BACKEND_API_URL}` = `http://localhost:3001/api/v1`); earlier "all mock" claims are stale (though a few routes may still return mock data — verify per route). Approval, moderation, resources, and users screens call live endpoints. Consolidated cross-app state: `../tap-platform/projectUpdate24June.md`.
+
 > Generated from a full read of the source under `src/`. Every claim below is drawn from the actual code, not assumptions. Where the code is incomplete, mocked, or inconsistent, this is called out explicitly.
 
 ---

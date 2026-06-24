@@ -1,5 +1,8 @@
 # Approval End-to-End Development Plan
 
+> ## ✅ AUDIT UPDATE — 2026-06-24: THE ARTIST FLOW IS IMPLEMENTED
+> The artist `DRAFT → PENDING_APPROVAL → APPROVED/REJECTED` workflow this plan describes now works end-to-end: backend `POST /artist/profile/submit` (+ `submitProfileForReview`), admin `POST /admin/user/approve|reject|req-changes`, and frontend `submitArtistForReview()` called at end of onboarding. Approved artists get `marketplace_unlocked = true` and appear in `GET /discover/artists`. **Venues are not yet on this workflow** — `POST /admin/venue/approve` only flips `marketplace_unlocked` (no `approval_status`/pending state). Consolidated state: `../tap-platform/projectUpdate24June.md`.
+
 > **Goal:** Complete the user registration → admin review → public listing workflow across all three codebases so that when an admin approves an artist or venue profile, it becomes visible in the public Artist/Venue Directory.
 
 ---

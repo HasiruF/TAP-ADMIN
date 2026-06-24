@@ -1,5 +1,7 @@
 # TAP Admin — Screens & Components Inventory
 
+> ⚠️ **AUDIT UPDATE — 2026-06-24:** The line below — *"All data is currently mock… No real backend is connected"* — is **no longer true**. The admin now talks to the live backend through Next.js BFF routes under `src/app/api/**` (`backendFetch` → `BACKEND_API_URL`). Screens present today: users (artist/venue + artistapproval/venueapproval), moderation, resources, messages, log. A few routes may still return mock data — verify per route. Consolidated state: `../tap-platform/projectUpdate24June.md`.
+
 > Generated: 2026-06-03  
 > All data is currently mock (in-memory). No real backend is connected.
 

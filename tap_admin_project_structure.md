@@ -1,5 +1,7 @@
 # TAP Admin — Project Structure Analysis
 
+> 🗂️ **AUDIT NOTE — 2026-06-24:** Structure largely current, but the app now includes live BFF API routes (`src/app/api/**`) and moderation/approval screens added since. Consolidated state: `../tap-platform/projectUpdate24June.md`.
+
 > Generated: 2026-06-03
 
 ---

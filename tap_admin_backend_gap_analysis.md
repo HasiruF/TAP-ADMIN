@@ -1,5 +1,7 @@
 # TAP Admin — Backend Endpoint Gap Analysis
 
+> ⚠️ **AUDIT UPDATE — 2026-06-24:** Many gaps below are now closed (approval, moderation, resources, users endpoints are wired to the real backend). Also correct the prefix note below: backend routes are served under **`/api/v1/`** (global prefix `api` + URI versioning `v1`), not `/v1/`. The admin's BFF `BACKEND_API_URL` is set to `http://localhost:3001/api/v1` in `.env.local` (the hardcoded code default `http://localhost:3001/v1` is stale and overridden by env). Consolidated state: `../tap-platform/projectUpdate24June.md`.
+
 > **Generated:** 2026-06-03  
 > **Source:** Full static analysis of `tap-admin` (Next.js BFF + mock API routes) and `tap-backend` (NestJS source).  
 > All NestJS endpoints are versioned under `/v1/` and protected by JWT unless noted.  
