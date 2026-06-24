@@ -1,19 +1,40 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
-import { refresh } from './auth'
+import { refresh, RefreshResponse } from './auth'
 
 let accessToken: string | null = null
+let tokenExpiresAt: number | null = null
 
-export function setAccessToken(token: string | null) {
+export function setAccessToken(token: string | null, tokenExpires?: number) {
   accessToken = token
+
+  if (token && tokenExpires) {
+    tokenExpiresAt = Date.now() + tokenExpires * 1000
+  } else {
+    tokenExpiresAt = null
+  }
 }
 
 export function getAccessToken() {
   return accessToken
 }
+let refreshPromise: Promise<RefreshResponse> | null = null
 
-const isRefreshing = false
-const queue: (() => void)[] = []
+async function refreshWithLock() {
+  if (!refreshPromise) {
+    refreshPromise = refresh().finally(() => {
+      refreshPromise = null
+    })
+  }
+
+  return refreshPromise
+}
+
+function isTokenExpired() {
+  if (!tokenExpiresAt) return false
+
+  return Date.now() >= tokenExpiresAt
+}
 
 export async function api(path: string, options: RequestInit = {}) {
   const request = async (authToken?: string | null) => {
@@ -27,19 +48,29 @@ export async function api(path: string, options: RequestInit = {}) {
     })
   }
 
+  if (isTokenExpired()) {
+    try {
+      const newTokens = await refresh()
+
+      setAccessToken(newTokens.token, newTokens.tokenExpires)
+    } catch {
+      setAccessToken(null)
+      throw new Error('Session expired')
+    }
+  }
   let res = await request(accessToken)
 
   if (res.status === 401) {
     try {
-      const newTokens = await refresh()
+      const newTokens = await refreshWithLock()
 
-      setAccessToken(newTokens.token)
-
-      console.log('REFRESH RESULT:', newTokens)
+      setAccessToken(newTokens.token, newTokens.tokenExpires)
 
       res = await request(newTokens.token)
     } catch (err) {
       setAccessToken(null)
+      localStorage.removeItem('tap_refresh_token')
+
       throw new Error('Session expired')
     }
   }

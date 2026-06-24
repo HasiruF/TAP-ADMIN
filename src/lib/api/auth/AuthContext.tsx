@@ -143,8 +143,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: false,
         isLoading: false,
       })
-
-      window.location.href = '/login'
     }
   }, [])
 
