@@ -92,10 +92,10 @@ tap-admin/
 ├── tap_admin_*.md                 # Design/spec docs (data contracts, workflows, gap analysis…)
 ├── public/                        # Static assets (Primary.svg logo, brand SVGs)
 └── src/
-    ├── middleware.ts              # Auth gate: token cookie → redirect /login or /admin
+    ├── middleware.ts              # Auth gate: tap_session marker cookie → redirect /login or /admin
     │
     ├── app/                       # Next.js App Router
-    │   ├── layout.tsx             # Root layout: fonts + <QueryProvider>
+    │   ├── layout.tsx             # Root layout: fonts + <QueryProvider> + <AuthProvider>
     │   ├── page.tsx               # "/" → redirect('/login')
     │   ├── globals.css            # Theme tokens (--gold, --card, --status-* …)
     │   ├── login/page.tsx         # Login screen (client)
@@ -128,7 +128,7 @@ tap-admin/
     │       └── resources/{CreateResourceDialog,ViewResourceDialog}.tsx
     │
     ├── features/
-    │   └── auth/                  # api.ts, hooks.ts (useMe/useLogin/useLogout), AuthProvider.tsx
+    │   └── auth/                  # api.ts (authApi.login/me/logout), hooks.ts (useMe/useLogin/useLogout)
     │
     ├── hooks/
     │   ├── use-mobile.ts          # 768px breakpoint hook (sidebar)
@@ -139,10 +139,12 @@ tap-admin/
     │   ├── providers/QueryProvider.tsx
     │   ├── schemas/{loginSchema,resourceSchema}.ts   # Zod
     │   └── api/
-    │       ├── client.ts          # api() — browser → external backend, 401 refresh
-    │       ├── auth.ts             # refresh() token rotation
+    │       ├── client.ts          # api() — browser → external backend; in-memory access token,
+    │       │                      #   proactive expiry refresh + locked 401 refresh; clearAuthState()
+    │       ├── auth.ts             # refresh() — reads refresh token from localStorage
+    │       ├── auth/AuthContext.tsx # <AuthProvider> + useAuthContext() — session state, setSession, logout
     │       ├── media.ts            # uploadMedia() multipart → /media/upload
-    │       ├── server/backendFetch.ts   # Server-side fetch w/ cookie token
+    │       ├── server/backendFetch.ts   # Server-side fetch w/ cookie token (legacy — see §6 note)
     │       └── admin/             # Typed call wrappers (artists, venues, users, …)
     │
     ├── types/                     # authuser, user, resource, conversation, logs
@@ -155,8 +157,10 @@ tap-admin/
 ## 4. Routing
 
 Next.js App Router. Auth is enforced by [src/middleware.ts](src/middleware.ts), `matcher: ['/admin/:path*', '/login']`:
-- No `token` cookie + not on `/login` → redirect to `/login`.
-- Has `token` + on `/login` → redirect to `/admin`.
+- No `tap_session` cookie + not on `/login` → redirect to `/login`.
+- Has `tap_session` + on `/login` → redirect to `/admin`.
+
+(`tap_session` is a non-secret marker cookie set client-side on login/restore; the real access token is never in a cookie — see §6.)
 
 | URL path | File | Renders |
 |---|---|---|
@@ -204,15 +208,17 @@ There are **three** ways data leaves the browser, plus a server-side fetcher.
 
 ### 5a. `api()` — primary browser client — [src/lib/api/client.ts](src/lib/api/client.ts)
 - Base URL: `process.env.NEXT_PUBLIC_API_URL`.
-- Reads `token` from `document.cookie`, sets `Authorization: Bearer <token>` + `Content-Type: application/json`.
-- On **401**: calls `refresh()`, rewrites the `token` cookie, retries once. On failure throws `Session expired`.
-- On non-OK: throws parsed JSON error (or text).
-- Returns `res.json()`.
-- (Note: a module-level `isRefreshing`/`queue` exist but are unused — no real request queueing.)
+- Reads the access token from a **module-level in-memory variable** (set via `setAccessToken`), sets `Authorization: Bearer <token>` + `Content-Type: application/json`. The token is **never** read from cookies/localStorage.
+- **Proactive refresh:** if `isTokenExpired()` (current time ≥ `tokenExpiresAt`, the absolute epoch-ms from the backend) it refreshes via `refreshWithLock()` before sending the request.
+- **Reactive refresh:** on **401** it refreshes via `refreshWithLock()` and retries once.
+- **Refresh lock:** `refreshWithLock()` shares a single in-flight `refresh()` promise so concurrent expired/401 requests trigger only **one** network refresh.
+- **On refresh failure** (either path): calls `clearAuthState()` (clears in-memory token + `tap_refresh_token` + `tap_session`/`tap_role` cookies) and throws `Session expired`.
+- On non-OK: throws parsed JSON error (or text). Returns `res.json()`.
 
 ### 5b. `refresh()` — [src/lib/api/auth.ts](src/lib/api/auth.ts)
-- `POST {NEXT_PUBLIC_API_URL}/auth/refresh` with `Authorization: Bearer <refreshToken-from-cookie>`.
-- Writes new `token` + `refreshToken` cookies. Returns `{ token, refreshToken, tokenExpires }`.
+- Reads the refresh token from `localStorage` (`tap_refresh_token`); throws if absent.
+- `POST {NEXT_PUBLIC_API_URL}/auth/refresh` with `Authorization: Bearer <refreshToken>`.
+- Stores the new access token in memory (`setAccessToken`) and the new refresh token in `localStorage`. Returns `{ token, refreshToken, tokenExpires }`.
 
 ### 5c. `uploadMedia()` — [src/lib/api/media.ts](src/lib/api/media.ts)
 - `POST {NEXT_PUBLIC_API_URL}/media/upload` as `FormData` (no JSON content-type — deliberately separate from `api()`).
@@ -227,7 +233,7 @@ There are **three** ways data leaves the browser, plus a server-side fetcher.
 **Auth — [src/features/auth/api.ts](src/features/auth/api.ts)**
 | Function | Method | Endpoint | Payload | Returns |
 |---|---|---|---|---|
-| `authApi.login` | POST | `/auth/email/login` | `{ email, password }` | `{ token, refreshToken, ... }` |
+| `authApi.login` | POST | `/auth/email/login` | `{ email, password }` | `{ token, refreshToken, tokenExpires, user }` |
 | `authApi.me` | GET | `/auth/me` | — | `{ user: { id, name, email, role } \| null }` (maps backend `role.name`, defaults `admin`) |
 | `authApi.logout` | POST | `/auth/logout` | — | — |
 
@@ -286,26 +292,29 @@ There are **three** ways data leaves the browser, plus a server-side fetcher.
 
 ## 6. Auth Flow
 
+Auth is centralised in **`<AuthProvider>` / `useAuthContext()`** ([src/lib/api/auth/AuthContext.tsx](src/lib/api/auth/AuthContext.tsx)), mounted in the root layout inside `<QueryProvider>`. It exposes `{ user, accessToken, isAuthenticated, isLoading, setSession, logout }`.
+
+**Token storage model (the core of the `feature/newauth` redesign):**
+- **Access token → in-memory only** (a module variable in [client.ts](src/lib/api/client.ts)). Never written to cookies or localStorage; gone on full page reload (restored via refresh). Reduces XSS exposure.
+- **Refresh token → `localStorage` (`tap_refresh_token`)** so the session survives reloads.
+- **`tap_session` + `tap_role` → non-secret marker cookies** (client-set, `SameSite=Lax`, `Secure` in production) used **only** by middleware to gate routes. They are flags, not credentials — the backend must still validate every request.
+
 **Login** ([login/page.tsx](src/app/login/page.tsx)):
 1. Form validated by `loginSchema` (email + min-6 password).
-2. `useLogin()` → `authApi.login()` → `POST /auth/email/login` (directly on backend via `api()`).
-3. On success, the page **manually writes cookies in JS**: `token=<res.token>` and `refreshToken=<res.refreshToken>` (`path=/`, **not** `httpOnly`, **not** `Secure`).
+2. `useLogin()` → `authApi.login()` → `POST /auth/email/login`, returning `{ token, refreshToken, tokenExpires, user }`.
+3. On success calls `setSession(token, mappedUser, refreshToken, tokenExpires)`, which stores the access token (with expiry) in memory, the refresh token in localStorage, and sets the `tap_session`/`tap_role` cookies.
 4. Invalidates the `['me']` query, then `router.push('/admin')`.
 
-**Token storage & transmission:**
-- Stored as **plain browser cookies** (readable by JS — `document.cookie`). `api()`, `refresh()`, and `uploadMedia()` all parse the `token` cookie and attach `Authorization: Bearer`.
-- Server-side `backendFetch()` reads the same `token` cookie from request headers.
+**Session restoration** (on app load, in `AuthProvider`): a one-shot effect (guarded by a `useRef`) calls `refresh()`; on success it sets the in-memory token + cookies and fetches `authApi.me()` to populate `user`; on failure it calls `clearAuthState()`. `isLoading` stays `true` until this resolves, and every admin query is gated on `!isLoading` (`enabled: !isLoading`) so no authenticated request fires before the token is restored.
 
-**Session / identity:**
-- `AuthProvider` ([features/auth/AuthProvider.tsx](src/features/auth/AuthProvider.tsx)) exposes `{ user, isLoading, isAuthenticated }` via `useMe()`. *(Note: `AuthProvider` is defined but is **not** mounted in the root layout — only `QueryProvider` is. `useAuth()` is therefore currently unused by the rendered tree.)*
-- `useMe()` → `authApi.me()` → `GET /auth/me`, mapping `role.name` (default `admin`).
-- There is a **second, divergent** `me` implementation at [/api/auth/me/route.ts](src/app/api/auth/me/route.ts) that returns a hard-coded `{ id: 'usr_1', name: 'Admin', role: 'admin' }` whenever a token cookie is present — but the client `authApi.me()` does not call it (it calls the backend directly).
+**Token refresh:** handled in `api()` — proactively when the token is near expiry and reactively on 401, both via the shared `refreshWithLock()` (see §5a).
 
-**Token refresh:** `api()` intercepts 401, calls `refresh()` (`POST /auth/refresh` with the refresh-token cookie), rotates cookies, retries once.
+**Route protection:** [middleware.ts](src/middleware.ts) on `/admin/:path*` and `/login` gates purely on presence of the `tap_session` cookie. No server-side role check in middleware; role is assumed `admin`.
 
-**Route protection:** Enforced at the edge by [middleware.ts](src/middleware.ts) on `/admin/:path*` and `/login` — presence of the `token` cookie is the only gate. There is no server-side role check in middleware; role is assumed `admin`.
+**Logout** ([SideBar.tsx](src/components/admin/layout/SideBar.tsx)): calls `logout()` from `useAuthContext()` → `POST /auth/logout` to revoke server-side, then (in `finally`) `clearAuthState()` wipes the in-memory token, `tap_refresh_token`, and both cookies. The component then removes `['me']` from the cache and routes to `/login`. Local cleanup runs even if the API call fails.
 
-**Logout** ([SideBar.tsx](src/components/admin/layout/SideBar.tsx)): `useLogout()` → `POST /auth/logout`, then clears `token`/`refreshToken` cookies (`Max-Age=0`), removes `['me']` from the query cache, and routes to `/login`. Falls back to local logout even if the API call fails.
+> **Note — server-side `backendFetch()` is now stale:** [server/backendFetch.ts](src/lib/api/server/backendFetch.ts) still reads a `token` cookie from request headers, but the new flow never sets one (the access token lives in memory). Any Route Handler relying on `backendFetch` for authenticated calls will send no bearer token. Those handlers are largely the legacy/dead BFF path (see Appendix); migrate or retire them.
+> **Note — divergent `/api/auth/me`:** [/api/auth/me/route.ts](src/app/api/auth/me/route.ts) still returns a hard-coded admin when a token cookie is present, but the client `authApi.me()` calls the backend directly and never hits it.
 
 ---
 
@@ -385,9 +394,9 @@ There are **three** ways data leaves the browser, plus a server-side fetcher.
 
 - **Server state:** **TanStack React Query** is the single source of truth for all remote data. Configured in [QueryProvider](src/lib/providers/QueryProvider.tsx): `staleTime` 2 min, `retry: 1`, `refetchOnWindowFocus: false`, devtools mounted. Query keys: `['me']`, `['admin-overview']`, `['admin-users', page, role]`, `['admin-artist', id]`, `['admin-venue', id]`, `['moderation-queue']`, `['admin-conversations', filters]`, `['conversation-thread', id]`, `['resources']`, `['admin-logs']`.
   - ⚠️ Cache-key mismatch: `useUpdateResources` in [useResources.ts](src/hooks/queries/useResources.ts) invalidates `['admin-resources']` (`onSettled`) which **no query uses**; the standalone [useUpdateResources.ts](src/hooks/queries/useUpdateResources.ts) correctly invalidates `['resources']`.
-- **Auth context:** `AuthContext`/`useAuth` exist ([AuthProvider.tsx](src/features/auth/AuthProvider.tsx)) but the provider is **not mounted**, so auth identity in practice flows through `useMe()`/cookies, not context.
+- **Auth context:** `AuthProvider`/`useAuthContext()` ([lib/api/auth/AuthContext.tsx](src/lib/api/auth/AuthContext.tsx)) is **mounted in the root layout** and is the single source of session state (`user`, `isAuthenticated`, `isLoading`, `setSession`, `logout`). Admin query hooks consume its `isLoading` to gate fetching until session restore completes.
 - **Local UI state:** plain `useState` per page (selected conversation, dialog open/close, filters, pagination page, busy flags, drag order). No Redux/Zustand/Jotai.
-- **Auth tokens:** persisted in **browser cookies** (not React state), read directly where needed.
+- **Auth tokens:** access token in **memory** (module variable in [client.ts](src/lib/api/client.ts)); refresh token in **localStorage** (`tap_refresh_token`); `tap_session`/`tap_role` marker **cookies** for middleware only.
 
 ---
 
@@ -423,7 +432,7 @@ Follow the established pattern (using the existing features as templates). To ad
 
 6. **Navigation** — add an entry to the `navMain` array in [SideBar.tsx](src/components/admin/layout/SideBar.tsx) (`{ title, url, icon }`). If the screen is reached from a user row, extend [AdminRoutes.ts](src/utils/AdminRoutes.ts).
 
-7. **Auth/access** — anything under `/admin/*` is automatically gated by [middleware.ts](src/middleware.ts); no extra wiring needed beyond ensuring the `token` cookie reaches the backend (handled by `api()`/`backendFetch`).
+7. **Auth/access** — anything under `/admin/*` is automatically gated by [middleware.ts](src/middleware.ts) via the `tap_session` cookie; no extra wiring needed. `api()` attaches the in-memory bearer token and handles refresh automatically. If a query must wait for session restore, gate it on `useAuthContext().isLoading` (`enabled: !isLoading`), as the existing admin hooks do.
 
 8. **Validate** — `npm run lint` (pre-commit also runs prettier + eslint via husky/lint-staged). Follow the [AGENTS.md](AGENTS.md) instruction to consult `node_modules/next/dist/docs/` before using unfamiliar Next.js APIs, since this Next.js version is treated as non-standard.
 
@@ -431,8 +440,9 @@ Follow the established pattern (using the existing features as templates). To ad
 
 ### Appendix — Known inconsistencies / tech debt surfaced during analysis
 - Two parallel data paths (direct `api()` vs `/api/admin/*` Route Handlers); most hooks bypass the handlers, leaving several handlers (and the `data_mock`-backed `/api/admin/artist|venue`) effectively dead or legacy.
-- `AuthProvider` is implemented but never mounted; `/api/auth/me` returns a hard-coded admin and is unused by the client.
-- Tokens are stored in JS-readable, non-`Secure`/non-`httpOnly` cookies.
+- `/api/auth/me` route handler still returns a hard-coded admin and is unused by the client (which calls the backend directly).
+- Server-side `backendFetch()` still expects a `token` cookie that the new auth flow no longer sets — authenticated Route-Handler/SSR calls through it will be unauthenticated until migrated.
+- Refresh token lives in `localStorage` (XSS-readable). Documented in [AuthContext.tsx](src/lib/api/auth/AuthContext.tsx)'s threat-model comment; the recommended hardening is an HttpOnly Secure cookie issued by the backend + CSP. The access token is in-memory only (not persisted).
 - Moderation preview dialog reads `item.content`, which the page mapping omits.
 - Resource update cache invalidation key (`['admin-resources']`) doesn't match the query key (`['resources']`) in one of the two `useUpdateResources` hooks.
 - Venue inspection Suspend/Reset buttons and artist Reset-Password button are unwired.

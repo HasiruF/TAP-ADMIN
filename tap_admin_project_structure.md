@@ -180,17 +180,24 @@ Every route handler imports directly from `src/data_mock/` and returns `NextResp
 
 ## 4. Authentication & Session Management
 
-**Current state: NONE — completely mocked.**
+**Current state: implemented (JWT against the backend).** Centralised in `<AuthProvider>` / `useAuthContext()` ([src/lib/api/auth/AuthContext.tsx](src/lib/api/auth/AuthContext.tsx)), mounted in the root layout.
 
-- The login page (`src/app/login/page.tsx`) has email/password inputs but the `handleLogin` function just calls `router.push("/admin")` with a `// TEMP MOCK LOGIN` comment.
-- The sidebar logout button calls `router.push("/login")` with a `// TEMP MOCK LOGOUT` comment.
-- There is **no middleware**, no session token, no cookie, no JWT, no context, no auth state whatsoever.
-- Any user can navigate directly to `/admin` without logging in.
+**Token storage model:**
+- **Access token → in-memory only** (module variable in [src/lib/api/client.ts](src/lib/api/client.ts)). Never persisted to cookies/localStorage; restored on reload via the refresh token. Minimises XSS exposure.
+- **Refresh token → `localStorage`** (`tap_refresh_token`) so sessions survive reloads.
+- **`tap_session` + `tap_role` → marker cookies** (client-set, `SameSite=Lax`, `Secure` in prod). Non-secret flags used **only** by middleware; the backend must validate every request independently.
 
-**What needs to be built:**
-- Auth middleware (`src/middleware.ts`) to protect `/admin/*` routes
-- Session/token storage (cookie recommended for SSR compatibility)
-- Real login API endpoint with credential validation
+**Flow:**
+- **Login** (`src/app/login/page.tsx`) → `POST /auth/email/login` → `setSession(token, user, refreshToken, tokenExpires)` stores token in memory, refresh token in localStorage, sets the marker cookies.
+- **Session restore** — on app load `AuthProvider` runs `refresh()` once, then `authApi.me()` to hydrate `user`; admin queries are gated on `!isLoading` so none fire before restore completes.
+- **Refresh** — `api()` refreshes proactively before expiry and reactively on 401, both through a shared `refreshWithLock()` (single in-flight refresh). Any failure calls `clearAuthState()` (wipes in-memory token + `tap_refresh_token` + both cookies).
+- **Route protection** — [src/middleware.ts](src/middleware.ts) on `/admin/:path*` and `/login` gates on the `tap_session` cookie.
+- **Logout** — `useAuthContext().logout()` → `POST /auth/logout` then `clearAuthState()`.
+
+**Known limitations / hardening TODO:**
+- Refresh token in `localStorage` is XSS-readable; recommended hardening is a backend-issued HttpOnly Secure cookie + CSP (documented in the threat-model comment in `AuthContext.tsx`).
+- `tap_session`/`tap_role` are client-trusted markers, not server-validated sessions — middleware does no role check (role assumed `admin`).
+- Server-side `backendFetch()` still reads a `token` cookie the new flow no longer sets (legacy BFF path).
 
 ---
 
