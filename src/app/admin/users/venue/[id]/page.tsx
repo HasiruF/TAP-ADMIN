@@ -58,16 +58,36 @@ export default function VenueDetailPage({
           Admin • Venue Inspection
         </p>
 
-        <h1
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: '54px',
-            fontWeight: 500,
-            color: 'var(--foreground)',
-          }}
-        >
-          {data.venueDetails.venueName}
-        </h1>
+        <div className="flex items-center gap-5">
+          {data.venueDetails.profilePicture && (
+            <div
+              className="relative shrink-0 overflow-hidden rounded-full border"
+              style={{
+                width: 96,
+                height: 96,
+                borderColor: 'var(--border)',
+              }}
+            >
+              <NextImage
+                src={resolveImg(data.venueDetails.profilePicture)}
+                alt={data.venueDetails.venueName ?? 'Profile picture'}
+                fill
+                className="object-cover"
+              />
+            </div>
+          )}
+
+          <h1
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '54px',
+              fontWeight: 500,
+              color: 'var(--foreground)',
+            }}
+          >
+            {data.venueDetails.venueName}
+          </h1>
+        </div>
       </div>
 
       {/* GRID */}

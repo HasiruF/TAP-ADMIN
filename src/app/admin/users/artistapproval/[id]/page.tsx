@@ -126,16 +126,36 @@ export default function ArtistApprovalPage({
         >
           Admin • Artist Approval
         </p>
-        <h1
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: '54px',
-            fontWeight: 500,
-            color: 'var(--foreground)',
-          }}
-        >
-          {data.basicInfo.stageName}
-        </h1>
+        <div className="flex items-center gap-5">
+          {data.basicInfo.profilePicture && (
+            <div
+              className="relative shrink-0 overflow-hidden rounded-full border"
+              style={{
+                width: 96,
+                height: 96,
+                borderColor: 'var(--border)',
+              }}
+            >
+              <NextImage
+                src={resolveImg(data.basicInfo.profilePicture)}
+                alt={data.basicInfo.stageName ?? 'Profile picture'}
+                fill
+                className="object-cover"
+              />
+            </div>
+          )}
+
+          <h1
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '54px',
+              fontWeight: 500,
+              color: 'var(--foreground)',
+            }}
+          >
+            {data.basicInfo.stageName}
+          </h1>
+        </div>
       </div>
 
       {/* GRID */}
