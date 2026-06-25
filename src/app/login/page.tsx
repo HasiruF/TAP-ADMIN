@@ -35,10 +35,7 @@ export default function LoginPage() {
           id: res.user.id,
           name: `${res.user.firstName} ${res.user.lastName}`.trim(),
           email: res.user.email,
-          role: res.user.role.name.toLowerCase() as
-            | 'admin'
-            | 'artist'
-            | 'venue',
+          role: res.user.role?.name?.toLowerCase() ?? 'admin',
         },
         res.refreshToken
       )

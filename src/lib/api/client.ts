@@ -1,5 +1,5 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL
-
+import Cookies from 'js-cookie'
 import { refresh, RefreshResponse } from './auth'
 /**
  * Authentication security considerations:
@@ -28,7 +28,7 @@ export function setAccessToken(token: string | null, tokenExpires?: number) {
   accessToken = token
 
   if (token && tokenExpires) {
-    tokenExpiresAt = Date.now() + tokenExpires * 1000
+    tokenExpiresAt = tokenExpires //epoch milliseconds
   } else {
     tokenExpiresAt = null
   }
@@ -69,7 +69,7 @@ export async function api(path: string, options: RequestInit = {}) {
 
   if (isTokenExpired()) {
     try {
-      const newTokens = await refresh()
+      const newTokens = await refreshWithLock()
 
       setAccessToken(newTokens.token, newTokens.tokenExpires)
     } catch {
@@ -88,8 +88,11 @@ export async function api(path: string, options: RequestInit = {}) {
       res = await request(newTokens.token)
     } catch (err) {
       setAccessToken(null)
-      localStorage.removeItem('tap_refresh_token')
-
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('tap_refresh_token')
+      }
+      Cookies.remove('tap_session')
+      Cookies.remove('tap_role')
       throw new Error('Session expired')
     }
   }

@@ -120,7 +120,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAccessToken(null)
 
         localStorage.removeItem('tap_refresh_token')
-
+        Cookies.remove('tap_session')
+        Cookies.remove('tap_role')
         setState({
           user: null,
           accessToken: null,
