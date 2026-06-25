@@ -37,6 +37,27 @@ export function setAccessToken(token: string | null, tokenExpires?: number) {
 export function getAccessToken() {
   return accessToken
 }
+
+/**
+ * Clears ALL client-side auth state: the in-memory access token, the persisted
+ * refresh token, and the middleware marker cookies.
+ *
+ * This is the single source of truth for "log the user out locally" and MUST be
+ * used by every path that abandons a session (refresh failure, logout, etc.) so
+ * the in-memory token, localStorage, and the tap_session/tap_role cookies never
+ * drift out of sync — a desync leaves middleware thinking the user is still
+ * logged in and traps them on protected routes.
+ */
+export function clearAuthState() {
+  setAccessToken(null)
+
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('tap_refresh_token')
+  }
+
+  Cookies.remove('tap_session', { path: '/' })
+  Cookies.remove('tap_role', { path: '/' })
+}
 let refreshPromise: Promise<RefreshResponse> | null = null
 
 async function refreshWithLock() {
@@ -73,7 +94,7 @@ export async function api(path: string, options: RequestInit = {}) {
 
       setAccessToken(newTokens.token, newTokens.tokenExpires)
     } catch {
-      setAccessToken(null)
+      clearAuthState()
       throw new Error('Session expired')
     }
   }
@@ -86,13 +107,8 @@ export async function api(path: string, options: RequestInit = {}) {
       setAccessToken(newTokens.token, newTokens.tokenExpires)
 
       res = await request(newTokens.token)
-    } catch (err) {
-      setAccessToken(null)
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('tap_refresh_token')
-      }
-      Cookies.remove('tap_session')
-      Cookies.remove('tap_role')
+    } catch {
+      clearAuthState()
       throw new Error('Session expired')
     }
   }

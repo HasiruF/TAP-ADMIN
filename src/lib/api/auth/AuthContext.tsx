@@ -11,7 +11,7 @@ import React, {
 
 import Cookies from 'js-cookie'
 
-import { setAccessToken } from '../client'
+import { setAccessToken, clearAuthState } from '../client'
 import { refresh } from '../auth'
 import { authApi } from '@/features/auth/api'
 
@@ -23,7 +23,12 @@ interface AuthContextValue {
   isAuthenticated: boolean
   isLoading: boolean
 
-  setSession: (token: string, user: Authuser, refreshToken?: string) => void
+  setSession: (
+    token: string,
+    user: Authuser,
+    refreshToken?: string,
+    tokenExpires?: number
+  ) => void
 
   logout: () => Promise<void>
 }
@@ -117,11 +122,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {
         // ⚠️ If refresh fails (no stored token, expired token, etc.), clear auth state
         // and set isLoading=false so the app can redirect to login
-        setAccessToken(null)
+        clearAuthState()
 
-        localStorage.removeItem('tap_refresh_token')
-        Cookies.remove('tap_session')
-        Cookies.remove('tap_role')
         setState({
           user: null,
           accessToken: null,
@@ -134,10 +136,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ⚠️ setSession is called after successful login to store the session in memory, localStorage, and cookies.
   // Do NOT call this during logout; use logout() instead to ensure all state is cleared.
   const setSession = useCallback(
-    (token: string, user: Authuser, refreshToken?: string) => {
+    (
+      token: string,
+      user: Authuser,
+      refreshToken?: string,
+      tokenExpires?: number
+    ) => {
       // ⚠️ Access token lives ONLY in memory and is cleared on logout or page reload.
       // This prevents accidental exposure through localStorage/cookies.
-      setAccessToken(token)
+      // ⚠️ tokenExpires (absolute epoch ms from the backend) lets the client
+      // proactively refresh before the token 401s; without it the first refresh
+      // only happens reactively after a 401.
+      setAccessToken(token, tokenExpires)
 
       // ⚠️ Refresh token is persisted in localStorage to allow session restoration after reload.
       // If backend changes to send refresh token in HttpOnly cookie, remove this line.
@@ -182,22 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       // ⚠️ TOTAL WIPEOUT: Clear ALL auth state from memory, localStorage, and cookies.
       // This ensures the user is fully logged out and cannot make authenticated requests.
-
-      // Clear in-memory access token
-      setAccessToken(null)
-
-      // Clear refresh token stored for session restoration
-      localStorage.removeItem('tap_refresh_token')
-
-      // Clear session marker cookie
-      Cookies.remove('tap_session', {
-        path: '/',
-      })
-
-      // Clear role cookie
-      Cookies.remove('tap_role', {
-        path: '/',
-      })
+      clearAuthState()
 
       // Reset auth context to logged-out state
       setState({

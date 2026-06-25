@@ -37,7 +37,8 @@ export default function LoginPage() {
           email: res.user.email,
           role: res.user.role?.name?.toLowerCase() ?? 'admin',
         },
-        res.refreshToken
+        res.refreshToken,
+        res.tokenExpires
       )
 
       await queryClient.invalidateQueries({ queryKey: ['me'] })
