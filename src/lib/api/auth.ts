@@ -1,3 +1,5 @@
+import { setAccessToken } from './client'
+
 export interface RefreshResponse {
   token: string
   refreshToken: string
@@ -7,10 +9,7 @@ export interface RefreshResponse {
 export async function refresh(): Promise<RefreshResponse> {
   const storedRefreshToken =
     typeof window !== 'undefined'
-      ? document.cookie
-          .split('; ')
-          .find((row) => row.startsWith('refreshToken='))
-          ?.split('=')[1]
+      ? localStorage.getItem('tap_refresh_token')
       : null
 
   if (!storedRefreshToken) {
@@ -31,9 +30,11 @@ export async function refresh(): Promise<RefreshResponse> {
 
   const data = await res.json()
 
-  // store new tokens
-  document.cookie = `token=${data.token}; path=/;`
-  document.cookie = `refreshToken=${data.refreshToken}; path=/;`
+  // access token stays only in memory
+  setAccessToken(data.token)
+
+  // refresh token persists for reloads
+  localStorage.setItem('tap_refresh_token', data.refreshToken)
 
   return data
 }
