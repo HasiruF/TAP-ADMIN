@@ -1,6 +1,8 @@
 # TAP Admin — Data Contracts
 
 > 🗂️ **AUDIT NOTE — 2026-06-24:** Field contracts here largely predate live backend wiring; many "dummy-data shapes" are now served by real endpoints. Cross-check shapes against the backend DTOs / OpenAPI spec. Consolidated state: `../tap-platform/projectUpdate24June.md`.
+>
+> **Update 2026-06-25:** Artist/venue inspection responses now include `basicInfo.profilePicture` (string URL, resolved `cdnUrl → storageKey`; null when none). The artist/venue/artist-approval/venue-approval inspection pages render this avatar next to the name.
 
 > **Source of truth for every field the admin UI reads, renders, sends, or filters on.**
 > Generated from full static analysis of `src/`. All dummy-data shapes represent what the real API **must** return.
