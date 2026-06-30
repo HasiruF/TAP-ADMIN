@@ -263,10 +263,13 @@ export default function VenueDetailPage({
               <p>Pricing Model: {data.bookingPreferences.pricingModel}</p>
 
               <p>
-                Budget: {data.bookingPreferences.minPrice} -{' '}
-                {data.bookingPreferences.maxPrice}
+                Budget:{' '}
+                {data.bookingPreferences.pricingRange
+                  ? data.bookingPreferences.pricingRange
+                  : `${data.bookingPreferences.minPrice || '0'} - ${
+                      data.bookingPreferences.maxPrice || '∞'
+                    }`}
               </p>
-
               <p style={{ color: 'var(--muted-foreground)' }}>
                 {data.bookingPreferences.bookingNotes}
               </p>
