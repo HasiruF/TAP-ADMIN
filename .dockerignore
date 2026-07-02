@@ -1,8 +1,36 @@
+# Dependencies & build output (re-created inside the image)
 node_modules
 .next
+out
 dist
 build
-npm-debug.log
+coverage
+
+# Env & secrets — never bake these into the image layer
+.env
+.env.*
+*.pem
+
+# VCS & CI
+.git
+.gitignore
+.github
+
+# Docker
 Dockerfile
 docker-compose.yml
-.git
+.dockerignore
+
+# Tooling / editor / OS
+.husky
+.vscode
+.idea
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Tests & docs not needed at runtime
+**/*.test.ts
+**/*.test.tsx
+*.md
