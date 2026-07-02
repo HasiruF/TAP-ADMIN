@@ -21,6 +21,11 @@ WORKDIR /app
 # libc6-compat keeps some native npm deps happy on Alpine.
 RUN apk add --no-cache libc6-compat
 
+# Disable Husky's git-hook install: the `prepare` lifecycle script runs
+# `husky install`, which has no place in an image (no .git, dev-only tooling)
+# and would fail the build. Husky v9 honors HUSKY=0 as a clean no-op.
+ENV HUSKY=0
+
 # Copy only manifests first so this layer is cached until the lockfile changes.
 COPY package.json package-lock.json* ./
 RUN npm ci
