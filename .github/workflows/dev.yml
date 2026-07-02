@@ -60,7 +60,7 @@ jobs:
       - name: Download current ECS task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition dev-admin \
+            --task-definition dev-admin-panel \
             --query taskDefinition > task-definition.json
       - name: Render new image into task definition
         id: task-def
@@ -73,6 +73,6 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: dev-admin
+          service: dev-admin-panel
           cluster: tap-dev
           wait-for-service-stability: false
