@@ -5,11 +5,11 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
   Shield,
-  RefreshCw,
   MapPin,
   Building2,
   Users,
   Music2,
+  Mic2,
   Image as ImageIcon,
   ScrollText,
 } from 'lucide-react'
@@ -102,7 +102,7 @@ export default function VenueDetailPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-4 flex items-center gap-2">
+            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
               <Building2 size={16} /> Venue Details
             </h2>
 
@@ -131,27 +131,30 @@ export default function VenueDetailPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-4 flex items-center gap-2">
+            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
               <Users size={16} /> Capacity & Stage
             </h2>
 
             <div className="space-y-2 text-sm">
               <p>
-                Capacity:{' '}
+                <strong>Capacity:</strong>{' '}
                 <span style={{ color: 'var(--foreground)' }}>
                   {data.capacitySpecs.capacity}
                 </span>
               </p>
 
               <p>
-                Stage:{' '}
+                <strong>Stage:</strong>{' '}
                 {data.capacitySpecs.hasStage ? 'Available' : 'Not Available'}
               </p>
 
-              <p>Stage Size: {data.capacitySpecs.stageDimensions}</p>
+              <p>
+                <strong>Stage Size:</strong>{' '}
+                {data.capacitySpecs.stageDimensions}
+              </p>
 
               <p>
-                Sound System:{' '}
+                <strong>Sound System:</strong>{' '}
                 {data.capacitySpecs.soundSystem.join(', ') || 'None listed'}
               </p>
 
@@ -168,37 +171,39 @@ export default function VenueDetailPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-4">Equipment & Support</h2>
+            <h2 className="mb-4 text-base font-semibold">
+              Equipment & Support
+            </h2>
 
             <div className="space-y-2 text-sm">
               <p>
-                Full Band Support:{' '}
+                <strong>Full Band Support:</strong>{' '}
                 {data.capacitySpecs.fullBandSupport ? 'Yes' : 'No'}
               </p>
 
               <p>
-                Audio Mixers:{' '}
+                <strong>Audio Mixers:</strong>{' '}
                 {data.capacitySpecs.audioMixersAvailable
                   ? 'Available'
                   : 'Not Available'}
               </p>
 
               <p>
-                Sound Engineer:{' '}
+                <strong>Sound Engineer:</strong>{' '}
                 {data.capacitySpecs.soundEngineerAvailable
                   ? 'Available'
                   : 'Not Available'}
               </p>
 
               <p>
-                Production Team:{' '}
+                <strong>Production Team:</strong>{' '}
                 {data.capacitySpecs.productionTeamAvailable
                   ? 'Available'
                   : 'Not Available'}
               </p>
 
               <p>
-                Equipment Provided:{' '}
+                <strong>Equipment Provided:</strong>{' '}
                 {data.capacitySpecs.equipmentProvided.join(', ') || 'None'}
               </p>
             </div>
@@ -212,27 +217,60 @@ export default function VenueDetailPage({
                 borderColor: 'var(--border)',
               }}
             >
-              <h2 className="mb-4">Venue History</h2>
+              <h2 className="mb-4 text-base font-semibold">
+                Past Performances
+              </h2>
 
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {data.venueHistory.map((event: any) => (
-                  <div key={event.id} className="text-sm border p-3 rounded-xl">
-                    <p className="font-medium">{event.performanceName}</p>
-
-                    <p className="text-muted-foreground">
-                      {event.eventDescription}
-                    </p>
-
+                  <div
+                    key={event.id}
+                    className="text-sm border p-3 rounded-xl"
+                    style={{ borderColor: 'var(--border)' }}
+                  >
                     {event.media && (
-                      <div className="relative mt-2 rounded-lg aspect-video overflow-hidden">
-                        <NextImage
-                          src={resolveImg(event.media)}
-                          alt={event.performanceName || 'Venue history'}
-                          fill
-                          className="object-cover"
-                        />
+                      <div className="relative rounded-lg aspect-video overflow-hidden">
+                        {/\.(mp4|webm|mov|ogg)(\?|$)/i.test(event.media) ? (
+                          <video
+                            src={resolveImg(event.media)}
+                            controls
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                        ) : (
+                          <NextImage
+                            src={resolveImg(event.media)}
+                            alt={event.performanceName || 'Past performance'}
+                            fill
+                            className="object-cover"
+                          />
+                        )}
                       </div>
                     )}
+
+                    <div className="mt-3 flex items-center gap-1.5">
+                      <Mic2 size={12} style={{ color: 'var(--gold)' }} />
+                      <span
+                        className="font-semibold"
+                        style={{
+                          fontSize: '10px',
+                          letterSpacing: '0.12em',
+                          textTransform: 'uppercase',
+                          color: 'var(--gold)',
+                        }}
+                      >
+                        Artist
+                      </span>
+                    </div>
+                    <p className="font-semibold text-base mt-0.5">
+                      {event.performanceName}
+                    </p>
+
+                    <p
+                      className="mt-1"
+                      style={{ color: 'var(--muted-foreground)' }}
+                    >
+                      {event.eventDescription}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -246,23 +284,29 @@ export default function VenueDetailPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-4 flex items-center gap-2">
+            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
               <Music2 size={16} /> Booking Preferences
             </h2>
 
             <div className="space-y-2 text-sm">
               <p>
-                Event Types:{' '}
+                <strong>Event Types:</strong>{' '}
                 {data.bookingPreferences.eventTypes.join(', ') || 'None'}
               </p>
 
               <p>
-                Genres: {data.bookingPreferences.genres.join(', ') || 'All'}
+                <strong>Genres:</strong>{' '}
+                {data.bookingPreferences.genres.join(', ') || 'All'}
               </p>
 
-              <p>Pricing Model: {data.bookingPreferences.pricingModel}</p>
+              <p>
+                <strong>Pricing Model:</strong>{' '}
+                {data.bookingPreferences.pricingModel}
+              </p>
 
-              <p>Budget: {formatBudget(data.bookingPreferences)}</p>
+              <p>
+                <strong>Budget:</strong> {formatBudget(data.bookingPreferences)}
+              </p>
               <p style={{ color: 'var(--muted-foreground)' }}>
                 {data.bookingPreferences.bookingNotes}
               </p>
@@ -309,7 +353,7 @@ export default function VenueDetailPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-6">Admin Actions</h2>
+            <h2 className="mb-6 text-base font-semibold">Admin Actions</h2>
 
             <div className="space-y-3">
               <Button
@@ -321,18 +365,6 @@ export default function VenueDetailPage({
               >
                 <Shield size={14} />
                 Suspend Venue
-              </Button>
-
-              <Button
-                className="w-full"
-                variant="outline"
-                style={{
-                  borderColor: 'var(--border)',
-                  color: 'var(--foreground)',
-                }}
-              >
-                <RefreshCw size={14} />
-                Reset Password
               </Button>
 
               <Button
@@ -364,12 +396,19 @@ export default function VenueDetailPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-4">Quick Summary</h2>
+            <h2 className="mb-4 text-base font-semibold">Quick Summary</h2>
 
             <div className="text-sm space-y-2">
-              <p>Capacity: {data.capacitySpecs.capacity}</p>
-              <p>Stage: {data.capacitySpecs.hasStage ? 'Yes' : 'No'}</p>
-              <p>City: {data.venueDetails.city}</p>
+              <p>
+                <strong>Capacity:</strong> {data.capacitySpecs.capacity}
+              </p>
+              <p>
+                <strong>Stage:</strong>{' '}
+                {data.capacitySpecs.hasStage ? 'Yes' : 'No'}
+              </p>
+              <p>
+                <strong>City:</strong> {data.venueDetails.city}
+              </p>
             </div>
           </section>
         </div>
@@ -383,8 +422,8 @@ export default function VenueDetailPage({
           borderColor: 'var(--border)',
         }}
       >
-        <h2 className="mb-4 flex items-center gap-2">
-          <ImageIcon size={16} /> Venue Photos
+        <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
+          <ImageIcon size={16} /> Picture Gallery
         </h2>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

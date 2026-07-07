@@ -44,6 +44,11 @@ const navMain = [
     icon: ShieldAlert,
   },
   {
+    title: 'Resources',
+    url: '/admin/resources',
+    icon: BookOpen,
+  },
+  {
     title: 'Activity Logs',
     url: '/admin/log',
     icon: ScrollText,
@@ -52,11 +57,7 @@ const navMain = [
     title: 'Message Moderation',
     url: '/admin/messages',
     icon: MessageSquare,
-  },
-  {
-    title: 'Help Resources',
-    url: '/admin/resources',
-    icon: BookOpen,
+    disabled: true,
   },
 ]
 
@@ -149,6 +150,7 @@ export function AppSidebar() {
           <SidebarMenu>
             {navMain.map((item) => {
               const isActive = pathname === item.url
+              const isDisabled = item.disabled
 
               return (
                 <SidebarMenuItem key={item.title}>
@@ -161,34 +163,57 @@ export function AppSidebar() {
                       backgroundColor: isActive
                         ? 'var(--foreground)'
                         : 'transparent',
+                      opacity: isDisabled ? 0.5 : 1,
+                      cursor: isDisabled ? 'not-allowed' : undefined,
                     }}
-                    className="
+                    className={`
                       transition-all
                       rounded-2xl
-                      hover:translate-x-[2px]
-                      hover:bg-[rgba(255,255,255,0.04)]
-                      "
+                      ${
+                        isDisabled
+                          ? ''
+                          : 'hover:translate-x-[2px] hover:bg-[rgba(255,255,255,0.04)]'
+                      }
+                      `}
                   >
-                    <a
-                      href={item.url}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl
-                         ${isCollapsed ? 'justify-center' : ''}`}
-                    >
-                      <item.icon
-                        size={24}
-                        style={{
-                          color: isActive ? 'var(--gold)' : 'var(--gold)',
-                        }}
-                      />
-
-                      <span
-                        className={
-                          isCollapsed ? 'hidden' : 'text-[15px] font-medium'
-                        }
+                    {isDisabled ? (
+                      <div
+                        aria-disabled="true"
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-not-allowed
+                           ${isCollapsed ? 'justify-center' : ''}`}
                       >
-                        {item.title}
-                      </span>
-                    </a>
+                        <item.icon size={24} style={{ color: 'var(--gold)' }} />
+
+                        <span
+                          className={
+                            isCollapsed ? 'hidden' : 'text-[15px] font-medium'
+                          }
+                        >
+                          {item.title}
+                        </span>
+                      </div>
+                    ) : (
+                      <a
+                        href={item.url}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl
+                           ${isCollapsed ? 'justify-center' : ''}`}
+                      >
+                        <item.icon
+                          size={24}
+                          style={{
+                            color: isActive ? 'var(--gold)' : 'var(--gold)',
+                          }}
+                        />
+
+                        <span
+                          className={
+                            isCollapsed ? 'hidden' : 'text-[15px] font-medium'
+                          }
+                        >
+                          {item.title}
+                        </span>
+                      </a>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )

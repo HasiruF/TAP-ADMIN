@@ -3,6 +3,7 @@ import { api } from '@/lib/api/client'
 export interface ModerationItem {
   contentModId: string
   userId: string | null
+  email: string | null
   name: string | null
   type: 'images' | 'video' | string
   role: 'artist' | 'venue' | string | null

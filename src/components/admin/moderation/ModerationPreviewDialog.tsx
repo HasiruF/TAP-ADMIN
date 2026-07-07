@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 type ModerationItem = {
   id: string
   userId: string
+  email: string
   name: string
   type: string
   role?: string
@@ -229,7 +230,7 @@ export function ModerationPreviewDialog({
                 fontSize: '13px',
               }}
             >
-              User ID: {item.userId}
+              Email: {item.email}
             </p>
 
             <p
