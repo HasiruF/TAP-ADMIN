@@ -10,6 +10,65 @@ import { useAuthContext } from '@/lib/api/auth/AuthContext'
 import { useLogin } from '@/features/auth/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 import { loginSchema, LoginInput } from '@/lib/schemas/loginSchema'
+
+interface ApiErrorBody {
+  message?: string | string[]
+  errors?: Record<string, string>
+  retryAfter?: number
+}
+
+function isApiErrorBody(err: unknown): err is ApiErrorBody {
+  return typeof err === 'object' && err !== null
+}
+
+function getLoginErrorMessage(err: unknown): string {
+  if (!isApiErrorBody(err)) {
+    return 'Login failed. Please try again.'
+  }
+
+  if (err.errors?.password === 'invalidCredentials') {
+    return 'Invalid email or password.'
+  }
+
+  if (err.errors?.email?.startsWith('needLoginViaProvider:')) {
+    const provider = err.errors.email.split(':')[1]
+    return `This account signs in with ${provider}. Please use ${provider} instead.`
+  }
+
+  if (err.errors) {
+    const firstError = Object.values(err.errors)[0]
+    if (firstError) return firstError
+  }
+
+  if (typeof err.message === 'string') {
+    if (
+      err.message === 'Account locked' &&
+      typeof err.retryAfter === 'number'
+    ) {
+      const minutes = Math.ceil(err.retryAfter / 60)
+      return `Too many failed attempts. Please try again in ${minutes} minute${
+        minutes === 1 ? '' : 's'
+      }.`
+    }
+
+    if (err.message === 'Session expired') {
+      return 'Your session has expired. Please log in again.'
+    }
+
+    if (/fetch|network/i.test(err.message)) {
+      return 'Unable to reach the server. Please check your connection and try again.'
+    }
+
+    return err.message
+  }
+
+  if (Array.isArray(err.message) && err.message.length > 0) {
+    return err.message[0]
+  }
+
+  return 'Login failed. Please try again.'
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -45,10 +104,7 @@ export default function LoginPage() {
 
       router.push('/admin')
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Login failed. Please try again.'
-
-      setServerError(message)
+      setServerError(getLoginErrorMessage(err))
     }
   }
 
@@ -106,16 +162,21 @@ export default function LoginPage() {
         {/* FORM */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {serverError && (
-            <div className="text-red-500 text-sm">{serverError}</div>
+            <div
+              role="alert"
+              className="text-sm rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-destructive"
+            >
+              {serverError}
+            </div>
           )}
           {/* EMAIL */}
           <div className="space-y-2">
             <label>Email</label>
 
-            <Input placeholder="admin@tap.com" {...register('email')} />
+            <Input placeholder="Enter your Email" {...register('email')} />
 
             {errors.email && (
-              <p className="text-red-400 text-sm">{errors.email.message}</p>
+              <p className="text-destructive text-sm">{errors.email.message}</p>
             )}
           </div>
 
@@ -125,12 +186,14 @@ export default function LoginPage() {
 
             <Input
               type="password"
-              placeholder="••••••••"
+              placeholder="Enter your Password"
               {...register('password')}
             />
 
             {errors.password && (
-              <p className="text-red-400 text-sm">{errors.password.message}</p>
+              <p className="text-destructive text-sm">
+                {errors.password.message}
+              </p>
             )}
           </div>
 

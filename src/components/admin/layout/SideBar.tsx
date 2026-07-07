@@ -230,11 +230,17 @@ export function AppSidebar() {
         >
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2 rounded-xl hover:bg-[rgba(255,255,255,0.04)] transition"
+            className={`flex items-center gap-3 w-full px-3 py-2 rounded-xl cursor-pointer transition-all hover:translate-x-[2px] hover:bg-[rgba(255,255,255,0.06)] active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${
+              isCollapsed ? 'justify-center' : ''
+            }`}
             style={{ color: 'var(--foreground)' }}
           >
             <LogOut size={18} style={{ color: 'var(--muted-foreground)' }} />
-            <span className="text-sm">Logout</span>
+            <span
+              className={`text-sm font-medium ${isCollapsed ? 'hidden' : ''}`}
+            >
+              Logout
+            </span>
           </button>
         </div>
       </SidebarFooter>
