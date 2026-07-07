@@ -13,6 +13,7 @@ export default function ContentModerationPage() {
   const tableData = moderationData.map((item: any) => ({
     id: item.contentModId,
     userId: item.userId ?? '-',
+    email: item.email ?? '-',
     name: item.name ?? '-',
     type: item.type,
     role: item.role ?? '-',

@@ -117,6 +117,7 @@ export default function AdminOverviewPage() {
           </div>
         ))}
       </div>
+
       <GrowthChart />
     </div>
   )

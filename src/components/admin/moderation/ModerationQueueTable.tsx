@@ -21,6 +21,7 @@ import {
 type ModerationItem = {
   id: string
   userId: string
+  email: string
   name: string
   type: string
   date: string
@@ -130,8 +131,8 @@ export function ModerationQueueTable({
       <Table>
         <TableHeader>
           <TableRow style={{ borderColor: 'var(--border)' }}>
-            <TableHead className="text-center">User ID</TableHead>
             <TableHead className="text-center">Name</TableHead>
+            <TableHead className="text-center">Email</TableHead>
             <TableHead className="text-center">Type</TableHead>
             <TableHead className="text-center">Date</TableHead>
             <TableHead className="text-center">Actions</TableHead>
@@ -146,20 +147,20 @@ export function ModerationQueueTable({
               className="cursor-pointer"
               style={{ borderColor: 'var(--border)' }}
             >
-              {/* USER ID */}
-              <TableCell
-                className="text-center"
-                style={{ color: 'var(--muted-foreground)' }}
-              >
-                {item.userId}
-              </TableCell>
-
               {/* NAME */}
               <TableCell
                 className="text-center"
                 style={{ color: 'var(--foreground)', fontWeight: 500 }}
               >
                 {item.name}
+              </TableCell>
+
+              {/* EMAIL */}
+              <TableCell
+                className="text-center"
+                style={{ color: 'var(--muted-foreground)' }}
+              >
+                {item.email}
               </TableCell>
 
               {/* TYPE */}

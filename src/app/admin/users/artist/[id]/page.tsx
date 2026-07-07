@@ -5,10 +5,10 @@ import NextImage from 'next/image'
 import { Button } from '@/components/ui/button'
 import {
   Shield,
-  RefreshCw,
   MapPin,
   Music2,
   Video,
+  Share2,
   Link as LinkIcon,
   Image as ImageIcon,
   ScrollText,
@@ -171,7 +171,7 @@ export default function ArtistDetailPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-4">Basic Info</h2>
+            <h2 className="mb-4 text-base font-semibold">Basic Info</h2>
 
             <div className="space-y-2 text-sm">
               <p>
@@ -202,22 +202,36 @@ export default function ArtistDetailPage({
             </div>
           </section>
           {/* MEMBERS AND INSTRUMENTS*/}
-          {data.members && (
-            <section className="p-6 rounded-3xl border">
-              <h2 className="mb-4">Members</h2>
+          {data.members && data.members.numberOfMembers !== 1 && (
+            <section
+              className="p-6 rounded-3xl border"
+              style={{
+                backgroundColor: 'var(--card)',
+                borderColor: 'var(--border)',
+              }}
+            >
+              <h2 className="mb-4 text-base font-semibold">Members</h2>
 
               <p className="text-sm">
-                Number of Members: {data.members.numberOfMembers ?? '-'}
+                <strong>Number of Members:</strong>{' '}
+                {data.members.numberOfMembers ?? '-'}
               </p>
 
               <p className="text-sm">
-                Names: {data.members.memberNames.join(', ') || '-'}
+                <strong>Names:</strong>{' '}
+                {data.members.memberNames.join(', ') || '-'}
               </p>
             </section>
           )}
           {data.instruments && (
-            <section className="p-6 rounded-3xl border">
-              <h2 className="mb-4">Instruments</h2>
+            <section
+              className="p-6 rounded-3xl border"
+              style={{
+                backgroundColor: 'var(--card)',
+                borderColor: 'var(--border)',
+              }}
+            >
+              <h2 className="mb-4 text-base font-semibold">Instruments</h2>
 
               <p className="text-sm">
                 {data.instruments.instruments.join(', ') || '-'}
@@ -232,7 +246,7 @@ export default function ArtistDetailPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-4">Genres & Style</h2>
+            <h2 className="mb-4 text-base font-semibold">Genres & Style</h2>
 
             <div className="flex flex-wrap gap-2 mb-4">
               {data.genres.genres.map((g: string) => (
@@ -250,19 +264,24 @@ export default function ArtistDetailPage({
             </div>
 
             <div className="text-sm space-y-1">
-              <p>Performance Type: {data.genres.performanceType ?? '-'}</p>
+              <p>
+                <strong>Performance Type:</strong>{' '}
+                {data.genres.performanceType ?? '-'}
+              </p>
 
               <p>
-                Act Type:{' '}
+                <strong>Act Type:</strong>{' '}
                 {data.genres.actType?.length
                   ? data.genres.actType.join(', ')
                   : '-'}
               </p>
 
-              <p>Energy: {data.genres.energyLevel ?? '-'}</p>
+              <p>
+                <strong>Energy:</strong> {data.genres.energyLevel ?? '-'}
+              </p>
             </div>
           </section>
-          {/* MEDIA */}
+          {/* PICTURE GALLERY */}
           <section
             className="p-6 rounded-3xl border"
             style={{
@@ -270,52 +289,121 @@ export default function ArtistDetailPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-4 flex items-center gap-2">
-              <Video size={16} /> Media
+            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
+              <ImageIcon size={16} /> Picture Gallery
             </h2>
 
-            {/* Video Preview */}
-            {data.media.videoUrl &&
-              isYouTubeUrl(data.media.videoUrl) &&
-              getYouTubeEmbedUrl(data.media.videoUrl) && (
-                <div
-                  className="relative rounded-xl overflow-hidden mb-4 border"
-                  style={{ aspectRatio: '16/9' }}
-                >
-                  <iframe
-                    src={getYouTubeEmbedUrl(data.media.videoUrl) || ''}
-                    className="w-full h-full"
-                    allowFullScreen
-                  />
-                </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {data.media.images.length > 0 ? (
+                data.media.images.map((img: string, i: number) => (
+                  <div
+                    key={i}
+                    className="relative rounded-xl aspect-square overflow-hidden"
+                  >
+                    <NextImage
+                      src={resolveImg(img)}
+                      alt="Artist photo"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No images uploaded
+                </p>
               )}
+            </div>
+          </section>
+          {/* VIDEO GALLERY */}
+          <section
+            className="p-6 rounded-3xl border"
+            style={{
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
+            }}
+          >
+            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
+              <Video size={16} /> Video Gallery
+            </h2>
 
             {/* Live Performances */}
             {data.media.livePerformance.length > 0 && (
-              <div className="space-y-3 mb-4">
-                <h3 className="text-sm font-medium">Live Performances</h3>
-
-                {data.media.livePerformance.map(
-                  (lp: { id: string; url: string; name: string | null }) => (
-                    <div
-                      key={lp.id}
-                      className="text-sm flex items-center gap-2"
-                    >
-                      <ExternalLink size={12} />
-                      <a href={lp.url} target="_blank" className="underline">
-                        {lp.name || lp.url}
-                      </a>
-                    </div>
-                  )
-                )}
+              <div className="mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">
+                  {data.media.livePerformance.map(
+                    (lp: {
+                      id: string
+                      url: string
+                      title?: string
+                      name?: string | null
+                    }) => {
+                      const embedUrl = isYouTubeUrl(lp.url)
+                        ? getYouTubeEmbedUrl(lp.url)
+                        : null
+                      const label = lp.title || lp.name || undefined
+                      return (
+                        <div
+                          key={lp.id}
+                          className="relative overflow-hidden rounded-xl border"
+                          style={{
+                            aspectRatio: '16/9',
+                            borderColor: 'var(--border)',
+                          }}
+                        >
+                          {embedUrl ? (
+                            <iframe
+                              src={embedUrl}
+                              title={label || 'Live performance video'}
+                              className="w-full h-full"
+                              allowFullScreen
+                            />
+                          ) : (
+                            <video
+                              src={resolveImg(lp.url)}
+                              controls
+                              className="w-full h-full object-cover"
+                            />
+                          )}
+                        </div>
+                      )
+                    }
+                  )}
+                </div>
               </div>
             )}
+          </section>
+
+          {/* SOCIAL LINKS */}
+          <section
+            className="p-6 rounded-3xl border"
+            style={{
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
+            }}
+          >
+            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
+              <Share2 size={16} /> Social Links
+            </h2>
             <div className="space-y-1 text-sm">
-              <p>Instagram: {data.media.socialMedia.instagram ?? '-'}</p>
-              <p>TikTok: {data.media.socialMedia.tiktok ?? '-'}</p>
-              <p>YouTube: {data.media.socialMedia.youtube ?? '-'}</p>
-              <p>Facebook: {data.media.socialMedia.facebook ?? '-'}</p>
-              <p>X: {data.media.socialMedia.x ?? '-'}</p>
+              <p>
+                <strong>Instagram:</strong>{' '}
+                {data.media.socialMedia.instagram ?? '-'}
+              </p>
+              <p>
+                <strong>TikTok:</strong> {data.media.socialMedia.tiktok ?? '-'}
+              </p>
+              <p>
+                <strong>YouTube:</strong>{' '}
+                {data.media.socialMedia.youtube ?? '-'}
+              </p>
+              <p>
+                <strong>Facebook:</strong>{' '}
+                {data.media.socialMedia.facebook ?? '-'}
+              </p>
+              <p>
+                <strong>X:</strong> {data.media.socialMedia.x ?? '-'}
+              </p>
             </div>
           </section>
 
@@ -327,7 +415,7 @@ export default function ArtistDetailPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-4 flex items-center gap-2">
+            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
               <Music2 size={16} /> Music Links
             </h2>
 
@@ -337,7 +425,7 @@ export default function ArtistDetailPage({
                   (l: { id: string; platform: string; url: string }) => (
                     <div key={l.id} className="flex items-center gap-2">
                       <LinkIcon size={12} style={{ color: 'var(--gold)' }} />
-                      {l.platform}: {l.url}
+                      <strong>{l.platform}:</strong> {l.url}
                     </div>
                   )
                 )
@@ -348,25 +436,33 @@ export default function ArtistDetailPage({
           </section>
 
           {/* BOOKING */}
-          <section className="p-6 rounded-3xl border">
-            <h2 className="mb-4">Booking</h2>
+          <section
+            className="p-6 rounded-3xl border"
+            style={{
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
+            }}
+          >
+            <h2 className="mb-4 text-base font-semibold">Booking</h2>
 
             <p className="text-sm">
-              Fee:{' '}
+              <strong>Fee:</strong>{' '}
               {data.bookingInfo.performanceFee ??
                 `${data.bookingInfo.feeRange.min ?? '-'} – ${data.bookingInfo.feeRange.max ?? '-'} ${data.bookingInfo.feeRange.currency}`}
             </p>
 
             <p className="text-sm">
-              Availability: {data.bookingInfo.availability.join(', ') || '-'}
+              <strong>Availability:</strong>{' '}
+              {data.bookingInfo.availability.join(', ') || '-'}
             </p>
 
             <p className="text-sm">
-              Payment: {data.bookingInfo.paymentPreferences ?? '-'}
+              <strong>Payment:</strong>{' '}
+              {data.bookingInfo.paymentPreferences ?? '-'}
             </p>
 
             <p className="text-sm">
-              Set Lengths:{' '}
+              <strong>Set Lengths:</strong>{' '}
               {data.bookingInfo.setLengths.map(formatSetLength).join(', ') ||
                 '-'}
             </p>
@@ -380,21 +476,32 @@ export default function ArtistDetailPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-4">Live Setup</h2>
+            <h2 className="mb-4 text-base font-semibold">Live Setup</h2>
 
-            <p className="text-sm">Type: {data.liveSetup.setupType ?? '-'}</p>
             <p className="text-sm">
-              Equipment: {data.liveSetup.equipment.join(', ') || '-'}
+              <strong>Type:</strong> {data.liveSetup.setupType ?? '-'}
+            </p>
+            <p className="text-sm">
+              <strong>Equipment:</strong>{' '}
+              {data.liveSetup.equipment.join(', ') || '-'}
             </p>
 
-            <p className="text-sm mt-2">{data.liveSetup.technicalNotes}</p>
+            <p className="text-sm mt-2">
+              <strong>Notes:</strong> {data.liveSetup.technicalNotes}
+            </p>
           </section>
           {/*PAST GIGS*/}
           {data.pastGigs && data.pastGigs.length > 0 && (
-            <section className="p-6 rounded-3xl border">
-              <h2 className="mb-4">Past Gigs</h2>
+            <section
+              className="p-6 rounded-3xl border"
+              style={{
+                backgroundColor: 'var(--card)',
+                borderColor: 'var(--border)',
+              }}
+            >
+              <h2 className="mb-4 text-base font-semibold">Past Gigs</h2>
 
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {data.pastGigs.map(
                   (gig: {
                     id: string
@@ -403,14 +510,13 @@ export default function ArtistDetailPage({
                     media: string | null
                     testimonial: string | null
                   }) => (
-                    <div key={gig.id} className="text-sm border p-3 rounded-xl">
-                      <p>
-                        <strong>{gig.venueName}</strong>
-                      </p>
-                      <p>{gig.date}</p>
-
+                    <div
+                      key={gig.id}
+                      className="text-sm border p-3 rounded-xl"
+                      style={{ borderColor: 'var(--border)' }}
+                    >
                       {gig.media && (
-                        <div className="relative mt-2 rounded-lg aspect-video overflow-hidden">
+                        <div className="relative rounded-lg aspect-video overflow-hidden">
                           {/\.(mp4|webm|mov|ogg)(\?|$)/i.test(gig.media) ? (
                             <video
                               src={resolveImg(gig.media)}
@@ -428,8 +534,45 @@ export default function ArtistDetailPage({
                         </div>
                       )}
 
+                      <div className="mt-3 flex items-center gap-1.5">
+                        <MapPin size={12} style={{ color: 'var(--gold)' }} />
+                        <span
+                          className="font-semibold"
+                          style={{
+                            fontSize: '10px',
+                            letterSpacing: '0.12em',
+                            textTransform: 'uppercase',
+                            color: 'var(--gold)',
+                          }}
+                        >
+                          Venue
+                        </span>
+                      </div>
+                      <p className="font-semibold text-base mt-0.5">
+                        {gig.venueName}
+                      </p>
+                      <p className="mt-1">
+                        <span
+                          className="font-semibold"
+                          style={{
+                            fontSize: '10px',
+                            letterSpacing: '0.06em',
+                            textTransform: 'uppercase',
+                            color: 'var(--muted-foreground)',
+                          }}
+                        >
+                          Performance Date:
+                        </span>{' '}
+                        <span style={{ color: 'var(--foreground)' }}>
+                          {gig.date}
+                        </span>
+                      </p>
+
                       {gig.testimonial && (
-                        <p className="mt-2 italic text-muted-foreground">
+                        <p
+                          className="mt-2 italic"
+                          style={{ color: 'var(--muted-foreground)' }}
+                        >
                           &quot;{gig.testimonial}&quot;
                         </p>
                       )}
@@ -479,7 +622,7 @@ export default function ArtistDetailPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-6">Admin Actions</h2>
+            <h2 className="mb-6 text-base font-semibold">Admin Actions</h2>
 
             <div className="space-y-3">
               <Button
@@ -493,18 +636,6 @@ export default function ArtistDetailPage({
               >
                 <Shield size={14} />
                 {busy ? 'Suspending...' : 'Suspend'}
-              </Button>
-
-              <Button
-                className="w-full"
-                variant="outline"
-                style={{
-                  borderColor: 'var(--border)',
-                  color: 'var(--foreground)',
-                }}
-              >
-                <RefreshCw size={14} />
-                Reset Password
               </Button>
 
               <Button
@@ -529,38 +660,6 @@ export default function ArtistDetailPage({
           </section>
         </div>
       </div>
-      {/* PHOTOS */}
-      <section
-        className="p-6 rounded-3xl border"
-        style={{
-          backgroundColor: 'var(--card)',
-          borderColor: 'var(--border)',
-        }}
-      >
-        <h2 className="mb-4 flex items-center gap-2">
-          <ImageIcon size={16} /> Artist Photos
-        </h2>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {data.media.images.length > 0 ? (
-            data.media.images.map((img: string, i: number) => (
-              <div
-                key={i}
-                className="relative rounded-xl aspect-square overflow-hidden"
-              >
-                <NextImage
-                  src={resolveImg(img)}
-                  alt="Artist photo"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground">No images uploaded</p>
-          )}
-        </div>
-      </section>
     </div>
   )
 }
