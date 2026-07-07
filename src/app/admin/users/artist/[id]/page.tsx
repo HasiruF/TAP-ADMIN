@@ -2,9 +2,12 @@
 
 import { useState } from 'react'
 import NextImage from 'next/image'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
-  Shield,
+  ArrowLeft,
+  ShieldMinus,
+  ShieldCheck,
   MapPin,
   Music2,
   Video,
@@ -15,7 +18,8 @@ import {
 } from 'lucide-react'
 import { ExternalLink } from 'lucide-react'
 import { useAdminArtist } from '@/hooks/queries/useAdminArtists'
-import { suspendArtist } from '@/lib/api/admin/artists'
+import { suspendUser, unsuspendUser } from '@/lib/api/admin/users'
+import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { use } from 'react'
 export default function ArtistDetailPage({
@@ -25,15 +29,26 @@ export default function ArtistDetailPage({
 }) {
   const { id } = use(params)
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [busy, setBusy] = useState(false)
 
   const { data: artist, isLoading, error } = useAdminArtist(id)
 
+  const isSuspended =
+    artist?.accountStatus === 'SUSPENDED' || artist?.accountStatus === 'LOCKED'
+
   async function handleSuspend() {
     setBusy(true)
     try {
-      await suspendArtist(id)
-      router.push('/admin/users')
+      if (isSuspended) {
+        await unsuspendUser(id)
+      } else {
+        await suspendUser(id)
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['admin-artist', id] }),
+        queryClient.invalidateQueries({ queryKey: ['admin-users'] }),
+      ])
     } finally {
       setBusy(false)
     }
@@ -50,6 +65,14 @@ export default function ArtistDetailPage({
   if (!artist.hasProfile) {
     return (
       <div className="p-6 space-y-4">
+        <Link
+          href="/admin/users"
+          className="inline-flex items-center gap-1.5 text-sm"
+          style={{ color: 'var(--muted-foreground)' }}
+        >
+          <ArrowLeft size={14} />
+          Back to User Management
+        </Link>
         <p
           style={{
             color: 'var(--muted-foreground)',
@@ -115,6 +138,14 @@ export default function ArtistDetailPage({
     <div className="space-y-10">
       {/* HEADER */}
       <div>
+        <Link
+          href="/admin/users"
+          className="mb-3 inline-flex items-center gap-1.5 text-sm"
+          style={{ color: 'var(--muted-foreground)' }}
+        >
+          <ArrowLeft size={14} />
+          Back to User Management
+        </Link>
         <p
           className="mb-2"
           style={{
@@ -629,13 +660,30 @@ export default function ArtistDetailPage({
                 className="w-full"
                 disabled={busy}
                 onClick={handleSuspend}
-                style={{
-                  backgroundColor: 'var(--status-active-bg)',
-                  color: 'var(--status-active-text)',
-                }}
+                style={
+                  isSuspended
+                    ? {
+                        backgroundColor: 'var(--status-active-bg)',
+                        color: 'var(--status-active-text)',
+                      }
+                    : {
+                        backgroundColor: 'var(--status-suspended-bg)',
+                        color: 'var(--status-suspended-text)',
+                      }
+                }
               >
-                <Shield size={14} />
-                {busy ? 'Suspending...' : 'Suspend'}
+                {isSuspended ? (
+                  <ShieldCheck size={14} />
+                ) : (
+                  <ShieldMinus size={14} />
+                )}
+                {busy
+                  ? isSuspended
+                    ? 'Unsuspending...'
+                    : 'Suspending...'
+                  : isSuspended
+                    ? 'Unsuspend'
+                    : 'Suspend'}
               </Button>
 
               <Button

@@ -1,9 +1,11 @@
 'use client'
 import { useState } from 'react'
 import NextImage from 'next/image'
+import Link from 'next/link'
 import { ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
+  ArrowLeft,
   MapPin,
   Music2,
   Video,
@@ -90,6 +92,14 @@ export default function ArtistApprovalPage({
     <div className="space-y-10">
       {/* HEADER */}
       <div>
+        <Link
+          href="/admin/users"
+          className="mb-3 inline-flex items-center gap-1.5 text-sm"
+          style={{ color: 'var(--muted-foreground)' }}
+        >
+          <ArrowLeft size={14} />
+          Back to User Management
+        </Link>
         <p
           className="mb-2"
           style={{

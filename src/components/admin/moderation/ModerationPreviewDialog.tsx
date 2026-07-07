@@ -38,6 +38,16 @@ export function ModerationPreviewDialog({
 }: Props) {
   if (!item) return null
 
+  const handleApprove = () => {
+    onApprove(item.id)
+    onOpenChange(false)
+  }
+
+  const handleReject = () => {
+    onReject(item.id)
+    onOpenChange(false)
+  }
+
   const renderContent = () => {
     switch (item.type) {
       case 'profile-pic':
@@ -260,7 +270,7 @@ export function ModerationPreviewDialog({
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
-              onClick={() => onReject(item.id)}
+              onClick={handleReject}
               style={{
                 borderColor: 'var(--status-banned-text)',
                 color: 'var(--status-banned-text)',
@@ -270,7 +280,7 @@ export function ModerationPreviewDialog({
             </Button>
 
             <Button
-              onClick={() => onApprove(item.id)}
+              onClick={handleApprove}
               style={{
                 backgroundColor: 'var(--status-active-bg)',
                 color: 'var(--status-active-text)',

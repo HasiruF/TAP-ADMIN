@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { resourceSchema, ResourceInput } from '@/lib/schemas/resourceSchema'
@@ -33,9 +33,21 @@ type Props = {
   onSuccess?: () => any
 }
 
+const emptyValues = {
+  type: 'youtube',
+  title: '',
+  description: '',
+  category: '',
+  url: '',
+  pdfFile: undefined,
+  thumbnailFile: undefined,
+} as any
+
 export function CreateResourceDialog({ onSuccess }: Props) {
   const [open, setOpen] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const pdfInputRef = useRef<HTMLInputElement>(null)
+  const thumbnailInputRef = useRef<HTMLInputElement>(null)
 
   const { data: resources = [] } = useResources()
   const updateMutation = useUpdateResources()
@@ -50,18 +62,13 @@ export function CreateResourceDialog({ onSuccess }: Props) {
     formState: { errors, isSubmitting },
   } = useForm<ResourceInput>({
     resolver: zodResolver(resourceSchema),
-    defaultValues: {
-      type: 'youtube',
-    } as any,
+    defaultValues: emptyValues,
   })
-  const handleClose = () => {
-    reset({
-      type: 'youtube',
-      title: '',
-      description: '',
-      url: '',
-    })
-    setOpen(false)
+
+  const resetForm = () => {
+    reset(emptyValues)
+    if (pdfInputRef.current) pdfInputRef.current.value = ''
+    if (thumbnailInputRef.current) thumbnailInputRef.current.value = ''
   }
 
   const type = useWatch({
@@ -82,13 +89,13 @@ export function CreateResourceDialog({ onSuccess }: Props) {
           return
         }
         const media = await uploadMedia(data.pdfFile)
-        url = media.storageKey
+        url = media.cdnUrl ?? media.storageKey
       }
 
       let thumbnailUrl: string | undefined
       if (data.thumbnailFile instanceof File) {
         const media = await uploadMedia(data.thumbnailFile)
-        thumbnailUrl = media.storageKey
+        thumbnailUrl = media.cdnUrl ?? media.storageKey
       }
 
       await updateMutation.mutateAsync([
@@ -104,7 +111,7 @@ export function CreateResourceDialog({ onSuccess }: Props) {
         },
       ])
       await onSuccess?.()
-      reset({ type: 'youtube' } as any)
+      resetForm()
       setOpen(false)
     } catch (err) {
       setSubmitError(
@@ -117,7 +124,7 @@ export function CreateResourceDialog({ onSuccess }: Props) {
     setOpen(v)
     if (!v) {
       setSubmitError(null)
-      reset({ type: 'youtube' } as any)
+      resetForm()
     }
   }
 
@@ -335,6 +342,7 @@ export function CreateResourceDialog({ onSuccess }: Props) {
                     </p>
 
                     <input
+                      ref={pdfInputRef}
                       type="file"
                       accept=".pdf"
                       className="hidden"
@@ -384,6 +392,7 @@ export function CreateResourceDialog({ onSuccess }: Props) {
                     </p>
 
                     <input
+                      ref={thumbnailInputRef}
                       type="file"
                       accept="image/*"
                       className="hidden"

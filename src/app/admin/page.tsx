@@ -1,7 +1,7 @@
 // src/app/admin/page.tsx
 'use client'
 import { Music2, Building2, BadgeCheck, Clock3 } from 'lucide-react'
-import { GrowthChart } from '@/components/admin/overview/GrowthChart'
+import { AnalyticsOverview } from '@/components/admin/overview/AnalyticsOverview'
 import { useAdminOverview } from '@/hooks/queries/useAdminOverview'
 
 export default function AdminOverviewPage() {
@@ -118,7 +118,7 @@ export default function AdminOverviewPage() {
         ))}
       </div>
 
-      <GrowthChart />
+      <AnalyticsOverview />
     </div>
   )
 }

@@ -8,6 +8,8 @@ export interface UserBe {
   email: string | null
   firstName: string | null
   lastName: string | null
+  /** Artist stage name / venue name from onboarding, when a profile exists. */
+  profileName: string | null
   role: { id: number; name: string }
   accountStatus: string
   profileApprovalStatus: string | null
@@ -71,9 +73,11 @@ export const mapUserToBe = (user: UserBe): User => {
 
   return {
     id: user.id,
-    // Social/Google signups can have null firstName/lastName, which would
-    // leave the Name column blank — fall back to email, then id.
+    // Prefer the artist/venue name from onboarding; fall back to the account
+    // holder's name (e.g. Google-auth given/family name), then email, then id
+    // for users who have no profile yet.
     name:
+      user.profileName ||
       `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() ||
       (user.email ?? '') ||
       user.id,

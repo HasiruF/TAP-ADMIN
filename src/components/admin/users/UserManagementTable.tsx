@@ -5,7 +5,14 @@
 import { useEffect, useState } from 'react'
 import { getAdminUserRoute } from '@/utils/AdminRoutes'
 import { getAdminLogRoute } from '@/utils/AdminRoutes'
-import { Ban, ShieldMinus, ShieldCheck, Check } from 'lucide-react'
+import {
+  Ban,
+  ShieldMinus,
+  ShieldCheck,
+  Check,
+  Eye,
+  ScrollText,
+} from 'lucide-react'
 import { MoreVertical } from 'lucide-react'
 import {
   Select,
@@ -14,6 +21,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Table,
   TableBody,
@@ -262,118 +276,94 @@ export function UserManagementTable() {
     }
   }
 
-  function renderActions(user: User) {
+  function renderActionItems(user: User) {
     const busy = actionBusy === user.id
     switch (user.status) {
       case 'Not-approved':
         return (
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              size="sm"
+          <>
+            <DropdownMenuItem
               disabled={busy}
-              onClick={(e) => {
-                e.stopPropagation()
-                handleApprove(user)
-              }}
-              style={{
-                backgroundColor: 'var(--status-active-bg)',
-                color: 'var(--status-active-text)',
-              }}
+              onClick={() => handleApprove(user)}
             >
               <Check size={14} />
-              {busy ? '...' : 'Approve'}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={busy}
-              onClick={(e) => {
-                e.stopPropagation()
-                router.push(getAdminUserRoute(user))
-              }}
+              Approve
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => router.push(getAdminUserRoute(user))}
             >
+              <Eye size={14} />
               Review
-            </Button>
-          </div>
+            </DropdownMenuItem>
+          </>
         )
       case 'Active':
         return (
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
+          <>
+            <DropdownMenuItem
               disabled={busy}
-              onClick={(e) => {
-                e.stopPropagation()
-                handleSuspend(user.id)
-              }}
+              onClick={() => handleSuspend(user.id)}
             >
               <ShieldMinus size={14} />
-              {busy ? '...' : 'Suspend'}
-            </Button>
-            <Button
+              Suspend
+            </DropdownMenuItem>
+            <DropdownMenuItem
               variant="destructive"
-              size="sm"
               disabled={busy}
-              onClick={(e) => {
-                e.stopPropagation()
-                handleBan(user)
-              }}
+              onClick={() => handleBan(user)}
             >
               <Ban size={14} />
-              {busy ? '...' : 'Ban'}
-            </Button>
-          </div>
-        )
-      case 'Inactive':
-        return (
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                router.push(getAdminUserRoute(user))
-              }}
-            >
-              View
-            </Button>
-          </div>
+              Ban
+            </DropdownMenuItem>
+          </>
         )
       case 'Suspended':
         return (
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              size="sm"
-              disabled={busy}
-              onClick={(e) => {
-                e.stopPropagation()
-                handleUnsuspend(user.id)
-              }}
-            >
-              <ShieldCheck size={14} />
-              {busy ? '...' : 'Unsuspend'}
-            </Button>
-          </div>
+          <DropdownMenuItem
+            disabled={busy}
+            onClick={() => handleUnsuspend(user.id)}
+          >
+            <ShieldCheck size={14} />
+            Unsuspend
+          </DropdownMenuItem>
         )
+      case 'Inactive':
       case 'Banned':
         return (
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                router.push(getAdminUserRoute(user))
-              }}
-            >
-              View
-            </Button>
-          </div>
+          <DropdownMenuItem
+            onClick={() => router.push(getAdminUserRoute(user))}
+          >
+            <Eye size={14} />
+            View
+          </DropdownMenuItem>
         )
       default:
         return null
     }
+  }
+
+  function renderActions(user: User) {
+    const actionItems = renderActionItems(user)
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.04)] transition"
+          >
+            <MoreVertical size={18} style={{ color: 'var(--foreground)' }} />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+          {actionItems}
+          {actionItems && <DropdownMenuSeparator />}
+          <DropdownMenuItem onClick={() => router.push(getAdminLogRoute(user))}>
+            <ScrollText size={14} />
+            Activity Logs
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
   }
 
   return (
@@ -506,8 +496,7 @@ export function UserManagementTable() {
               Last Login Date
             </TableHead>
             <TableHead className="text-center w-[10%]">Status</TableHead>
-            <TableHead className="text-center w-[16%]">Actions</TableHead>
-            <TableHead className="text-center w-[4%]"></TableHead>
+            <TableHead className="text-center w-[10%]">Actions</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -561,26 +550,9 @@ export function UserManagementTable() {
 
               {/* ACTIONS */}
               <TableCell className="text-center">
-                {renderActions(user)}
-              </TableCell>
-
-              {/* LOG */}
-              <TableCell
-                className="text-center"
-                style={{ color: 'var(--muted-foreground)' }}
-              >
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    router.push(getAdminLogRoute(user))
-                  }}
-                  className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.04)] transition"
-                >
-                  <MoreVertical
-                    size={18}
-                    style={{ color: 'var(--foreground)' }}
-                  />
-                </button>
+                <div className="flex items-center justify-center">
+                  {renderActions(user)}
+                </div>
               </TableCell>
             </TableRow>
           ))}

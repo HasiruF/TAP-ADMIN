@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import NextImage from 'next/image'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
+  ArrowLeft,
   MapPin,
   Building2,
   Users,
@@ -71,6 +73,14 @@ export default function VenueApprovalPage({
     <div className="space-y-10">
       {/* HEADER */}
       <div>
+        <Link
+          href="/admin/users"
+          className="mb-3 inline-flex items-center gap-1.5 text-sm"
+          style={{ color: 'var(--muted-foreground)' }}
+        >
+          <ArrowLeft size={14} />
+          Back to User Management
+        </Link>
         <p
           className="mb-2"
           style={{

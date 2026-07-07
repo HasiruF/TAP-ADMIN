@@ -1,10 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import NextImage from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
-  Shield,
+  ArrowLeft,
+  ShieldMinus,
+  ShieldCheck,
   MapPin,
   Building2,
   Users,
@@ -16,6 +19,8 @@ import {
 import { ExternalLink } from 'lucide-react'
 import { use } from 'react'
 import { useAdminVenue } from '@/hooks/queries/useAdminVenues'
+import { suspendUser, unsuspendUser } from '@/lib/api/admin/users'
+import { useQueryClient } from '@tanstack/react-query'
 import { formatBudget } from '@/lib/formatters'
 export default function VenueDetailPage({
   params,
@@ -23,6 +28,8 @@ export default function VenueDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = use(params)
+  const queryClient = useQueryClient()
+  const [busy, setBusy] = useState(false)
 
   const { data: venue, isLoading, error } = useAdminVenue(id)
 
@@ -36,6 +43,26 @@ export default function VenueDetailPage({
 
   const data = venue
 
+  const isSuspended =
+    data.accountStatus === 'SUSPENDED' || data.accountStatus === 'LOCKED'
+
+  async function handleSuspend() {
+    setBusy(true)
+    try {
+      if (isSuspended) {
+        await unsuspendUser(id)
+      } else {
+        await suspendUser(id)
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['admin-venue', id] }),
+        queryClient.invalidateQueries({ queryKey: ['admin-users'] }),
+      ])
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const API_BASE = (
     process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'
   ).replace('/api/v1', '')
@@ -46,6 +73,14 @@ export default function VenueDetailPage({
     <div className="space-y-10">
       {/* HEADER */}
       <div>
+        <Link
+          href="/admin/users"
+          className="mb-3 inline-flex items-center gap-1.5 text-sm"
+          style={{ color: 'var(--muted-foreground)' }}
+        >
+          <ArrowLeft size={14} />
+          Back to User Management
+        </Link>
         <p
           className="mb-2"
           style={{
@@ -358,13 +393,32 @@ export default function VenueDetailPage({
             <div className="space-y-3">
               <Button
                 className="w-full"
-                style={{
-                  backgroundColor: 'var(--status-active-bg)',
-                  color: 'var(--status-active-text)',
-                }}
+                disabled={busy}
+                onClick={handleSuspend}
+                style={
+                  isSuspended
+                    ? {
+                        backgroundColor: 'var(--status-active-bg)',
+                        color: 'var(--status-active-text)',
+                      }
+                    : {
+                        backgroundColor: 'var(--status-suspended-bg)',
+                        color: 'var(--status-suspended-text)',
+                      }
+                }
               >
-                <Shield size={14} />
-                Suspend Venue
+                {isSuspended ? (
+                  <ShieldCheck size={14} />
+                ) : (
+                  <ShieldMinus size={14} />
+                )}
+                {busy
+                  ? isSuspended
+                    ? 'Unsuspending...'
+                    : 'Suspending...'
+                  : isSuspended
+                    ? 'Unsuspend Venue'
+                    : 'Suspend Venue'}
               </Button>
 
               <Button

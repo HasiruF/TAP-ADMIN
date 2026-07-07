@@ -28,6 +28,23 @@ type ModerationItem = {
   role: string
 }
 
+function formatDate(date?: string | null) {
+  if (!date) return '-'
+
+  const parsed = new Date(date)
+
+  if (isNaN(parsed.getTime())) return '-'
+
+  return new Intl.DateTimeFormat('en-AU', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(parsed)
+}
+
 interface Props {
   data: ModerationItem[]
   onApprove: (id: string) => void
@@ -42,16 +59,18 @@ export function ModerationQueueTable({
 
   onRowClick,
 }: Props) {
-  const [roleFilter, setRoleFilter] = useState('all')
+  const [roleFilter, setRoleFilter] = useState('artist')
   const [typeFilter, setTypeFilter] = useState('all')
 
-  const filteredData = data.filter((item) => {
-    const matchesRole = roleFilter === 'all' ? true : item.role === roleFilter
+  const filteredData = data
+    .filter((item) => {
+      const matchesRole = roleFilter === 'all' ? true : item.role === roleFilter
 
-    const matchesType = typeFilter === 'all' ? true : item.type === typeFilter
+      const matchesType = typeFilter === 'all' ? true : item.type === typeFilter
 
-    return matchesRole && matchesType
-  })
+      return matchesRole && matchesType
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   return (
     <div
@@ -181,7 +200,7 @@ export function ModerationQueueTable({
                 className="text-center"
                 style={{ color: 'var(--muted-foreground)' }}
               >
-                {item.date ? String(item.date).slice(0, 10) : '-'}
+                {formatDate(item.date)}
               </TableCell>
 
               {/* ACTIONS */}

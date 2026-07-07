@@ -87,13 +87,13 @@ export function ViewResourceDialog({
 
       if (data.type === 'pdf' && data.pdfFile instanceof File) {
         const media = await uploadMedia(data.pdfFile)
-        nextUrl = media.storageKey
+        nextUrl = media.cdnUrl ?? media.storageKey
       }
 
       let thumbnailUrl = resource.thumbnailUrl ?? undefined
       if (data.thumbnailFile instanceof File) {
         const media = await uploadMedia(data.thumbnailFile)
-        thumbnailUrl = media.storageKey
+        thumbnailUrl = media.cdnUrl ?? media.storageKey
       }
 
       const items = resources.map((r, i) =>
