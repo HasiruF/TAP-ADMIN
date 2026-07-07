@@ -16,7 +16,7 @@ import {
 import { ExternalLink } from 'lucide-react'
 import { use } from 'react'
 import { useAdminVenue } from '@/hooks/queries/useAdminVenues'
-
+import { formatBudget } from '@/lib/formatters'
 export default function VenueDetailPage({
   params,
 }: {
@@ -262,11 +262,7 @@ export default function VenueDetailPage({
 
               <p>Pricing Model: {data.bookingPreferences.pricingModel}</p>
 
-              <p>
-                Budget: {data.bookingPreferences.minPrice} -{' '}
-                {data.bookingPreferences.maxPrice}
-              </p>
-
+              <p>Budget: {formatBudget(data.bookingPreferences)}</p>
               <p style={{ color: 'var(--muted-foreground)' }}>
                 {data.bookingPreferences.bookingNotes}
               </p>

@@ -15,7 +15,7 @@ import { use } from 'react'
 import { useAdminVenue } from '@/hooks/queries/useAdminVenues'
 import { approveVenue, rejectVenue } from '@/lib/api/admin/venues'
 import { useRouter } from 'next/navigation'
-
+import { formatBudget } from '@/lib/formatters'
 export default function VenueApprovalPage({
   params,
 }: {
@@ -274,10 +274,7 @@ export default function VenueApprovalPage({
                 Genres: {data.bookingPreferences.genres.join(', ') || 'All'}
               </p>
               <p>Pricing Model: {data.bookingPreferences.pricingModel}</p>
-              <p>
-                Budget: {data.bookingPreferences.minPrice} –{' '}
-                {data.bookingPreferences.maxPrice}
-              </p>
+              <p>Budget: {formatBudget(data.bookingPreferences)}</p>
               <p style={{ color: 'var(--muted-foreground)' }}>
                 {data.bookingPreferences.bookingNotes}
               </p>
