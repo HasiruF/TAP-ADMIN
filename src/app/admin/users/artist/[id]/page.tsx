@@ -519,6 +519,10 @@ export default function ArtistDetailPage({
               <strong>Equipment:</strong>{' '}
               {data.liveSetup.equipment.join(', ') || '-'}
             </p>
+            <p className="text-sm">
+              <strong>Tech Rider Tags:</strong>{' '}
+              {(data.liveSetup.techRiderTags ?? []).join(', ') || '-'}
+            </p>
 
             <p className="text-sm mt-2">
               <strong>Notes:</strong> {data.liveSetup.technicalNotes}

@@ -146,6 +146,11 @@ export default function VenueDetailPage({
                 <strong>Name:</strong> {data.venueDetails.venueName}
               </p>
 
+              <p>
+                <strong>Venue Type:</strong>{' '}
+                {data.venueDetails.venueType || 'Not set'}
+              </p>
+
               <p className="flex items-center gap-2">
                 <MapPin size={14} style={{ color: 'var(--gold)' }} />
                 {data.venueDetails.address}, {data.venueDetails.city},{' '}
@@ -185,7 +190,12 @@ export default function VenueDetailPage({
 
               <p>
                 <strong>Stage Size:</strong>{' '}
-                {data.capacitySpecs.stageDimensions}
+                {data.capacitySpecs.stageSize || 'Not set'}
+              </p>
+
+              <p>
+                <strong>Stage Dimensions:</strong>{' '}
+                {data.capacitySpecs.stageDimensions || 'Not set'}
               </p>
 
               <p>
@@ -240,6 +250,11 @@ export default function VenueDetailPage({
               <p>
                 <strong>Equipment Provided:</strong>{' '}
                 {data.capacitySpecs.equipmentProvided.join(', ') || 'None'}
+              </p>
+
+              <p>
+                <strong>Amenities:</strong>{' '}
+                {data.capacitySpecs.amenities?.join(', ') || 'None'}
               </p>
             </div>
           </section>
