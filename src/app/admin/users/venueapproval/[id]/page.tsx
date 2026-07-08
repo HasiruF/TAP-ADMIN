@@ -143,6 +143,10 @@ export default function VenueApprovalPage({
               <p>
                 <strong>Name:</strong> {data.venueDetails.venueName}
               </p>
+              <p>
+                <strong>Venue Type:</strong>{' '}
+                {data.venueDetails.venueType || 'Not set'}
+              </p>
               <p className="flex items-center gap-2">
                 <MapPin size={14} style={{ color: 'var(--gold)' }} />
                 {data.venueDetails.address}, {data.venueDetails.city},{' '}
@@ -178,7 +182,11 @@ export default function VenueApprovalPage({
               </p>
               <p>
                 <strong>Stage Size:</strong>{' '}
-                {data.capacitySpecs.stageDimensions}
+                {data.capacitySpecs.stageSize || 'Not set'}
+              </p>
+              <p>
+                <strong>Stage Dimensions:</strong>{' '}
+                {data.capacitySpecs.stageDimensions || 'Not set'}
               </p>
               <p>
                 <strong>Sound System:</strong>{' '}

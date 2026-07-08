@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { ExternalLink } from 'lucide-react'
 import { useAdminArtist } from '@/hooks/queries/useAdminArtists'
+import { formatPerformanceType } from '@/lib/utils/performanceType'
 import { suspendUser, unsuspendUser } from '@/lib/api/admin/users'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
@@ -297,7 +298,9 @@ export default function ArtistDetailPage({
             <div className="text-sm space-y-1">
               <p>
                 <strong>Performance Type:</strong>{' '}
-                {data.genres.performanceType ?? '-'}
+                {data.genres.performanceType
+                  ? formatPerformanceType(data.genres.performanceType)
+                  : '-'}
               </p>
 
               <p>
@@ -515,6 +518,10 @@ export default function ArtistDetailPage({
             <p className="text-sm">
               <strong>Equipment:</strong>{' '}
               {data.liveSetup.equipment.join(', ') || '-'}
+            </p>
+            <p className="text-sm">
+              <strong>Tech Rider Tags:</strong>{' '}
+              {(data.liveSetup.techRiderTags ?? []).join(', ') || '-'}
             </p>
 
             <p className="text-sm mt-2">

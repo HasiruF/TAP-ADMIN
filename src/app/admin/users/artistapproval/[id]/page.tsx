@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useAdminArtist } from '@/hooks/queries/useAdminArtists'
 import { approveArtist, rejectArtist } from '@/lib/api/admin/artists'
+import { formatPerformanceType } from '@/lib/utils/performanceType'
 import { use } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -248,7 +249,8 @@ export default function ArtistApprovalPage({
             </div>
             <div className="text-sm space-y-1">
               <p>
-                <strong>Performance Type:</strong> {data.genres.performanceType}
+                <strong>Performance Type:</strong>{' '}
+                {formatPerformanceType(data.genres.performanceType)}
               </p>
               <p>
                 <strong>Act Type:</strong>{' '}
@@ -455,6 +457,10 @@ export default function ArtistApprovalPage({
             <p className="text-sm">
               <strong>Equipment:</strong>{' '}
               {(data.liveSetup.equipment ?? []).join(', ') || '-'}
+            </p>
+            <p className="text-sm">
+              <strong>Tech Rider Tags:</strong>{' '}
+              {(data.liveSetup.techRiderTags ?? []).join(', ') || '-'}
             </p>
             <p className="text-sm mt-2">
               <strong>Notes:</strong> {data.liveSetup.technicalNotes}
