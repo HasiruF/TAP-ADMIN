@@ -27,6 +27,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { resourceSchema, ResourceInput } from '@/lib/schemas/resourceSchema'
 import { useResources, useUpdateResources } from '@/hooks/queries/useResources'
 import { uploadMedia } from '@/lib/api/media'
+import { getFriendlyErrorMessage } from '@/lib/api/errorMessage'
+import { compressImage } from '@/lib/utils/compressImage'
 import { Upload, ImagePlus } from 'lucide-react'
 
 type Props = {
@@ -117,7 +119,10 @@ export function ViewResourceDialog({
       onOpenChange(false)
     } catch (err) {
       setSubmitError(
-        err instanceof Error ? err.message : 'Failed to save changes'
+        getFriendlyErrorMessage(
+          err,
+          "We couldn't save your changes. Please try again."
+        )
       )
     }
   }
@@ -328,10 +333,13 @@ export function ViewResourceDialog({
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0]
                       if (file) {
-                        setValue('thumbnailFile', file, { shouldDirty: true })
+                        const compressed = await compressImage(file)
+                        setValue('thumbnailFile', compressed, {
+                          shouldDirty: true,
+                        })
                       }
                     }}
                   />

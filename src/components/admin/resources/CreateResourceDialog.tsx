@@ -7,6 +7,8 @@ import { resourceSchema, ResourceInput } from '@/lib/schemas/resourceSchema'
 import { toResourceItemInput } from '@/types/resource'
 import { useResources, useUpdateResources } from '@/hooks/queries/useResources'
 import { uploadMedia } from '@/lib/api/media'
+import { getFriendlyErrorMessage } from '@/lib/api/errorMessage'
+import { compressImage } from '@/lib/utils/compressImage'
 
 import { Plus, Upload, ImagePlus } from 'lucide-react'
 
@@ -115,7 +117,10 @@ export function CreateResourceDialog({ onSuccess }: Props) {
       setOpen(false)
     } catch (err) {
       setSubmitError(
-        err instanceof Error ? err.message : 'Failed to create resource'
+        getFriendlyErrorMessage(
+          err,
+          "We couldn't create this resource. Please try again."
+        )
       )
     }
   }
@@ -396,10 +401,11 @@ export function CreateResourceDialog({ onSuccess }: Props) {
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files?.[0]
                         if (file) {
-                          setValue('thumbnailFile', file, {
+                          const compressed = await compressImage(file)
+                          setValue('thumbnailFile', compressed, {
                             shouldDirty: true,
                           })
                         }

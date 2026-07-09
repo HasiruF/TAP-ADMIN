@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { RejectReasonDialog } from './RejectReasonDialog'
 
 type ModerationItem = {
   id: string
@@ -48,7 +49,7 @@ function formatDate(date?: string | null) {
 interface Props {
   data: ModerationItem[]
   onApprove: (id: string) => void
-  onReject: (id: string) => void
+  onReject: (id: string, reviewNotes: string) => void
   onRowClick: (item: ModerationItem) => void
 }
 
@@ -61,6 +62,7 @@ export function ModerationQueueTable({
 }: Props) {
   const [roleFilter, setRoleFilter] = useState('artist')
   const [typeFilter, setTypeFilter] = useState('all')
+  const [rejectingId, setRejectingId] = useState<string | null>(null)
 
   const filteredData = data
     .filter((item) => {
@@ -228,7 +230,7 @@ export function ModerationQueueTable({
                     }}
                     onClick={(e) => {
                       e.stopPropagation()
-                      onReject(item.id)
+                      setRejectingId(item.id)
                     }}
                   >
                     Reject
@@ -239,6 +241,17 @@ export function ModerationQueueTable({
           ))}
         </TableBody>
       </Table>
+
+      <RejectReasonDialog
+        open={rejectingId !== null}
+        onOpenChange={(open) => {
+          if (!open) setRejectingId(null)
+        }}
+        onConfirm={(reviewNotes) => {
+          if (rejectingId) onReject(rejectingId, reviewNotes)
+          setRejectingId(null)
+        }}
+      />
     </div>
   )
 }

@@ -38,9 +38,15 @@ export function approveModeration(contentModId: string) {
   })
 }
 
-export function rejectModeration(contentModId: string) {
+export function rejectModeration({
+  contentModId,
+  reviewNotes,
+}: {
+  contentModId: string
+  reviewNotes: string
+}) {
   return api('/admin/moderation/reject', {
     method: 'POST',
-    body: JSON.stringify({ contentModId }),
+    body: JSON.stringify({ contentModId, reviewNotes }),
   })
 }

@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import {
   Sidebar,
   SidebarContent,
@@ -193,7 +194,7 @@ export function AppSidebar() {
                         </span>
                       </div>
                     ) : (
-                      <a
+                      <Link
                         href={item.url}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl
                            ${isCollapsed ? 'justify-center' : ''}`}
@@ -212,7 +213,7 @@ export function AppSidebar() {
                         >
                           {item.title}
                         </span>
-                      </a>
+                      </Link>
                     )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>

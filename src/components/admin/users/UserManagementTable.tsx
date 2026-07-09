@@ -3,6 +3,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { getAdminUserRoute } from '@/utils/AdminRoutes'
 import { getAdminLogRoute } from '@/utils/AdminRoutes'
 import {
@@ -12,6 +13,7 @@ import {
   Check,
   Eye,
   ScrollText,
+  KeyRound,
 } from 'lucide-react'
 import { MoreVertical } from 'lucide-react'
 import {
@@ -45,6 +47,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { suspendUser, unsuspendUser, banUser } from '@/lib/api/admin/users'
 import { approveArtist } from '@/lib/api/admin/artists'
 import { approveVenue } from '@/lib/api/admin/venues'
+import { forgotPassword } from '@/lib/api/auth'
+import { ReasonPromptDialog } from '@/components/admin/shared/ReasonPromptDialog'
 
 function getStatusStyles(status: string) {
   switch (status) {
@@ -149,6 +153,8 @@ export function UserManagementTable() {
     () => loadStoredFilters().statusFilter ?? 'all'
   )
   const [actionBusy, setActionBusy] = useState<string | null>(null)
+  const [suspendTarget, setSuspendTarget] = useState<User | null>(null)
+  const [banTarget, setBanTarget] = useState<User | null>(null)
 
   const [currentPage, setCurrentPage] = useState(
     () => loadStoredFilters().currentPage ?? 1
@@ -181,7 +187,12 @@ export function UserManagementTable() {
   const users = usersBe.map(mapUserToBe)
 
   if (isLoading) return <div className="p-6">Loading users...</div>
-  if (error) return <div className="p-6 text-red-500">Failed to load users</div>
+  if (error)
+    return (
+      <div className="p-6 text-red-500">
+        Failed to load users. Please refresh the page or try again shortly.
+      </div>
+    )
 
   // Client-side filters: search + status only (role is already handled server-side)
   const filteredUsers = users.filter((user: User) => {
@@ -219,15 +230,18 @@ export function UserManagementTable() {
   const invalidateUsers = () =>
     queryClient.invalidateQueries({ queryKey: ['admin-users'] })
 
-  async function handleSuspend(userId: string) {
+  async function handleConfirmSuspend(reason: string) {
+    if (!suspendTarget) return
+    const userId = suspendTarget.id
     setActionBusy(userId)
     try {
-      await suspendUser(userId)
+      await suspendUser(userId, reason)
       await invalidateUsers()
     } catch {
-      /* error surfaced via table state */
+      toast.error("We couldn't suspend this user. Please try again.")
     } finally {
       setActionBusy(null)
+      setSuspendTarget(null)
     }
   }
 
@@ -237,26 +251,24 @@ export function UserManagementTable() {
       await unsuspendUser(userId)
       await invalidateUsers()
     } catch {
-      /* error surfaced via table state */
+      toast.error("We couldn't unsuspend this user. Please try again.")
     } finally {
       setActionBusy(null)
     }
   }
 
-  async function handleBan(user: User) {
-    const label = user.name?.trim() || user.email || user.id
-    const confirmed = window.confirm(
-      `Permanently ban ${label}?\n\nThis removes the account from the platform and blocks this email from ever registering again. This action cannot be undone.`
-    )
-    if (!confirmed) return
-    setActionBusy(user.id)
+  async function handleConfirmBan(reason: string) {
+    if (!banTarget) return
+    const userId = banTarget.id
+    setActionBusy(userId)
     try {
-      await banUser(user.id)
+      await banUser(userId, reason)
       await invalidateUsers()
     } catch {
-      /* error surfaced via table state */
+      toast.error("We couldn't ban this user. Please try again.")
     } finally {
       setActionBusy(null)
+      setBanTarget(null)
     }
   }
 
@@ -270,7 +282,24 @@ export function UserManagementTable() {
       }
       await invalidateUsers()
     } catch {
-      /* error surfaced via table state */
+      toast.error("We couldn't approve this user. Please try again.")
+    } finally {
+      setActionBusy(null)
+    }
+  }
+
+  async function handleResetPassword(user: User) {
+    const label = user.name?.trim() || user.email || user.id
+    const confirmed = window.confirm(
+      `Send a password reset email to ${label} (${user.email})?`
+    )
+    if (!confirmed) return
+    setActionBusy(user.id)
+    try {
+      await forgotPassword(user.email)
+      window.alert(`Password reset email sent to ${user.email}.`)
+    } catch {
+      window.alert('Failed to send password reset email. Please try again.')
     } finally {
       setActionBusy(null)
     }
@@ -302,7 +331,7 @@ export function UserManagementTable() {
           <>
             <DropdownMenuItem
               disabled={busy}
-              onClick={() => handleSuspend(user.id)}
+              onClick={() => setSuspendTarget(user)}
             >
               <ShieldMinus size={14} />
               Suspend
@@ -310,7 +339,7 @@ export function UserManagementTable() {
             <DropdownMenuItem
               variant="destructive"
               disabled={busy}
-              onClick={() => handleBan(user)}
+              onClick={() => setBanTarget(user)}
             >
               <Ban size={14} />
               Ban
@@ -344,6 +373,8 @@ export function UserManagementTable() {
 
   function renderActions(user: User) {
     const actionItems = renderActionItems(user)
+    const busy = actionBusy === user.id
+    const canResetPassword = user.status !== 'Banned'
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -357,6 +388,15 @@ export function UserManagementTable() {
         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
           {actionItems}
           {actionItems && <DropdownMenuSeparator />}
+          {canResetPassword && (
+            <DropdownMenuItem
+              disabled={busy}
+              onClick={() => handleResetPassword(user)}
+            >
+              <KeyRound size={14} />
+              Reset Password
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onClick={() => router.push(getAdminLogRoute(user))}>
             <ScrollText size={14} />
             Activity Logs
@@ -615,6 +655,42 @@ export function UserManagementTable() {
           </Button>
         </div>
       </div>
+
+      <ReasonPromptDialog
+        open={suspendTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setSuspendTarget(null)
+        }}
+        onConfirm={handleConfirmSuspend}
+        eyebrow="Admin • User Management"
+        title={`Suspend ${suspendTarget?.name?.trim() || suspendTarget?.email || 'user'}`}
+        description="This will block the account from logging in. The reason is emailed to the user."
+        confirmLabel="Confirm Suspension"
+        confirmingLabel="Suspending..."
+        confirmColor={{
+          backgroundColor: 'var(--status-suspended-bg)',
+          color: 'var(--status-suspended-text)',
+        }}
+        isSubmitting={actionBusy === suspendTarget?.id}
+      />
+
+      <ReasonPromptDialog
+        open={banTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setBanTarget(null)
+        }}
+        onConfirm={handleConfirmBan}
+        eyebrow="Admin • User Management"
+        title={`Ban ${banTarget?.name?.trim() || banTarget?.email || 'user'}`}
+        description="This permanently removes the account and blocks the email from ever registering again. This cannot be undone. The reason is emailed to the user."
+        confirmLabel="Confirm Ban"
+        confirmingLabel="Banning..."
+        confirmColor={{
+          backgroundColor: 'var(--status-banned-bg)',
+          color: 'var(--status-banned-text)',
+        }}
+        isSubmitting={actionBusy === banTarget?.id}
+      />
     </div>
   )
 }
