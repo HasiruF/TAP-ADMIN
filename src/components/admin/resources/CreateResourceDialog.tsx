@@ -7,6 +7,7 @@ import { resourceSchema, ResourceInput } from '@/lib/schemas/resourceSchema'
 import { toResourceItemInput } from '@/types/resource'
 import { useResources, useUpdateResources } from '@/hooks/queries/useResources'
 import { uploadMedia } from '@/lib/api/media'
+import { getFriendlyErrorMessage } from '@/lib/api/errorMessage'
 
 import { Plus, Upload, ImagePlus } from 'lucide-react'
 
@@ -115,7 +116,10 @@ export function CreateResourceDialog({ onSuccess }: Props) {
       setOpen(false)
     } catch (err) {
       setSubmitError(
-        err instanceof Error ? err.message : 'Failed to create resource'
+        getFriendlyErrorMessage(
+          err,
+          "We couldn't create this resource. Please try again."
+        )
       )
     }
   }

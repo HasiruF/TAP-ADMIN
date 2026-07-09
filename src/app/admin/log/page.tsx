@@ -77,7 +77,11 @@ function LogsView() {
   }
 
   if (error) {
-    return <div className="p-6 text-red-500">Failed to load logs</div>
+    return (
+      <div className="p-6 text-red-500">
+        Failed to load logs. Please refresh the page or try again shortly.
+      </div>
+    )
   }
 
   return (

@@ -27,6 +27,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { resourceSchema, ResourceInput } from '@/lib/schemas/resourceSchema'
 import { useResources, useUpdateResources } from '@/hooks/queries/useResources'
 import { uploadMedia } from '@/lib/api/media'
+import { getFriendlyErrorMessage } from '@/lib/api/errorMessage'
 import { Upload, ImagePlus } from 'lucide-react'
 
 type Props = {
@@ -117,7 +118,10 @@ export function ViewResourceDialog({
       onOpenChange(false)
     } catch (err) {
       setSubmitError(
-        err instanceof Error ? err.message : 'Failed to save changes'
+        getFriendlyErrorMessage(
+          err,
+          "We couldn't save your changes. Please try again."
+        )
       )
     }
   }

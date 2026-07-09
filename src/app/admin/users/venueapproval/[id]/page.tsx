@@ -13,12 +13,15 @@ import {
   Mic2,
   Image as ImageIcon,
   ExternalLink,
+  KeyRound,
 } from 'lucide-react'
 import { use } from 'react'
 import { useAdminVenue } from '@/hooks/queries/useAdminVenues'
 import { approveVenue, rejectVenue } from '@/lib/api/admin/venues'
+import { forgotPassword } from '@/lib/api/auth'
 import { useRouter } from 'next/navigation'
 import { formatBudget } from '@/lib/formatters'
+import { getFriendlyErrorMessage } from '@/lib/api/errorMessage'
 export default function VenueApprovalPage({
   params,
 }: {
@@ -29,11 +32,22 @@ export default function VenueApprovalPage({
 
   const { data: venue, isLoading, error } = useAdminVenue(id)
   const [busy, setBusy] = useState(false)
+  const [resetBusy, setResetBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [feedback, setFeedback] = useState('')
 
   if (isLoading) return <div className="p-6">Loading venue...</div>
-  if (error || !venue)
-    return <div className="text-center py-20">Venue not found</div>
+  if (error || !venue) {
+    const status = (error as any)?.statusCode ?? (error as any)?.status
+    const notFoundMessage =
+      status === 404
+        ? 'Venue not found'
+        : getFriendlyErrorMessage(
+            error,
+            "We couldn't load this venue. Please try again."
+          )
+    return <div className="text-center py-20">{notFoundMessage}</div>
+  }
 
   const data = venue
 
@@ -49,23 +63,56 @@ export default function VenueApprovalPage({
     try {
       await approveVenue(id)
       router.push('/admin/users')
-    } catch (e: any) {
-      setActionError(e?.message ?? 'Approval failed')
+    } catch (e) {
+      setActionError(
+        getFriendlyErrorMessage(
+          e,
+          "We couldn't approve this venue. Please try again."
+        )
+      )
     } finally {
       setBusy(false)
     }
   }
 
   async function handleReject() {
+    if (!feedback.trim()) {
+      setActionError(
+        'Please add a message explaining the rejection — it will be emailed to the user.'
+      )
+      return
+    }
     setBusy(true)
     setActionError(null)
     try {
-      await rejectVenue(id, '')
+      await rejectVenue(id, feedback.trim())
       router.push('/admin/users')
-    } catch (e: any) {
-      setActionError(e?.message ?? 'Rejection failed')
+    } catch (e) {
+      setActionError(
+        getFriendlyErrorMessage(
+          e,
+          "We couldn't reject this venue. Please try again."
+        )
+      )
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function handleResetPassword() {
+    if (!data.email) return
+    const confirmed = window.confirm(
+      `Send a password reset email to ${data.email}?`
+    )
+    if (!confirmed) return
+    setResetBusy(true)
+    try {
+      await forgotPassword(data.email)
+      window.alert(`Password reset email sent to ${data.email}.`)
+    } catch {
+      window.alert('Failed to send password reset email. Please try again.')
+    } finally {
+      setResetBusy(false)
     }
   }
 
@@ -380,6 +427,24 @@ export default function VenueApprovalPage({
               <div className="mb-4 text-sm text-red-400">{actionError}</div>
             )}
 
+            <div className="mb-4">
+              <label className="mb-2 block text-sm font-medium">
+                Feedback message
+              </label>
+              <textarea
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                placeholder="Required to decline — this message will be emailed to the venue explaining why."
+                rows={4}
+                className="w-full rounded-xl border p-3 text-sm outline-none"
+                style={{
+                  backgroundColor: 'var(--muted)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--foreground)',
+                }}
+              />
+            </div>
+
             <div
               className="p-4 rounded-2xl border"
               style={{ borderColor: 'var(--border)' }}
@@ -409,6 +474,20 @@ export default function VenueApprovalPage({
                 </Button>
               </div>
             </div>
+
+            <Button
+              className="w-full mt-3"
+              variant="outline"
+              disabled={resetBusy || !data.email}
+              onClick={handleResetPassword}
+              style={{
+                borderColor: 'var(--border)',
+                color: 'var(--foreground)',
+              }}
+            >
+              <KeyRound size={14} />
+              {resetBusy ? 'Sending...' : 'Reset Password'}
+            </Button>
           </section>
         </div>
       </div>

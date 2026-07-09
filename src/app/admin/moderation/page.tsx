@@ -25,13 +25,20 @@ export default function ContentModerationPage() {
   const [selectedItem, setSelectedItem] = useState<any | null>(null)
   const [open, setOpen] = useState(false)
 
+  const handleReject = (contentModId: string, reviewNotes: string) => {
+    rejectModeration({ contentModId, reviewNotes })
+  }
+
   if (isLoading) {
     return <div className="p-6">Loading moderation queue...</div>
   }
 
   if (error) {
     return (
-      <div className="p-6 text-red-500">Failed to load moderation data</div>
+      <div className="p-6 text-red-500">
+        Failed to load moderation data. Please refresh the page or try again
+        shortly.
+      </div>
     )
   }
 
@@ -67,7 +74,7 @@ export default function ContentModerationPage() {
       <ModerationQueueTable
         data={tableData}
         onApprove={approveModeration}
-        onReject={rejectModeration}
+        onReject={handleReject}
         onRowClick={(item) => {
           setSelectedItem(item)
           setOpen(true)
@@ -78,7 +85,7 @@ export default function ContentModerationPage() {
         onOpenChange={setOpen}
         item={selectedItem}
         onApprove={approveModeration}
-        onReject={rejectModeration}
+        onReject={handleReject}
       />
     </div>
   )

@@ -6,6 +6,21 @@ export interface RefreshResponse {
   tokenExpires: number
 }
 
+export async function forgotPassword(email: string): Promise<void> {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/auth/forgot/password`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    }
+  )
+
+  if (!res.ok) {
+    throw new Error('Failed to send password reset email')
+  }
+}
+
 export async function refresh(): Promise<RefreshResponse> {
   const storedRefreshToken =
     typeof window !== 'undefined'

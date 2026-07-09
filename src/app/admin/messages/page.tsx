@@ -90,7 +90,11 @@ export default function MessagesPage() {
   if (isLoading) return <div className="p-6">Loading messages...</div>
 
   if (error)
-    return <div className="p-6 text-red-500">Failed to load messages</div>
+    return (
+      <div className="p-6 text-red-500">
+        Failed to load messages. Please refresh the page or try again shortly.
+      </div>
+    )
 
   return (
     <div className="space-y-8">

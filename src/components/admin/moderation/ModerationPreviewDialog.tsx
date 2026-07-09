@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -8,6 +9,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { RejectReasonDialog } from './RejectReasonDialog'
 
 type ModerationItem = {
   id: string
@@ -26,7 +28,7 @@ interface Props {
   onOpenChange: (open: boolean) => void
   item: ModerationItem | null
   onApprove: (id: string) => void
-  onReject: (id: string) => void
+  onReject: (id: string, reviewNotes: string) => void
 }
 
 export function ModerationPreviewDialog({
@@ -36,6 +38,8 @@ export function ModerationPreviewDialog({
   onApprove,
   onReject,
 }: Props) {
+  const [rejecting, setRejecting] = useState(false)
+
   if (!item) return null
 
   const handleApprove = () => {
@@ -43,8 +47,8 @@ export function ModerationPreviewDialog({
     onOpenChange(false)
   }
 
-  const handleReject = () => {
-    onReject(item.id)
+  const handleConfirmReject = (reviewNotes: string) => {
+    onReject(item.id, reviewNotes)
     onOpenChange(false)
   }
 
@@ -270,7 +274,7 @@ export function ModerationPreviewDialog({
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
-              onClick={handleReject}
+              onClick={() => setRejecting(true)}
               style={{
                 borderColor: 'var(--status-banned-text)',
                 color: 'var(--status-banned-text)',
@@ -291,6 +295,12 @@ export function ModerationPreviewDialog({
           </div>
         </div>
       </DialogContent>
+
+      <RejectReasonDialog
+        open={rejecting}
+        onOpenChange={setRejecting}
+        onConfirm={handleConfirmReject}
+      />
     </Dialog>
   )
 }

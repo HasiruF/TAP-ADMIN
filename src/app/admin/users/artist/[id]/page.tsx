@@ -15,14 +15,17 @@ import {
   Link as LinkIcon,
   Image as ImageIcon,
   ScrollText,
+  KeyRound,
 } from 'lucide-react'
 import { ExternalLink } from 'lucide-react'
 import { useAdminArtist } from '@/hooks/queries/useAdminArtists'
 import { formatPerformanceType } from '@/lib/utils/performanceType'
 import { suspendUser, unsuspendUser } from '@/lib/api/admin/users'
+import { forgotPassword } from '@/lib/api/auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { use } from 'react'
+import { ReasonPromptDialog } from '@/components/admin/shared/ReasonPromptDialog'
 export default function ArtistDetailPage({
   params,
 }: {
@@ -32,26 +35,55 @@ export default function ArtistDetailPage({
   const router = useRouter()
   const queryClient = useQueryClient()
   const [busy, setBusy] = useState(false)
+  const [resetBusy, setResetBusy] = useState(false)
+  const [suspendDialogOpen, setSuspendDialogOpen] = useState(false)
 
   const { data: artist, isLoading, error } = useAdminArtist(id)
 
   const isSuspended =
     artist?.accountStatus === 'SUSPENDED' || artist?.accountStatus === 'LOCKED'
 
-  async function handleSuspend() {
+  async function refreshArtist() {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['admin-artist', id] }),
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] }),
+    ])
+  }
+
+  async function handleUnsuspend() {
     setBusy(true)
     try {
-      if (isSuspended) {
-        await unsuspendUser(id)
-      } else {
-        await suspendUser(id)
-      }
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['admin-artist', id] }),
-        queryClient.invalidateQueries({ queryKey: ['admin-users'] }),
-      ])
+      await unsuspendUser(id)
+      await refreshArtist()
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function handleConfirmSuspend(reason: string) {
+    setBusy(true)
+    try {
+      await suspendUser(id, reason)
+      await refreshArtist()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleResetPassword() {
+    if (!artist?.email) return
+    const confirmed = window.confirm(
+      `Send a password reset email to ${artist.email}?`
+    )
+    if (!confirmed) return
+    setResetBusy(true)
+    try {
+      await forgotPassword(artist.email)
+      window.alert(`Password reset email sent to ${artist.email}.`)
+    } catch {
+      window.alert('Failed to send password reset email. Please try again.')
+    } finally {
+      setResetBusy(false)
     }
   }
 
@@ -666,7 +698,9 @@ export default function ArtistDetailPage({
               <Button
                 className="w-full"
                 disabled={busy}
-                onClick={handleSuspend}
+                onClick={() =>
+                  isSuspended ? handleUnsuspend() : setSuspendDialogOpen(true)
+                }
                 style={
                   isSuspended
                     ? {
@@ -696,6 +730,20 @@ export default function ArtistDetailPage({
               <Button
                 className="w-full"
                 variant="outline"
+                disabled={resetBusy || !data.email}
+                onClick={handleResetPassword}
+                style={{
+                  borderColor: 'var(--border)',
+                  color: 'var(--foreground)',
+                }}
+              >
+                <KeyRound size={14} />
+                {resetBusy ? 'Sending...' : 'Reset Password'}
+              </Button>
+
+              <Button
+                className="w-full"
+                variant="outline"
                 onClick={() =>
                   router.push(
                     `/admin/log?userId=${id}&name=${encodeURIComponent(
@@ -715,6 +763,22 @@ export default function ArtistDetailPage({
           </section>
         </div>
       </div>
+
+      <ReasonPromptDialog
+        open={suspendDialogOpen}
+        onOpenChange={setSuspendDialogOpen}
+        onConfirm={handleConfirmSuspend}
+        eyebrow="Admin • Artist Inspection"
+        title="Suspend Artist"
+        description="This will block the account from logging in. The reason is emailed to the artist."
+        confirmLabel="Confirm Suspension"
+        confirmingLabel="Suspending..."
+        confirmColor={{
+          backgroundColor: 'var(--status-suspended-bg)',
+          color: 'var(--status-suspended-text)',
+        }}
+        isSubmitting={busy}
+      />
     </div>
   )
 }

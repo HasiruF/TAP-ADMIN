@@ -15,13 +15,16 @@ import {
   Mic2,
   Image as ImageIcon,
   ScrollText,
+  KeyRound,
 } from 'lucide-react'
 import { ExternalLink } from 'lucide-react'
 import { use } from 'react'
 import { useAdminVenue } from '@/hooks/queries/useAdminVenues'
 import { suspendUser, unsuspendUser } from '@/lib/api/admin/users'
+import { forgotPassword } from '@/lib/api/auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { formatBudget } from '@/lib/formatters'
+import { ReasonPromptDialog } from '@/components/admin/shared/ReasonPromptDialog'
 export default function VenueDetailPage({
   params,
 }: {
@@ -30,6 +33,8 @@ export default function VenueDetailPage({
   const { id } = use(params)
   const queryClient = useQueryClient()
   const [busy, setBusy] = useState(false)
+  const [resetBusy, setResetBusy] = useState(false)
+  const [suspendDialogOpen, setSuspendDialogOpen] = useState(false)
 
   const { data: venue, isLoading, error } = useAdminVenue(id)
 
@@ -46,20 +51,47 @@ export default function VenueDetailPage({
   const isSuspended =
     data.accountStatus === 'SUSPENDED' || data.accountStatus === 'LOCKED'
 
-  async function handleSuspend() {
+  async function refreshVenue() {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['admin-venue', id] }),
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] }),
+    ])
+  }
+
+  async function handleUnsuspend() {
     setBusy(true)
     try {
-      if (isSuspended) {
-        await unsuspendUser(id)
-      } else {
-        await suspendUser(id)
-      }
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['admin-venue', id] }),
-        queryClient.invalidateQueries({ queryKey: ['admin-users'] }),
-      ])
+      await unsuspendUser(id)
+      await refreshVenue()
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function handleConfirmSuspend(reason: string) {
+    setBusy(true)
+    try {
+      await suspendUser(id, reason)
+      await refreshVenue()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleResetPassword() {
+    if (!data.email) return
+    const confirmed = window.confirm(
+      `Send a password reset email to ${data.email}?`
+    )
+    if (!confirmed) return
+    setResetBusy(true)
+    try {
+      await forgotPassword(data.email)
+      window.alert(`Password reset email sent to ${data.email}.`)
+    } catch {
+      window.alert('Failed to send password reset email. Please try again.')
+    } finally {
+      setResetBusy(false)
     }
   }
 
@@ -409,7 +441,9 @@ export default function VenueDetailPage({
               <Button
                 className="w-full"
                 disabled={busy}
-                onClick={handleSuspend}
+                onClick={() =>
+                  isSuspended ? handleUnsuspend() : setSuspendDialogOpen(true)
+                }
                 style={
                   isSuspended
                     ? {
@@ -434,6 +468,20 @@ export default function VenueDetailPage({
                   : isSuspended
                     ? 'Unsuspend Venue'
                     : 'Suspend Venue'}
+              </Button>
+
+              <Button
+                className="w-full"
+                variant="outline"
+                disabled={resetBusy || !data.email}
+                onClick={handleResetPassword}
+                style={{
+                  borderColor: 'var(--border)',
+                  color: 'var(--foreground)',
+                }}
+              >
+                <KeyRound size={14} />
+                {resetBusy ? 'Sending...' : 'Reset Password'}
               </Button>
 
               <Button
@@ -517,6 +565,22 @@ export default function VenueDetailPage({
           )}
         </div>
       </section>
+
+      <ReasonPromptDialog
+        open={suspendDialogOpen}
+        onOpenChange={setSuspendDialogOpen}
+        onConfirm={handleConfirmSuspend}
+        eyebrow="Admin • Venue Inspection"
+        title="Suspend Venue"
+        description="This will block the account from logging in. The reason is emailed to the venue."
+        confirmLabel="Confirm Suspension"
+        confirmingLabel="Suspending..."
+        confirmColor={{
+          backgroundColor: 'var(--status-suspended-bg)',
+          color: 'var(--status-suspended-text)',
+        }}
+        isSubmitting={busy}
+      />
     </div>
   )
 }

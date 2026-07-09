@@ -59,7 +59,7 @@ function getLoginErrorMessage(err: unknown): string {
       return 'Unable to reach the server. Please check your connection and try again.'
     }
 
-    return err.message
+    return "We couldn't log you in. Please check your credentials and try again."
   }
 
   if (Array.isArray(err.message) && err.message.length > 0) {

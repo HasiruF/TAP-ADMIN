@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
 const baseFields = {
-  title: z.string().min(2),
-  description: z.string().min(5),
+  title: z.string().min(2, 'Title must be at least 2 characters'),
+  description: z.string().min(5, 'Description must be at least 5 characters'),
   category: z.string().min(2, 'Category is required'),
   // optional thumbnail image, validated manually (File)
   thumbnailFile: z.any().optional(),
