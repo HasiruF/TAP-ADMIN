@@ -40,7 +40,7 @@ const PROFILE_APPROVAL_STATUS_MAP: Record<string, string> = {
   DRAFT: 'Inactive',
   PENDING_APPROVAL: 'Not-approved',
   APPROVED: 'Active',
-  REJECTED: 'Banned',
+  REJECTED: 'Inactive',
 }
 
 export const mapUserToBe = (user: UserBe): User => {
