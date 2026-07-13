@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   ShieldMinus,
   ShieldCheck,
+  Unlock,
   MapPin,
   Building2,
   Users,
@@ -20,11 +21,19 @@ import {
 import { ExternalLink } from 'lucide-react'
 import { use } from 'react'
 import { useAdminVenue } from '@/hooks/queries/useAdminVenues'
-import { suspendUser, unsuspendUser } from '@/lib/api/admin/users'
+import { suspendUser, unsuspendUser, unlockUser } from '@/lib/api/admin/users'
 import { forgotPassword } from '@/lib/api/auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { formatBudget } from '@/lib/formatters'
 import { ReasonPromptDialog } from '@/components/admin/shared/ReasonPromptDialog'
+
+type VenueHistoryEvent = {
+  id: string
+  media?: string | null
+  performanceName?: string | null
+  eventDescription?: string | null
+}
+
 export default function VenueDetailPage({
   params,
 }: {
@@ -48,8 +57,8 @@ export default function VenueDetailPage({
 
   const data = venue
 
-  const isSuspended =
-    data.accountStatus === 'SUSPENDED' || data.accountStatus === 'LOCKED'
+  const isSuspended = data.accountStatus === 'SUSPENDED'
+  const isLocked = data.accountStatus === 'LOCKED'
 
   async function refreshVenue() {
     await Promise.all([
@@ -62,6 +71,16 @@ export default function VenueDetailPage({
     setBusy(true)
     try {
       await unsuspendUser(id)
+      await refreshVenue()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleUnlock() {
+    setBusy(true)
+    try {
+      await unlockUser(id)
       await refreshVenue()
     } finally {
       setBusy(false)
@@ -304,7 +323,7 @@ export default function VenueDetailPage({
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {data.venueHistory.map((event: any) => (
+                {data.venueHistory.map((event: VenueHistoryEvent) => (
                   <div
                     key={event.id}
                     className="text-sm border p-3 rounded-xl"
@@ -438,37 +457,52 @@ export default function VenueDetailPage({
             <h2 className="mb-6 text-base font-semibold">Admin Actions</h2>
 
             <div className="space-y-3">
-              <Button
-                className="w-full"
-                disabled={busy}
-                onClick={() =>
-                  isSuspended ? handleUnsuspend() : setSuspendDialogOpen(true)
-                }
-                style={
-                  isSuspended
-                    ? {
-                        backgroundColor: 'var(--status-active-bg)',
-                        color: 'var(--status-active-text)',
-                      }
-                    : {
-                        backgroundColor: 'var(--status-suspended-bg)',
-                        color: 'var(--status-suspended-text)',
-                      }
-                }
-              >
-                {isSuspended ? (
-                  <ShieldCheck size={14} />
-                ) : (
-                  <ShieldMinus size={14} />
-                )}
-                {busy
-                  ? isSuspended
-                    ? 'Unsuspending...'
-                    : 'Suspending...'
-                  : isSuspended
-                    ? 'Unsuspend Venue'
-                    : 'Suspend Venue'}
-              </Button>
+              {isLocked ? (
+                <Button
+                  className="w-full"
+                  disabled={busy}
+                  onClick={handleUnlock}
+                  style={{
+                    backgroundColor: 'var(--status-locked-bg)',
+                    color: 'var(--status-locked-text)',
+                  }}
+                >
+                  <Unlock size={14} />
+                  {busy ? 'Unlocking...' : 'Unlock Venue'}
+                </Button>
+              ) : (
+                <Button
+                  className="w-full"
+                  disabled={busy}
+                  onClick={() =>
+                    isSuspended ? handleUnsuspend() : setSuspendDialogOpen(true)
+                  }
+                  style={
+                    isSuspended
+                      ? {
+                          backgroundColor: 'var(--status-active-bg)',
+                          color: 'var(--status-active-text)',
+                        }
+                      : {
+                          backgroundColor: 'var(--status-suspended-bg)',
+                          color: 'var(--status-suspended-text)',
+                        }
+                  }
+                >
+                  {isSuspended ? (
+                    <ShieldCheck size={14} />
+                  ) : (
+                    <ShieldMinus size={14} />
+                  )}
+                  {busy
+                    ? isSuspended
+                      ? 'Unsuspending...'
+                      : 'Suspending...'
+                    : isSuspended
+                      ? 'Unsuspend Venue'
+                      : 'Suspend Venue'}
+                </Button>
+              )}
 
               <Button
                 className="w-full"

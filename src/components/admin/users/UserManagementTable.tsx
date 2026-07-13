@@ -14,6 +14,7 @@ import {
   Eye,
   ScrollText,
   KeyRound,
+  Unlock,
 } from 'lucide-react'
 import { MoreVertical } from 'lucide-react'
 import {
@@ -44,7 +45,12 @@ import { useAdminUsers } from '@/hooks/queries/useAdminUsers'
 import { useRouter } from 'next/navigation'
 import { mapUserToBe } from '@/types/user'
 import { useQueryClient } from '@tanstack/react-query'
-import { suspendUser, unsuspendUser, banUser } from '@/lib/api/admin/users'
+import {
+  suspendUser,
+  unsuspendUser,
+  banUser,
+  unlockUser,
+} from '@/lib/api/admin/users'
 import { approveArtist } from '@/lib/api/admin/artists'
 import { approveVenue } from '@/lib/api/admin/venues'
 import { forgotPassword } from '@/lib/api/auth'
@@ -74,6 +80,11 @@ function getStatusStyles(status: string) {
       return {
         backgroundColor: 'var(--status-banned-bg)',
         color: 'var(--status-banned-text)',
+      }
+    case 'Locked':
+      return {
+        backgroundColor: 'var(--status-locked-bg)',
+        color: 'var(--status-locked-text)',
       }
     case 'Inactive':
       return {
@@ -113,6 +124,7 @@ const statusOptions = [
   { label: 'Not Approved', value: 'not-approved' },
   { label: 'Inactive', value: 'inactive' },
   { label: 'Suspended', value: 'suspended' },
+  { label: 'Locked', value: 'locked' },
   { label: 'Banned', value: 'banned' },
 ]
 
@@ -257,6 +269,18 @@ export function UserManagementTable() {
     }
   }
 
+  async function handleUnlock(userId: string) {
+    setActionBusy(userId)
+    try {
+      await unlockUser(userId)
+      await invalidateUsers()
+    } catch {
+      toast.error("We couldn't unlock this account. Please try again.")
+    } finally {
+      setActionBusy(null)
+    }
+  }
+
   async function handleConfirmBan(reason: string) {
     if (!banTarget) return
     const userId = banTarget.id
@@ -354,6 +378,16 @@ export function UserManagementTable() {
           >
             <ShieldCheck size={14} />
             Unsuspend
+          </DropdownMenuItem>
+        )
+      case 'Locked':
+        return (
+          <DropdownMenuItem
+            disabled={busy}
+            onClick={() => handleUnlock(user.id)}
+          >
+            <Unlock size={14} />
+            Unlock
           </DropdownMenuItem>
         )
       case 'Inactive':

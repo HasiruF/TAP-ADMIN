@@ -7,6 +7,7 @@ export function useConversationThread(id: string | undefined) {
   return useQuery({
     queryKey: ['conversation-thread', id],
     queryFn: () => fetchConversationThread(id as string),
-    enabled: id !== null && !isLoading,
+    refetchInterval: 1000 * 15,
+    enabled: !!id && !isLoading,
   })
 }

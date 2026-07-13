@@ -26,3 +26,9 @@ export function banUser(userId: string, reason: string) {
     body: JSON.stringify({ id: userId, reason }),
   })
 }
+
+export function unlockUser(userId: string) {
+  return api(`/admin/users/${userId}/unlock`, {
+    method: 'PATCH',
+  })
+}

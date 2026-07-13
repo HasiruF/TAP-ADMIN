@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
 import { Resource, toResourceItemInput } from '@/types/resource'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import { resourceSchema, ResourceInput } from '@/lib/schemas/resourceSchema'
@@ -32,7 +32,7 @@ import { compressImage } from '@/lib/utils/compressImage'
 import { Upload, ImagePlus } from 'lucide-react'
 
 type Props = {
-  onSuccess?: () => any
+  onSuccess?: () => unknown
 }
 
 export function ViewResourceDialog({
@@ -51,7 +51,7 @@ export function ViewResourceDialog({
 
   const {
     register,
-    watch,
+    control,
     handleSubmit,
     setValue,
     formState: { errors, isSubmitting },
@@ -63,14 +63,14 @@ export function ViewResourceDialog({
       description: resource.description ?? '',
       category: resource.category ?? '',
       url: resource.url,
-    } as any,
+    } as ResourceInput,
   })
 
-  const type = watch('type')
-  const url = watch('url')
-  const title = watch('title')
-  const pdfFile = watch('pdfFile')
-  const thumbnailFile = watch('thumbnailFile')
+  const type = useWatch({ control, name: 'type' })
+  const url = useWatch({ control, name: 'url' })
+  const title = useWatch({ control, name: 'title' })
+  const pdfFile = useWatch({ control, name: 'pdfFile' })
+  const thumbnailFile = useWatch({ control, name: 'thumbnailFile' })
 
   const embed = useMemo(() => {
     if (type !== 'youtube' || !url) return null
@@ -89,13 +89,17 @@ export function ViewResourceDialog({
 
       if (data.type === 'pdf' && data.pdfFile instanceof File) {
         const media = await uploadMedia(data.pdfFile)
-        nextUrl = media.cdnUrl ?? media.storageKey
+        // Store the storageKey, not a resolved URL — the backend resolves it
+        // (signs it, for S3) fresh on every read, so the stored value never
+        // goes stale. `resource.url` (the unchanged-file fallback above) is
+        // already a raw storageKey too, from the admin-only resource list.
+        nextUrl = media.storageKey
       }
 
       let thumbnailUrl = resource.thumbnailUrl ?? undefined
       if (data.thumbnailFile instanceof File) {
         const media = await uploadMedia(data.thumbnailFile)
-        thumbnailUrl = media.cdnUrl ?? media.storageKey
+        thumbnailUrl = media.storageKey
       }
 
       const items = resources.map((r, i) =>
@@ -173,7 +177,9 @@ export function ViewResourceDialog({
 
               <Select
                 value={type}
-                onValueChange={(v) => setValue('type', v as any)}
+                onValueChange={(v) =>
+                  setValue('type', v as ResourceInput['type'])
+                }
               >
                 <SelectTrigger
                   className="h-12"

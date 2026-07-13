@@ -33,7 +33,7 @@ const ACCOUNT_STATUS_MAP: Record<string, string> = {
   PENDING_VERIFICATION: 'Not-approved',
   SUSPENDED: 'Suspended',
   ANONYMISED: 'Banned',
-  LOCKED: 'Suspended',
+  LOCKED: 'Locked',
 }
 
 const PROFILE_APPROVAL_STATUS_MAP: Record<string, string> = {
@@ -50,9 +50,11 @@ export const mapUserToBe = (user: UserBe): User => {
 
   let status: string
 
-  // Account-level suspended/banned/anonymised always takes precedence
-  if (user.accountStatus === 'SUSPENDED' || user.accountStatus === 'LOCKED') {
+  // Account-level suspended/locked/banned/anonymised always takes precedence
+  if (user.accountStatus === 'SUSPENDED') {
     status = 'Suspended'
+  } else if (user.accountStatus === 'LOCKED') {
+    status = 'Locked'
   } else if (user.accountStatus === 'ANONYMISED') {
     status = 'Banned'
   } else if (user.accountStatus === 'PENDING_VERIFICATION') {

@@ -22,7 +22,18 @@ import { approveVenue, rejectVenue } from '@/lib/api/admin/venues'
 import { forgotPassword } from '@/lib/api/auth'
 import { useRouter } from 'next/navigation'
 import { formatBudget } from '@/lib/formatters'
-import { getFriendlyErrorMessage } from '@/lib/api/errorMessage'
+import {
+  getFriendlyErrorMessage,
+  BackendErrorShape,
+} from '@/lib/api/errorMessage'
+
+type VenueHistoryEvent = {
+  id: string
+  media?: string | null
+  performanceName?: string | null
+  eventDescription?: string | null
+}
+
 export default function VenueApprovalPage({
   params,
 }: {
@@ -40,7 +51,8 @@ export default function VenueApprovalPage({
 
   if (isLoading) return <div className="p-6">Loading venue...</div>
   if (error || !venue) {
-    const status = (error as any)?.statusCode ?? (error as any)?.status
+    const errorShape = error as BackendErrorShape | null
+    const status = errorShape?.statusCode ?? errorShape?.status
     const notFoundMessage =
       status === 404
         ? 'Venue not found'
@@ -312,7 +324,7 @@ export default function VenueApprovalPage({
                 Past Performances
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {data.venueHistory.map((event: any) => (
+                {data.venueHistory.map((event: VenueHistoryEvent) => (
                   <div
                     key={event.id}
                     className="text-sm border p-3 rounded-xl"

@@ -10,7 +10,7 @@ import { resolveContentUrl } from '@/lib/api/admin/moderation'
 export default function ContentModerationPage() {
   const { data: moderationData = [], isLoading, error } = useModerationQueue()
 
-  const tableData = moderationData.map((item: any) => ({
+  const tableData = moderationData.map((item) => ({
     id: item.contentModId,
     userId: item.userId ?? '-',
     email: item.email ?? '-',
@@ -22,7 +22,9 @@ export default function ContentModerationPage() {
     content: resolveContentUrl(item.contentLink) ?? '',
   }))
   const { approveModeration, rejectModeration } = useModerationActions()
-  const [selectedItem, setSelectedItem] = useState<any | null>(null)
+  const [selectedItem, setSelectedItem] = useState<
+    (typeof tableData)[number] | null
+  >(null)
   const [open, setOpen] = useState(false)
 
   const handleReject = (contentModId: string, reviewNotes: string) => {

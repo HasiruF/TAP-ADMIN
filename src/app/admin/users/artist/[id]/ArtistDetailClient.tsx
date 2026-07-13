@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   ShieldMinus,
   ShieldCheck,
+  Unlock,
   MapPin,
   Music2,
   Video,
@@ -20,7 +21,7 @@ import {
 import { ExternalLink } from 'lucide-react'
 import { useAdminArtist } from '@/hooks/queries/useAdminArtists'
 import { formatPerformanceType } from '@/lib/utils/performanceType'
-import { suspendUser, unsuspendUser } from '@/lib/api/admin/users'
+import { suspendUser, unsuspendUser, unlockUser } from '@/lib/api/admin/users'
 import { forgotPassword } from '@/lib/api/auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
@@ -40,8 +41,8 @@ export default function ArtistDetailPage({
 
   const { data: artist, isLoading, error } = useAdminArtist(id)
 
-  const isSuspended =
-    artist?.accountStatus === 'SUSPENDED' || artist?.accountStatus === 'LOCKED'
+  const isSuspended = artist?.accountStatus === 'SUSPENDED'
+  const isLocked = artist?.accountStatus === 'LOCKED'
 
   async function refreshArtist() {
     await Promise.all([
@@ -54,6 +55,16 @@ export default function ArtistDetailPage({
     setBusy(true)
     try {
       await unsuspendUser(id)
+      await refreshArtist()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleUnlock() {
+    setBusy(true)
+    try {
+      await unlockUser(id)
       await refreshArtist()
     } finally {
       setBusy(false)
@@ -695,37 +706,52 @@ export default function ArtistDetailPage({
             <h2 className="mb-6 text-base font-semibold">Admin Actions</h2>
 
             <div className="space-y-3">
-              <Button
-                className="w-full"
-                disabled={busy}
-                onClick={() =>
-                  isSuspended ? handleUnsuspend() : setSuspendDialogOpen(true)
-                }
-                style={
-                  isSuspended
-                    ? {
-                        backgroundColor: 'var(--status-active-bg)',
-                        color: 'var(--status-active-text)',
-                      }
-                    : {
-                        backgroundColor: 'var(--status-suspended-bg)',
-                        color: 'var(--status-suspended-text)',
-                      }
-                }
-              >
-                {isSuspended ? (
-                  <ShieldCheck size={14} />
-                ) : (
-                  <ShieldMinus size={14} />
-                )}
-                {busy
-                  ? isSuspended
-                    ? 'Unsuspending...'
-                    : 'Suspending...'
-                  : isSuspended
-                    ? 'Unsuspend'
-                    : 'Suspend'}
-              </Button>
+              {isLocked ? (
+                <Button
+                  className="w-full"
+                  disabled={busy}
+                  onClick={handleUnlock}
+                  style={{
+                    backgroundColor: 'var(--status-locked-bg)',
+                    color: 'var(--status-locked-text)',
+                  }}
+                >
+                  <Unlock size={14} />
+                  {busy ? 'Unlocking...' : 'Unlock'}
+                </Button>
+              ) : (
+                <Button
+                  className="w-full"
+                  disabled={busy}
+                  onClick={() =>
+                    isSuspended ? handleUnsuspend() : setSuspendDialogOpen(true)
+                  }
+                  style={
+                    isSuspended
+                      ? {
+                          backgroundColor: 'var(--status-active-bg)',
+                          color: 'var(--status-active-text)',
+                        }
+                      : {
+                          backgroundColor: 'var(--status-suspended-bg)',
+                          color: 'var(--status-suspended-text)',
+                        }
+                  }
+                >
+                  {isSuspended ? (
+                    <ShieldCheck size={14} />
+                  ) : (
+                    <ShieldMinus size={14} />
+                  )}
+                  {busy
+                    ? isSuspended
+                      ? 'Unsuspending...'
+                      : 'Suspending...'
+                    : isSuspended
+                      ? 'Unsuspend'
+                      : 'Suspend'}
+                </Button>
+              )}
 
               <Button
                 className="w-full"

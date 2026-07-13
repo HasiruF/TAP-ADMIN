@@ -1,10 +1,10 @@
 'use client'
 
-import { format } from 'date-fns'
-import { Check, CheckCheck } from 'lucide-react'
+import Image from 'next/image'
+import { Conversation } from '@/types/conversation'
 
 type Props = {
-  conversation: any
+  conversation: Conversation
 }
 
 export function MessageThread({ conversation }: Props) {
@@ -20,12 +20,14 @@ export function MessageThread({ conversation }: Props) {
         {/* Left side: avatars + names */}
         <div className="flex items-center gap-3">
           {/* Artist Avatar */}
-          <img
+          <Image
             src={
               conversation.artist.avatar ||
               'https://images.unsplash.com/photo-1524504388940-b1c1722653e1'
             }
             alt={conversation.artist.name}
+            width={40}
+            height={40}
             className="w-10 h-10 rounded-full object-cover"
           />
 
@@ -49,12 +51,14 @@ export function MessageThread({ conversation }: Props) {
           </div>
 
           {/* Venue Avatar */}
-          <img
+          <Image
             src={
               conversation.venue.avatar ||
               'https://images.unsplash.com/photo-1506157786151-b8491531f063'
             }
             alt={conversation.venue.name}
+            width={40}
+            height={40}
             className="w-10 h-10 rounded-full object-cover"
           />
         </div>
@@ -62,7 +66,7 @@ export function MessageThread({ conversation }: Props) {
 
       {/* MESSAGES */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {conversation.messages.map((message: any) => {
+        {conversation.messages.map((message) => {
           const isArtist = message.senderId === conversation.artist.id
           const isVenue = message.senderId === conversation.venue.id
 
@@ -96,35 +100,24 @@ export function MessageThread({ conversation }: Props) {
                 <p className="text-sm">{message.content}</p>
 
                 {/* ATTACHMENTS */}
-                {message.attachments?.length > 0 && (
+                {(message.attachments?.length ?? 0) > 0 && (
                   <div className="mt-3 space-y-2">
-                    {message.attachments?.map((a: any) => (
+                    {message.attachments?.map((a) => (
                       <div key={a.id} className="mt-2 space-y-2">
                         {/* IMAGE */}
-                        {a.type === 'image' && (
-                          <img
-                            src={a.url}
-                            alt={a.name}
-                            className="rounded-lg max-h-[240px] object-cover"
-                          />
-                        )}
-
-                        {/* VIDEO */}
-                        {a.type === 'video' && (
-                          <video
-                            src={a.url}
-                            controls
-                            className="rounded-lg max-h-[260px] w-full"
-                          />
-                        )}
-
-                        {/* AUDIO */}
-                        {a.type === 'audio' && (
-                          <audio src={a.url} controls className="w-full" />
+                        {a.type === 'IMAGE' && (
+                          <div className="relative w-60 h-60 rounded-lg overflow-hidden">
+                            <Image
+                              src={a.url}
+                              alt={a.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
                         )}
 
                         {/* PDF */}
-                        {a.type === 'pdf' && (
+                        {a.type === 'PDF' && (
                           <a
                             href={a.url}
                             target="_blank"
@@ -135,15 +128,15 @@ export function MessageThread({ conversation }: Props) {
                           </a>
                         )}
 
-                        {/* DOCUMENT */}
-                        {a.type === 'document' && (
+                        {/* LINK */}
+                        {a.type === 'LINK' && (
                           <a
                             href={a.url}
                             target="_blank"
                             className="text-xs underline flex items-center gap-2"
                             style={{ color: 'var(--foreground)' }}
                           >
-                            {a.name}
+                            {a.name || a.url}
                           </a>
                         )}
                       </div>

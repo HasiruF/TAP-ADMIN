@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 import Link from 'next/link'
 import {
   Sidebar,
@@ -21,14 +22,17 @@ import {
   LayoutDashboard,
   Users,
   ShieldAlert,
-  BadgeCheck,
-  Settings,
   MessageSquare,
   LogOut,
   BookOpen,
   ScrollText,
 } from 'lucide-react'
-const navMain = [
+const navMain: Array<{
+  title: string
+  url: string
+  icon: typeof LayoutDashboard
+  disabled?: boolean
+}> = [
   {
     title: 'Overview',
     url: '/admin',
@@ -58,7 +62,6 @@ const navMain = [
     title: 'Message Moderation',
     url: '/admin/messages',
     icon: MessageSquare,
-    disabled: true,
   },
 ]
 
@@ -76,7 +79,7 @@ export function AppSidebar() {
       queryClient.removeQueries({ queryKey: ['me'] })
 
       router.push('/login')
-    } catch (err) {
+    } catch {
       queryClient.removeQueries({ queryKey: ['me'] })
 
       router.push('/login')
@@ -107,9 +110,11 @@ export function AppSidebar() {
                   borderColor: 'var(--sidebar-border)',
                 }}
               >
-                <img
+                <Image
                   src="/Primary.svg"
                   alt="TAP Logo"
+                  width={48}
+                  height={48}
                   className="w-12 h-12 object-contain"
                 />
               </div>

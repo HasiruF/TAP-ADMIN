@@ -27,6 +27,8 @@ type ModerationItem = {
   type: string
   date: string
   role: string
+  reason: string
+  content: string
 }
 
 function formatDate(date?: string | null) {

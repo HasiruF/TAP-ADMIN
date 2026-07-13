@@ -20,7 +20,20 @@ import { forgotPassword } from '@/lib/api/auth'
 import { formatPerformanceType } from '@/lib/utils/performanceType'
 import { use } from 'react'
 import { useRouter } from 'next/navigation'
-import { getFriendlyErrorMessage } from '@/lib/api/errorMessage'
+import {
+  getFriendlyErrorMessage,
+  BackendErrorShape,
+} from '@/lib/api/errorMessage'
+
+type LivePerformance = { id: string; url: string; name?: string | null }
+
+type PastGig = {
+  id: string
+  media?: string | null
+  venueName?: string | null
+  date?: string | null
+  testimonial?: string | null
+}
 
 export default function ArtistApprovalPage({
   params,
@@ -38,7 +51,8 @@ export default function ArtistApprovalPage({
 
   if (isLoading) return <div className="p-6">Loading artist...</div>
   if (error || !artist) {
-    const status = (error as any)?.statusCode ?? (error as any)?.status
+    const errorShape = error as BackendErrorShape | null
+    const status = errorShape?.statusCode ?? errorShape?.status
     const notFoundMessage =
       status === 404
         ? 'Artist not found'
@@ -358,7 +372,7 @@ export default function ArtistApprovalPage({
               <div className="mb-4">
                 <h3 className="text-sm font-medium mb-3">Live Performances</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">
-                  {data.media.livePerformance.map((lp: any) => {
+                  {data.media.livePerformance.map((lp: LivePerformance) => {
                     const embedUrl = isYouTubeUrl(lp.url)
                       ? getYouTubeEmbedUrl(lp.url)
                       : null
@@ -525,7 +539,7 @@ export default function ArtistApprovalPage({
             >
               <h2 className="mb-4 text-base font-semibold">Past Gigs</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {data.pastGigs.map((gig: any) => (
+                {data.pastGigs.map((gig: PastGig) => (
                   <div
                     key={gig.id}
                     className="text-sm border p-3 rounded-xl"

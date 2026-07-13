@@ -27,7 +27,7 @@ export function resolveContentUrl(link: string | null): string | null {
   return link.startsWith('http') ? link : `${ORIGIN}${link}`
 }
 
-export function fetchModerationQueue() {
+export function fetchModerationQueue(): Promise<ModerationItem[]> {
   return api('/admin/moderation')
 }
 

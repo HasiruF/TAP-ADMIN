@@ -12,6 +12,7 @@ export function useAdminMessages(filters: ConversationQuery = {}) {
     queryKey: ['admin-conversations', filters], // 🔥 critical
     queryFn: () => fetchAdminConversations(filters),
     staleTime: 1000 * 60 * 2,
+    refetchInterval: 1000 * 15,
 
     enabled: !isLoading,
   })

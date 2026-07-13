@@ -1,4 +1,4 @@
-interface BackendErrorShape {
+export interface BackendErrorShape {
   message?: unknown
   statusCode?: unknown
   status?: unknown
