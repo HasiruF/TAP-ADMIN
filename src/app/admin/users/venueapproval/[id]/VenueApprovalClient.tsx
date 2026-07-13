@@ -16,6 +16,7 @@ import {
   KeyRound,
 } from 'lucide-react'
 import { use } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAdminVenue } from '@/hooks/queries/useAdminVenues'
 import { approveVenue, rejectVenue } from '@/lib/api/admin/venues'
 import { forgotPassword } from '@/lib/api/auth'
@@ -29,6 +30,7 @@ export default function VenueApprovalPage({
 }) {
   const { id } = use(params)
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   const { data: venue, isLoading, error } = useAdminVenue(id)
   const [busy, setBusy] = useState(false)
@@ -57,11 +59,19 @@ export default function VenueApprovalPage({
   const resolveImg = (url: string) =>
     url.startsWith('http') ? url : `${API_BASE}${url}`
 
+  async function refreshVenue() {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['admin-venue', id] }),
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] }),
+    ])
+  }
+
   async function handleApprove() {
     setBusy(true)
     setActionError(null)
     try {
       await approveVenue(id)
+      await refreshVenue()
       router.push('/admin/users')
     } catch (e) {
       setActionError(
@@ -86,6 +96,7 @@ export default function VenueApprovalPage({
     setActionError(null)
     try {
       await rejectVenue(id, feedback.trim())
+      await refreshVenue()
       router.push('/admin/users')
     } catch (e) {
       setActionError(
