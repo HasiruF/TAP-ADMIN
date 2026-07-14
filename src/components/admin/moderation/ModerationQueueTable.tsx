@@ -10,6 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { formatDateTime as formatDate } from '@/lib/utils/date'
 import {
   Select,
   SelectContent,
@@ -29,23 +30,6 @@ type ModerationItem = {
   role: string
   reason: string
   content: string
-}
-
-function formatDate(date?: string | null) {
-  if (!date) return '-'
-
-  const parsed = new Date(date)
-
-  if (isNaN(parsed.getTime())) return '-'
-
-  return new Intl.DateTimeFormat('en-AU', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(parsed)
 }
 
 interface Props {

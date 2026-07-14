@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { getAdminUserRoute } from '@/utils/AdminRoutes'
 import { getAdminLogRoute } from '@/utils/AdminRoutes'
+import { formatDateTime as formatDate } from '@/lib/utils/date'
 import {
   Ban,
   ShieldMinus,
@@ -100,23 +101,6 @@ const filterOptions = [
   { label: 'Joined Date', value: 'joined' },
   { label: 'Last Login Date', value: 'lastlogin' },
 ]
-
-function formatDate(date?: string | null) {
-  if (!date) return '-'
-
-  const parsed = new Date(date)
-
-  if (isNaN(parsed.getTime())) return '-'
-
-  return new Intl.DateTimeFormat('en-AU', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(parsed)
-}
 
 const statusOptions = [
   { label: 'All', value: 'all' },
