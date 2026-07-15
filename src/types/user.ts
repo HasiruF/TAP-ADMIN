@@ -12,6 +12,7 @@ export interface UserBe {
   profileName: string | null
   role: { id: number; name: string }
   accountStatus: string
+  deletedAt: string | null
   profileApprovalStatus: string | null
   createdAt: string
   updatedAt: string
@@ -34,6 +35,7 @@ const ACCOUNT_STATUS_MAP: Record<string, string> = {
   SUSPENDED: 'Suspended',
   ANONYMISED: 'Banned',
   LOCKED: 'Locked',
+  DEACTIVATED: 'Deactivated',
 }
 
 const PROFILE_APPROVAL_STATUS_MAP: Record<string, string> = {
@@ -50,13 +52,18 @@ export const mapUserToBe = (user: UserBe): User => {
 
   let status: string
 
-  // Account-level suspended/locked/banned/anonymised always takes precedence
-  if (user.accountStatus === 'SUSPENDED') {
+  // Soft-deleted always wins — the account no longer exists, regardless of
+  // whatever accountStatus/profile state it was left in.
+  if (user.deletedAt) {
+    status = 'Deleted'
+  } else if (user.accountStatus === 'SUSPENDED') {
     status = 'Suspended'
   } else if (user.accountStatus === 'LOCKED') {
     status = 'Locked'
   } else if (user.accountStatus === 'ANONYMISED') {
     status = 'Banned'
+  } else if (user.accountStatus === 'DEACTIVATED') {
+    status = 'Deactivated'
   } else if (user.accountStatus === 'PENDING_VERIFICATION') {
     // Email not yet confirmed — treat same as not-approved regardless of role
     status = 'Not-approved'

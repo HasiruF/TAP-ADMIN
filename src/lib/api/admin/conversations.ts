@@ -12,6 +12,7 @@ export interface Message {
   senderId: string
   senderRole: string | null
   message: string | null
+  isDeleted: boolean
   timestamp: string
   attachments: MessageAttachment[]
 }

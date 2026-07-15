@@ -92,6 +92,16 @@ function getStatusStyles(status: string) {
         backgroundColor: 'var(--status-pending-bg)',
         color: 'var(--status-pending-text)',
       }
+    case 'Deactivated':
+      return {
+        backgroundColor: 'var(--status-deactivated-bg)',
+        color: 'var(--status-deactivated-text)',
+      }
+    case 'Deleted':
+      return {
+        backgroundColor: 'var(--status-deleted-bg)',
+        color: 'var(--status-deleted-text)',
+      }
   }
 }
 
@@ -110,6 +120,8 @@ const statusOptions = [
   { label: 'Suspended', value: 'suspended' },
   { label: 'Locked', value: 'locked' },
   { label: 'Banned', value: 'banned' },
+  { label: 'Deactivated', value: 'deactivated' },
+  { label: 'Deleted', value: 'deleted' },
 ]
 
 // Persist the User Management filters across navigation (e.g. going into a
@@ -376,6 +388,8 @@ export function UserManagementTable() {
         )
       case 'Inactive':
       case 'Banned':
+      case 'Deactivated':
+      case 'Deleted':
         return (
           <DropdownMenuItem
             onClick={() => router.push(getAdminUserRoute(user))}
@@ -392,7 +406,8 @@ export function UserManagementTable() {
   function renderActions(user: User) {
     const actionItems = renderActionItems(user)
     const busy = actionBusy === user.id
-    const canResetPassword = user.status !== 'Banned'
+    const canResetPassword =
+      user.status !== 'Banned' && user.status !== 'Deleted'
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

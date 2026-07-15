@@ -644,7 +644,26 @@ export default function ArtistApprovalPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-6 text-base font-semibold">Approval Decision</h2>
+            <h2 className="mb-3 text-base font-semibold">Approval Decision</h2>
+
+            {(data.deletedAt || data.accountStatus === 'DEACTIVATED') && (
+              <span
+                className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium mb-4"
+                style={
+                  data.deletedAt
+                    ? {
+                        backgroundColor: 'var(--status-deleted-bg)',
+                        color: 'var(--status-deleted-text)',
+                      }
+                    : {
+                        backgroundColor: 'var(--status-deactivated-bg)',
+                        color: 'var(--status-deactivated-text)',
+                      }
+                }
+              >
+                Account {data.deletedAt ? 'deleted' : 'deactivated'}
+              </span>
+            )}
 
             {actionError && (
               <div className="mb-4 text-sm text-red-400">{actionError}</div>

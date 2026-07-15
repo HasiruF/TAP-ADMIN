@@ -59,6 +59,8 @@ export default function VenueDetailPage({
 
   const isSuspended = data.accountStatus === 'SUSPENDED'
   const isLocked = data.accountStatus === 'LOCKED'
+  const isDeactivated = data.accountStatus === 'DEACTIVATED'
+  const isDeleted = !!data.deletedAt
 
   async function refreshVenue() {
     await Promise.all([
@@ -454,89 +456,119 @@ export default function VenueDetailPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-6 text-base font-semibold">Admin Actions</h2>
+            <h2 className="mb-3 text-base font-semibold">Admin Actions</h2>
 
-            <div className="space-y-3">
-              {isLocked ? (
+            {(isDeleted || isDeactivated) && (
+              <span
+                className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium mb-4"
+                style={
+                  isDeleted
+                    ? {
+                        backgroundColor: 'var(--status-deleted-bg)',
+                        color: 'var(--status-deleted-text)',
+                      }
+                    : {
+                        backgroundColor: 'var(--status-deactivated-bg)',
+                        color: 'var(--status-deactivated-text)',
+                      }
+                }
+              >
+                Account {isDeleted ? 'deleted' : 'deactivated'}
+              </span>
+            )}
+
+            {isDeleted ? (
+              <p
+                className="text-sm"
+                style={{ color: 'var(--muted-foreground)' }}
+              >
+                This account has been deleted. No admin actions are available.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {isLocked ? (
+                  <Button
+                    className="w-full"
+                    disabled={busy}
+                    onClick={handleUnlock}
+                    style={{
+                      backgroundColor: 'var(--status-locked-bg)',
+                      color: 'var(--status-locked-text)',
+                    }}
+                  >
+                    <Unlock size={14} />
+                    {busy ? 'Unlocking...' : 'Unlock Venue'}
+                  </Button>
+                ) : (
+                  <Button
+                    className="w-full"
+                    disabled={busy}
+                    onClick={() =>
+                      isSuspended
+                        ? handleUnsuspend()
+                        : setSuspendDialogOpen(true)
+                    }
+                    style={
+                      isSuspended
+                        ? {
+                            backgroundColor: 'var(--status-active-bg)',
+                            color: 'var(--status-active-text)',
+                          }
+                        : {
+                            backgroundColor: 'var(--status-suspended-bg)',
+                            color: 'var(--status-suspended-text)',
+                          }
+                    }
+                  >
+                    {isSuspended ? (
+                      <ShieldCheck size={14} />
+                    ) : (
+                      <ShieldMinus size={14} />
+                    )}
+                    {busy
+                      ? isSuspended
+                        ? 'Unsuspending...'
+                        : 'Suspending...'
+                      : isSuspended
+                        ? 'Unsuspend Venue'
+                        : 'Suspend Venue'}
+                  </Button>
+                )}
+
                 <Button
                   className="w-full"
-                  disabled={busy}
-                  onClick={handleUnlock}
+                  variant="outline"
+                  disabled={resetBusy || !data.email}
+                  onClick={handleResetPassword}
                   style={{
-                    backgroundColor: 'var(--status-locked-bg)',
-                    color: 'var(--status-locked-text)',
+                    borderColor: 'var(--border)',
+                    color: 'var(--foreground)',
                   }}
                 >
-                  <Unlock size={14} />
-                  {busy ? 'Unlocking...' : 'Unlock Venue'}
+                  <KeyRound size={14} />
+                  {resetBusy ? 'Sending...' : 'Reset Password'}
                 </Button>
-              ) : (
+
                 <Button
+                  asChild
                   className="w-full"
-                  disabled={busy}
-                  onClick={() =>
-                    isSuspended ? handleUnsuspend() : setSuspendDialogOpen(true)
-                  }
-                  style={
-                    isSuspended
-                      ? {
-                          backgroundColor: 'var(--status-active-bg)',
-                          color: 'var(--status-active-text)',
-                        }
-                      : {
-                          backgroundColor: 'var(--status-suspended-bg)',
-                          color: 'var(--status-suspended-text)',
-                        }
-                  }
+                  variant="outline"
+                  style={{
+                    borderColor: 'var(--border)',
+                    color: 'var(--foreground)',
+                  }}
                 >
-                  {isSuspended ? (
-                    <ShieldCheck size={14} />
-                  ) : (
-                    <ShieldMinus size={14} />
-                  )}
-                  {busy
-                    ? isSuspended
-                      ? 'Unsuspending...'
-                      : 'Suspending...'
-                    : isSuspended
-                      ? 'Unsuspend Venue'
-                      : 'Suspend Venue'}
+                  <Link
+                    href={`/admin/log?userId=${id}&name=${encodeURIComponent(
+                      data.venueDetails.venueName ?? 'User Activity'
+                    )}`}
+                  >
+                    <ScrollText size={14} />
+                    Activity Logs
+                  </Link>
                 </Button>
-              )}
-
-              <Button
-                className="w-full"
-                variant="outline"
-                disabled={resetBusy || !data.email}
-                onClick={handleResetPassword}
-                style={{
-                  borderColor: 'var(--border)',
-                  color: 'var(--foreground)',
-                }}
-              >
-                <KeyRound size={14} />
-                {resetBusy ? 'Sending...' : 'Reset Password'}
-              </Button>
-
-              <Button
-                asChild
-                className="w-full"
-                variant="outline"
-                style={{
-                  borderColor: 'var(--border)',
-                  color: 'var(--foreground)',
-                }}
-              >
-                <Link
-                  href={`/admin/log?userId=${id}&name=${encodeURIComponent(
-                    data.venueDetails.venueName ?? 'User Activity'
-                  )}`}
-                >
-                  <ScrollText size={14} />
-                  Activity Logs
-                </Link>
-              </Button>
-            </div>
+              </div>
+            )}
           </section>
 
           {/* QUICK SUMMARY */}

@@ -43,6 +43,8 @@ export default function ArtistDetailPage({
 
   const isSuspended = artist?.accountStatus === 'SUSPENDED'
   const isLocked = artist?.accountStatus === 'LOCKED'
+  const isDeactivated = artist?.accountStatus === 'DEACTIVATED'
+  const isDeleted = !!artist?.deletedAt
 
   async function refreshArtist() {
     await Promise.all([
@@ -141,7 +143,8 @@ export default function ArtistDetailPage({
           This artist has registered but has not completed their profile setup.
         </p>
         <p className="text-sm">
-          <strong>Account Status:</strong> {artist.accountStatus}
+          <strong>Account Status:</strong>{' '}
+          {artist.deletedAt ? 'DELETED' : artist.accountStatus}
         </p>
       </div>
     )
@@ -703,89 +706,119 @@ export default function ArtistDetailPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-6 text-base font-semibold">Admin Actions</h2>
+            <h2 className="mb-3 text-base font-semibold">Admin Actions</h2>
 
-            <div className="space-y-3">
-              {isLocked ? (
+            {(isDeleted || isDeactivated) && (
+              <span
+                className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium mb-4"
+                style={
+                  isDeleted
+                    ? {
+                        backgroundColor: 'var(--status-deleted-bg)',
+                        color: 'var(--status-deleted-text)',
+                      }
+                    : {
+                        backgroundColor: 'var(--status-deactivated-bg)',
+                        color: 'var(--status-deactivated-text)',
+                      }
+                }
+              >
+                Account {isDeleted ? 'deleted' : 'deactivated'}
+              </span>
+            )}
+
+            {isDeleted ? (
+              <p
+                className="text-sm"
+                style={{ color: 'var(--muted-foreground)' }}
+              >
+                This account has been deleted. No admin actions are available.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {isLocked ? (
+                  <Button
+                    className="w-full"
+                    disabled={busy}
+                    onClick={handleUnlock}
+                    style={{
+                      backgroundColor: 'var(--status-locked-bg)',
+                      color: 'var(--status-locked-text)',
+                    }}
+                  >
+                    <Unlock size={14} />
+                    {busy ? 'Unlocking...' : 'Unlock'}
+                  </Button>
+                ) : (
+                  <Button
+                    className="w-full"
+                    disabled={busy}
+                    onClick={() =>
+                      isSuspended
+                        ? handleUnsuspend()
+                        : setSuspendDialogOpen(true)
+                    }
+                    style={
+                      isSuspended
+                        ? {
+                            backgroundColor: 'var(--status-active-bg)',
+                            color: 'var(--status-active-text)',
+                          }
+                        : {
+                            backgroundColor: 'var(--status-suspended-bg)',
+                            color: 'var(--status-suspended-text)',
+                          }
+                    }
+                  >
+                    {isSuspended ? (
+                      <ShieldCheck size={14} />
+                    ) : (
+                      <ShieldMinus size={14} />
+                    )}
+                    {busy
+                      ? isSuspended
+                        ? 'Unsuspending...'
+                        : 'Suspending...'
+                      : isSuspended
+                        ? 'Unsuspend'
+                        : 'Suspend'}
+                  </Button>
+                )}
+
                 <Button
                   className="w-full"
-                  disabled={busy}
-                  onClick={handleUnlock}
+                  variant="outline"
+                  disabled={resetBusy || !data.email}
+                  onClick={handleResetPassword}
                   style={{
-                    backgroundColor: 'var(--status-locked-bg)',
-                    color: 'var(--status-locked-text)',
+                    borderColor: 'var(--border)',
+                    color: 'var(--foreground)',
                   }}
                 >
-                  <Unlock size={14} />
-                  {busy ? 'Unlocking...' : 'Unlock'}
+                  <KeyRound size={14} />
+                  {resetBusy ? 'Sending...' : 'Reset Password'}
                 </Button>
-              ) : (
+
                 <Button
                   className="w-full"
-                  disabled={busy}
+                  variant="outline"
                   onClick={() =>
-                    isSuspended ? handleUnsuspend() : setSuspendDialogOpen(true)
+                    router.push(
+                      `/admin/log?userId=${id}&name=${encodeURIComponent(
+                        data.basicInfo.stageName ?? 'User Activity'
+                      )}`
+                    )
                   }
-                  style={
-                    isSuspended
-                      ? {
-                          backgroundColor: 'var(--status-active-bg)',
-                          color: 'var(--status-active-text)',
-                        }
-                      : {
-                          backgroundColor: 'var(--status-suspended-bg)',
-                          color: 'var(--status-suspended-text)',
-                        }
-                  }
+                  style={{
+                    borderColor: 'var(--border)',
+                    color: 'var(--foreground)',
+                  }}
                 >
-                  {isSuspended ? (
-                    <ShieldCheck size={14} />
-                  ) : (
-                    <ShieldMinus size={14} />
-                  )}
-                  {busy
-                    ? isSuspended
-                      ? 'Unsuspending...'
-                      : 'Suspending...'
-                    : isSuspended
-                      ? 'Unsuspend'
-                      : 'Suspend'}
+                  <ScrollText size={14} />
+                  Activity Logs
                 </Button>
-              )}
-
-              <Button
-                className="w-full"
-                variant="outline"
-                disabled={resetBusy || !data.email}
-                onClick={handleResetPassword}
-                style={{
-                  borderColor: 'var(--border)',
-                  color: 'var(--foreground)',
-                }}
-              >
-                <KeyRound size={14} />
-                {resetBusy ? 'Sending...' : 'Reset Password'}
-              </Button>
-
-              <Button
-                className="w-full"
-                variant="outline"
-                onClick={() =>
-                  router.push(
-                    `/admin/log?userId=${id}&name=${encodeURIComponent(
-                      data.basicInfo.stageName ?? 'User Activity'
-                    )}`
-                  )
-                }
-                style={{
-                  borderColor: 'var(--border)',
-                  color: 'var(--foreground)',
-                }}
-              >
-                <ScrollText size={14} />
-                Activity Logs
-              </Button>
-            </div>
+              </div>
+            )}
           </section>
         </div>
       </div>

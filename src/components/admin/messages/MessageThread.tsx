@@ -89,14 +89,29 @@ export function MessageThread({ conversation }: Props) {
                 }}
               >
                 {/* Sender */}
-                <p
-                  className="text-[10px] mb-1 uppercase tracking-widest"
-                  style={{ color: 'var(--muted-foreground)' }}
-                >
-                  {senderLabel}
-                </p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p
+                    className="text-[10px] uppercase tracking-widest"
+                    style={{ color: 'var(--muted-foreground)' }}
+                  >
+                    {senderLabel}
+                  </p>
+                  {message.isDeleted && (
+                    <span
+                      className="text-[9px] px-2 py-[2px] rounded-full uppercase tracking-widest"
+                      style={{
+                        backgroundColor: 'rgba(220,38,38,0.1)',
+                        color: '#dc2626',
+                      }}
+                    >
+                      Deleted by user
+                    </span>
+                  )}
+                </div>
 
-                {/* MESSAGE */}
+                {/* MESSAGE — full content is always shown to admins for
+                    moderation, even after the user-facing delete; the badge
+                    above is the only indicator it was removed from their view. */}
                 <p className="text-sm">{message.content}</p>
 
                 {/* ATTACHMENTS */}

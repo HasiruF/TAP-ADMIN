@@ -71,6 +71,7 @@ export default function MessagesPage() {
         senderId: m.senderId,
         content: m.message ?? '',
         timestamp: m.timestamp,
+        isDeleted: m.isDeleted,
 
         attachments: (m.attachments || []).map((a) => ({
           id: a.id,
