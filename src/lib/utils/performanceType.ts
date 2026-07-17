@@ -1,6 +1,6 @@
 /**
- * Backend enum is COVERS | ORIGINALS | BOTH. "Both" must never render as the
- * literal word "Both" — it always means the artist performs both, so show
+ * Backend enum is COVERS | ORIGINALS | BOTH | TRIBUTE_ACT. "Both" must never render
+ * as the literal word "Both" — it always means the artist performs both, so show
  * both labels separately instead of the combined value.
  */
 export function formatPerformanceType(
@@ -15,6 +15,8 @@ export function formatPerformanceType(
       return 'Originals'
     case 'COVERS':
       return 'Covers'
+    case 'TRIBUTE_ACT':
+      return 'Tribute Act'
     default:
       return value
   }

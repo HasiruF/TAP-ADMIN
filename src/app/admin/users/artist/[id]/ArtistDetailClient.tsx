@@ -155,11 +155,11 @@ export default function ArtistDetailPage({
   const formatSetLength = (minutes: string): string => {
     const map: Record<string, string> = {
       '30': '30 min',
-      '45': '45 min',
       '60': '1 hr',
       '90': '1.5 hr',
       '120': '2 hr',
-      '150': '2+ hr',
+      '180': '3 hr',
+      '210': '3+ hr',
     }
     return map[minutes] ?? `${minutes} min`
   }
@@ -312,7 +312,19 @@ export default function ArtistDetailPage({
               <h2 className="mb-4 text-base font-semibold">Instruments</h2>
 
               <p className="text-sm">
-                {data.instruments.instruments.join(', ') || '-'}
+                {data.instruments.instruments.length > 0
+                  ? data.instruments.instruments
+                      .map(
+                        (i: {
+                          instrumentName: string
+                          memberName: string | null
+                        }) =>
+                          i.memberName
+                            ? `${i.instrumentName} (${i.memberName})`
+                            : i.instrumentName
+                      )
+                      .join(', ')
+                  : '-'}
               </p>
             </section>
           )}
@@ -343,21 +355,24 @@ export default function ArtistDetailPage({
 
             <div className="text-sm space-y-1">
               <p>
-                <strong>Performance Type:</strong>{' '}
+                <strong>Repertoire:</strong>{' '}
                 {data.genres.performanceType
                   ? formatPerformanceType(data.genres.performanceType)
                   : '-'}
               </p>
 
               <p>
-                <strong>Act Type:</strong>{' '}
+                <strong>Performance Format:</strong>{' '}
                 {data.genres.actType?.length
                   ? data.genres.actType.join(', ')
                   : '-'}
               </p>
 
               <p>
-                <strong>Energy:</strong> {data.genres.energyLevel ?? '-'}
+                <strong>Energy Level:</strong>{' '}
+                {data.genres.energyLevel?.length
+                  ? data.genres.energyLevel.join(', ')
+                  : '-'}
               </p>
             </div>
           </section>
@@ -526,9 +541,27 @@ export default function ArtistDetailPage({
             <h2 className="mb-4 text-base font-semibold">Booking</h2>
 
             <p className="text-sm">
-              <strong>Fee:</strong>{' '}
-              {data.bookingInfo.performanceFee ??
-                `${data.bookingInfo.feeRange.min ?? '-'} – ${data.bookingInfo.feeRange.max ?? '-'} ${data.bookingInfo.feeRange.currency}`}
+              <strong>Starting Booking Fee:</strong>{' '}
+              {data.bookingInfo.startingFeeCents != null
+                ? `$${(data.bookingInfo.startingFeeCents / 100).toFixed(2)}${
+                    data.bookingInfo.startingSetLengthMinutes != null
+                      ? ` for ${formatSetLength(String(data.bookingInfo.startingSetLengthMinutes))}`
+                      : ''
+                  }`
+                : (data.bookingInfo.performanceFee ??
+                  `${data.bookingInfo.feeRange.min ?? '-'} – ${data.bookingInfo.feeRange.max ?? '-'} ${data.bookingInfo.feeRange.currency}`)}
+            </p>
+
+            <p className="text-sm">
+              <strong>Maximum Set Length:</strong>{' '}
+              {data.bookingInfo.maxSetLengthMinutes != null
+                ? formatSetLength(String(data.bookingInfo.maxSetLengthMinutes))
+                : '-'}
+            </p>
+
+            <p className="text-sm">
+              <strong>Fee Negotiable:</strong>{' '}
+              {data.bookingInfo.feeNegotiable ? 'Yes' : 'No'}
             </p>
 
             <p className="text-sm">
@@ -537,8 +570,10 @@ export default function ArtistDetailPage({
             </p>
 
             <p className="text-sm">
-              <strong>Payment:</strong>{' '}
-              {data.bookingInfo.paymentPreferences ?? '-'}
+              <strong>Payment Preferences:</strong>{' '}
+              {data.bookingInfo.paymentPreferences?.length
+                ? data.bookingInfo.paymentPreferences.join(', ')
+                : '-'}
             </p>
 
             <p className="text-sm">
@@ -559,14 +594,26 @@ export default function ArtistDetailPage({
             <h2 className="mb-4 text-base font-semibold">Live Setup</h2>
 
             <p className="text-sm">
-              <strong>Type:</strong> {data.liveSetup.setupType ?? '-'}
+              <strong>Setup Type:</strong> {data.liveSetup.setupType ?? '-'}
             </p>
             <p className="text-sm">
-              <strong>Equipment:</strong>{' '}
-              {data.liveSetup.equipment.join(', ') || '-'}
+              <strong>Equipment I Bring:</strong>{' '}
+              {data.liveSetup.equipmentProvided.join(', ') || '-'}
             </p>
             <p className="text-sm">
-              <strong>Tech Rider Tags:</strong>{' '}
+              <strong>Equipment Required from Venue:</strong>{' '}
+              {data.liveSetup.equipmentRequired.length > 0
+                ? data.liveSetup.equipmentRequired
+                    .map((e: { name: string; requirementLevel: string }) =>
+                      e.requirementLevel === 'PREFERRED'
+                        ? `${e.name} (preferred)`
+                        : e.name
+                    )
+                    .join(', ')
+                : '-'}
+            </p>
+            <p className="text-sm">
+              <strong>Tech Writer Tags:</strong>{' '}
               {(data.liveSetup.techRiderTags ?? []).join(', ') || '-'}
             </p>
 
