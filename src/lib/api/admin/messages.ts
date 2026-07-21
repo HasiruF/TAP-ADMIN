@@ -1,10 +1,16 @@
 import { api } from '@/lib/api/client'
 
+export interface ConversationParticipant {
+  id: string
+  name: string
+  avatar: string | null
+}
+
 export interface Conversation {
   conversationId: string
-  artistId: string
-  venueId: string
-  lastMessageAt: string
+  artist: ConversationParticipant | null
+  venue: ConversationParticipant | null
+  lastMessageAt: string | null
 }
 
 export interface ConversationQuery {
@@ -13,7 +19,9 @@ export interface ConversationQuery {
   venueId?: string
 }
 
-export function fetchAdminConversations(params: ConversationQuery = {}) {
+export function fetchAdminConversations(
+  params: ConversationQuery = {}
+): Promise<Conversation[]> {
   const searchParams = new URLSearchParams()
 
   if (params.id) searchParams.append('id', params.id)

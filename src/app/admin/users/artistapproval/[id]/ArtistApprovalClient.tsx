@@ -20,7 +20,20 @@ import { forgotPassword } from '@/lib/api/auth'
 import { formatPerformanceType } from '@/lib/utils/performanceType'
 import { use } from 'react'
 import { useRouter } from 'next/navigation'
-import { getFriendlyErrorMessage } from '@/lib/api/errorMessage'
+import {
+  getFriendlyErrorMessage,
+  BackendErrorShape,
+} from '@/lib/api/errorMessage'
+
+type LivePerformance = { id: string; url: string; name?: string | null }
+
+type PastGig = {
+  id: string
+  media?: string | null
+  venueName?: string | null
+  date?: string | null
+  testimonial?: string | null
+}
 
 export default function ArtistApprovalPage({
   params,
@@ -38,7 +51,8 @@ export default function ArtistApprovalPage({
 
   if (isLoading) return <div className="p-6">Loading artist...</div>
   if (error || !artist) {
-    const status = (error as any)?.statusCode ?? (error as any)?.status
+    const errorShape = error as BackendErrorShape | null
+    const status = errorShape?.statusCode ?? errorShape?.status
     const notFoundMessage =
       status === 404
         ? 'Artist not found'
@@ -54,11 +68,11 @@ export default function ArtistApprovalPage({
   const formatSetLength = (minutes: string): string => {
     const map: Record<string, string> = {
       '30': '30 min',
-      '45': '45 min',
       '60': '1 hr',
       '90': '1.5 hr',
       '120': '2 hr',
-      '150': '2+ hr',
+      '180': '3 hr',
+      '210': '3+ hr',
     }
     return map[minutes] ?? `${minutes} min`
   }
@@ -266,7 +280,19 @@ export default function ArtistApprovalPage({
             >
               <h2 className="mb-4 text-base font-semibold">Instruments</h2>
               <p className="text-sm">
-                {data.instruments.instruments.join(', ')}
+                {data.instruments.instruments.length > 0
+                  ? data.instruments.instruments
+                      .map(
+                        (i: {
+                          instrumentName: string
+                          memberName: string | null
+                        }) =>
+                          i.memberName
+                            ? `${i.instrumentName} (${i.memberName})`
+                            : i.instrumentName
+                      )
+                      .join(', ')
+                  : '-'}
               </p>
             </section>
           )}
@@ -296,15 +322,18 @@ export default function ArtistApprovalPage({
             </div>
             <div className="text-sm space-y-1">
               <p>
-                <strong>Performance Type:</strong>{' '}
+                <strong>Repertoire:</strong>{' '}
                 {formatPerformanceType(data.genres.performanceType)}
               </p>
               <p>
-                <strong>Act Type:</strong>{' '}
+                <strong>Performance Format:</strong>{' '}
                 {data.genres.actType?.join(', ') || '-'}
               </p>
               <p>
-                <strong>Energy:</strong> {data.genres.energyLevel}
+                <strong>Energy Level:</strong>{' '}
+                {data.genres.energyLevel?.length
+                  ? data.genres.energyLevel.join(', ')
+                  : '-'}
               </p>
             </div>
           </section>
@@ -358,7 +387,7 @@ export default function ArtistApprovalPage({
               <div className="mb-4">
                 <h3 className="text-sm font-medium mb-3">Live Performances</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">
-                  {data.media.livePerformance.map((lp: any) => {
+                  {data.media.livePerformance.map((lp: LivePerformance) => {
                     const embedUrl = isYouTubeUrl(lp.url)
                       ? getYouTubeEmbedUrl(lp.url)
                       : null
@@ -472,14 +501,34 @@ export default function ArtistApprovalPage({
           >
             <h2 className="mb-4 text-base font-semibold">Booking</h2>
             <p className="text-sm">
-              <strong>Fee:</strong> {data.bookingInfo.performanceFee}
+              <strong>Starting Booking Fee:</strong>{' '}
+              {data.bookingInfo.startingFeeCents != null
+                ? `$${(data.bookingInfo.startingFeeCents / 100).toFixed(2)}${
+                    data.bookingInfo.startingSetLengthMinutes != null
+                      ? ` for ${formatSetLength(String(data.bookingInfo.startingSetLengthMinutes))}`
+                      : ''
+                  }`
+                : (data.bookingInfo.performanceFee ?? '-')}
+            </p>
+            <p className="text-sm">
+              <strong>Maximum Set Length:</strong>{' '}
+              {data.bookingInfo.maxSetLengthMinutes != null
+                ? formatSetLength(String(data.bookingInfo.maxSetLengthMinutes))
+                : '-'}
+            </p>
+            <p className="text-sm">
+              <strong>Fee Negotiable:</strong>{' '}
+              {data.bookingInfo.feeNegotiable ? 'Yes' : 'No'}
             </p>
             <p className="text-sm">
               <strong>Availability:</strong>{' '}
               {data.bookingInfo.availability.join(', ')}
             </p>
             <p className="text-sm">
-              <strong>Payment:</strong> {data.bookingInfo.paymentPreferences}
+              <strong>Payment Preferences:</strong>{' '}
+              {data.bookingInfo.paymentPreferences?.length
+                ? data.bookingInfo.paymentPreferences.join(', ')
+                : '-'}
             </p>
             <p className="text-sm">
               <strong>Set Lengths:</strong>{' '}
@@ -499,14 +548,26 @@ export default function ArtistApprovalPage({
           >
             <h2 className="mb-4 text-base font-semibold">Live Setup</h2>
             <p className="text-sm">
-              <strong>Type:</strong> {data.liveSetup.setupType ?? '-'}
+              <strong>Setup Type:</strong> {data.liveSetup.setupType ?? '-'}
             </p>
             <p className="text-sm">
-              <strong>Equipment:</strong>{' '}
-              {(data.liveSetup.equipment ?? []).join(', ') || '-'}
+              <strong>Equipment I Bring:</strong>{' '}
+              {(data.liveSetup.equipmentProvided ?? []).join(', ') || '-'}
             </p>
             <p className="text-sm">
-              <strong>Tech Rider Tags:</strong>{' '}
+              <strong>Equipment Required from Venue:</strong>{' '}
+              {(data.liveSetup.equipmentRequired ?? []).length > 0
+                ? data.liveSetup.equipmentRequired
+                    .map((e: { name: string; requirementLevel: string }) =>
+                      e.requirementLevel === 'PREFERRED'
+                        ? `${e.name} (preferred)`
+                        : e.name
+                    )
+                    .join(', ')
+                : '-'}
+            </p>
+            <p className="text-sm">
+              <strong>Tech Writer Tags:</strong>{' '}
               {(data.liveSetup.techRiderTags ?? []).join(', ') || '-'}
             </p>
             <p className="text-sm mt-2">
@@ -525,7 +586,7 @@ export default function ArtistApprovalPage({
             >
               <h2 className="mb-4 text-base font-semibold">Past Gigs</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {data.pastGigs.map((gig: any) => (
+                {data.pastGigs.map((gig: PastGig) => (
                   <div
                     key={gig.id}
                     className="text-sm border p-3 rounded-xl"
@@ -630,7 +691,26 @@ export default function ArtistApprovalPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-6 text-base font-semibold">Approval Decision</h2>
+            <h2 className="mb-3 text-base font-semibold">Approval Decision</h2>
+
+            {(data.deletedAt || data.accountStatus === 'DEACTIVATED') && (
+              <span
+                className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium mb-4"
+                style={
+                  data.deletedAt
+                    ? {
+                        backgroundColor: 'var(--status-deleted-bg)',
+                        color: 'var(--status-deleted-text)',
+                      }
+                    : {
+                        backgroundColor: 'var(--status-deactivated-bg)',
+                        color: 'var(--status-deactivated-text)',
+                      }
+                }
+              >
+                Account {data.deletedAt ? 'deleted' : 'deactivated'}
+              </span>
+            )}
 
             {actionError && (
               <div className="mb-4 text-sm text-red-400">{actionError}</div>

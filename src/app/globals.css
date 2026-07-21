@@ -56,6 +56,12 @@
   --color-status-suspended-text: var(--status-suspended-text);
   --color-status-banned-bg: var(--status-banned-bg);
   --color-status-banned-text: var(--status-banned-text);
+  --color-status-locked-bg: var(--status-locked-bg);
+  --color-status-locked-text: var(--status-locked-text);
+  --color-status-deactivated-bg: var(--status-deactivated-bg);
+  --color-status-deactivated-text: var(--status-deactivated-text);
+  --color-status-deleted-bg: var(--status-deleted-bg);
+  --color-status-deleted-text: var(--status-deleted-text);
   --color-table-hover: var(--table-hover);
   --font-body: 'Inter', system-ui, sans-serif;
   --font-display: 'Cormorant Garamond', Georgia, serif;
@@ -106,6 +112,12 @@
   --status-suspended-text: #f472b6;
   --status-banned-bg: rgba(139, 58, 42, 0.14);
   --status-banned-text: var(--danger);
+  --status-locked-bg: rgba(96, 165, 250, 0.14);
+  --status-locked-text: #60a5fa;
+  --status-deactivated-bg: rgba(148, 163, 184, 0.14);
+  --status-deactivated-text: #94a3b8;
+  --status-deleted-bg: rgba(100, 116, 139, 0.16);
+  --status-deleted-text: #64748b;
   --table-hover: rgba(255, 255, 255, 0.03);
 }
 
@@ -152,6 +164,12 @@
     --status-suspended-text: #f472b6;
     --status-banned-bg: rgba(139, 58, 42, 0.14);
     --status-banned-text: var(--danger);
+    --status-locked-bg: rgba(96, 165, 250, 0.14);
+    --status-locked-text: #60a5fa;
+    --status-deactivated-bg: rgba(148, 163, 184, 0.14);
+    --status-deactivated-text: #94a3b8;
+    --status-deleted-bg: rgba(100, 116, 139, 0.16);
+    --status-deleted-text: #64748b;
     --table-hover: rgba(255, 255, 255, 0.03);
   }
 }

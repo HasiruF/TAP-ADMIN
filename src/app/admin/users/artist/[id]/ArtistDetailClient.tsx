@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   ShieldMinus,
   ShieldCheck,
+  Unlock,
   MapPin,
   Music2,
   Video,
@@ -20,7 +21,7 @@ import {
 import { ExternalLink } from 'lucide-react'
 import { useAdminArtist } from '@/hooks/queries/useAdminArtists'
 import { formatPerformanceType } from '@/lib/utils/performanceType'
-import { suspendUser, unsuspendUser } from '@/lib/api/admin/users'
+import { suspendUser, unsuspendUser, unlockUser } from '@/lib/api/admin/users'
 import { forgotPassword } from '@/lib/api/auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
@@ -40,8 +41,10 @@ export default function ArtistDetailPage({
 
   const { data: artist, isLoading, error } = useAdminArtist(id)
 
-  const isSuspended =
-    artist?.accountStatus === 'SUSPENDED' || artist?.accountStatus === 'LOCKED'
+  const isSuspended = artist?.accountStatus === 'SUSPENDED'
+  const isLocked = artist?.accountStatus === 'LOCKED'
+  const isDeactivated = artist?.accountStatus === 'DEACTIVATED'
+  const isDeleted = !!artist?.deletedAt
 
   async function refreshArtist() {
     await Promise.all([
@@ -54,6 +57,16 @@ export default function ArtistDetailPage({
     setBusy(true)
     try {
       await unsuspendUser(id)
+      await refreshArtist()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleUnlock() {
+    setBusy(true)
+    try {
+      await unlockUser(id)
       await refreshArtist()
     } finally {
       setBusy(false)
@@ -130,7 +143,8 @@ export default function ArtistDetailPage({
           This artist has registered but has not completed their profile setup.
         </p>
         <p className="text-sm">
-          <strong>Account Status:</strong> {artist.accountStatus}
+          <strong>Account Status:</strong>{' '}
+          {artist.deletedAt ? 'DELETED' : artist.accountStatus}
         </p>
       </div>
     )
@@ -141,11 +155,11 @@ export default function ArtistDetailPage({
   const formatSetLength = (minutes: string): string => {
     const map: Record<string, string> = {
       '30': '30 min',
-      '45': '45 min',
       '60': '1 hr',
       '90': '1.5 hr',
       '120': '2 hr',
-      '150': '2+ hr',
+      '180': '3 hr',
+      '210': '3+ hr',
     }
     return map[minutes] ?? `${minutes} min`
   }
@@ -298,7 +312,19 @@ export default function ArtistDetailPage({
               <h2 className="mb-4 text-base font-semibold">Instruments</h2>
 
               <p className="text-sm">
-                {data.instruments.instruments.join(', ') || '-'}
+                {data.instruments.instruments.length > 0
+                  ? data.instruments.instruments
+                      .map(
+                        (i: {
+                          instrumentName: string
+                          memberName: string | null
+                        }) =>
+                          i.memberName
+                            ? `${i.instrumentName} (${i.memberName})`
+                            : i.instrumentName
+                      )
+                      .join(', ')
+                  : '-'}
               </p>
             </section>
           )}
@@ -329,21 +355,24 @@ export default function ArtistDetailPage({
 
             <div className="text-sm space-y-1">
               <p>
-                <strong>Performance Type:</strong>{' '}
+                <strong>Repertoire:</strong>{' '}
                 {data.genres.performanceType
                   ? formatPerformanceType(data.genres.performanceType)
                   : '-'}
               </p>
 
               <p>
-                <strong>Act Type:</strong>{' '}
+                <strong>Performance Format:</strong>{' '}
                 {data.genres.actType?.length
                   ? data.genres.actType.join(', ')
                   : '-'}
               </p>
 
               <p>
-                <strong>Energy:</strong> {data.genres.energyLevel ?? '-'}
+                <strong>Energy Level:</strong>{' '}
+                {data.genres.energyLevel?.length
+                  ? data.genres.energyLevel.join(', ')
+                  : '-'}
               </p>
             </div>
           </section>
@@ -512,9 +541,27 @@ export default function ArtistDetailPage({
             <h2 className="mb-4 text-base font-semibold">Booking</h2>
 
             <p className="text-sm">
-              <strong>Fee:</strong>{' '}
-              {data.bookingInfo.performanceFee ??
-                `${data.bookingInfo.feeRange.min ?? '-'} – ${data.bookingInfo.feeRange.max ?? '-'} ${data.bookingInfo.feeRange.currency}`}
+              <strong>Starting Booking Fee:</strong>{' '}
+              {data.bookingInfo.startingFeeCents != null
+                ? `$${(data.bookingInfo.startingFeeCents / 100).toFixed(2)}${
+                    data.bookingInfo.startingSetLengthMinutes != null
+                      ? ` for ${formatSetLength(String(data.bookingInfo.startingSetLengthMinutes))}`
+                      : ''
+                  }`
+                : (data.bookingInfo.performanceFee ??
+                  `${data.bookingInfo.feeRange.min ?? '-'} – ${data.bookingInfo.feeRange.max ?? '-'} ${data.bookingInfo.feeRange.currency}`)}
+            </p>
+
+            <p className="text-sm">
+              <strong>Maximum Set Length:</strong>{' '}
+              {data.bookingInfo.maxSetLengthMinutes != null
+                ? formatSetLength(String(data.bookingInfo.maxSetLengthMinutes))
+                : '-'}
+            </p>
+
+            <p className="text-sm">
+              <strong>Fee Negotiable:</strong>{' '}
+              {data.bookingInfo.feeNegotiable ? 'Yes' : 'No'}
             </p>
 
             <p className="text-sm">
@@ -523,8 +570,10 @@ export default function ArtistDetailPage({
             </p>
 
             <p className="text-sm">
-              <strong>Payment:</strong>{' '}
-              {data.bookingInfo.paymentPreferences ?? '-'}
+              <strong>Payment Preferences:</strong>{' '}
+              {data.bookingInfo.paymentPreferences?.length
+                ? data.bookingInfo.paymentPreferences.join(', ')
+                : '-'}
             </p>
 
             <p className="text-sm">
@@ -545,14 +594,26 @@ export default function ArtistDetailPage({
             <h2 className="mb-4 text-base font-semibold">Live Setup</h2>
 
             <p className="text-sm">
-              <strong>Type:</strong> {data.liveSetup.setupType ?? '-'}
+              <strong>Setup Type:</strong> {data.liveSetup.setupType ?? '-'}
             </p>
             <p className="text-sm">
-              <strong>Equipment:</strong>{' '}
-              {data.liveSetup.equipment.join(', ') || '-'}
+              <strong>Equipment I Bring:</strong>{' '}
+              {data.liveSetup.equipmentProvided.join(', ') || '-'}
             </p>
             <p className="text-sm">
-              <strong>Tech Rider Tags:</strong>{' '}
+              <strong>Equipment Required from Venue:</strong>{' '}
+              {data.liveSetup.equipmentRequired.length > 0
+                ? data.liveSetup.equipmentRequired
+                    .map((e: { name: string; requirementLevel: string }) =>
+                      e.requirementLevel === 'PREFERRED'
+                        ? `${e.name} (preferred)`
+                        : e.name
+                    )
+                    .join(', ')
+                : '-'}
+            </p>
+            <p className="text-sm">
+              <strong>Tech Writer Tags:</strong>{' '}
               {(data.liveSetup.techRiderTags ?? []).join(', ') || '-'}
             </p>
 
@@ -692,74 +753,119 @@ export default function ArtistDetailPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-6 text-base font-semibold">Admin Actions</h2>
+            <h2 className="mb-3 text-base font-semibold">Admin Actions</h2>
 
-            <div className="space-y-3">
-              <Button
-                className="w-full"
-                disabled={busy}
-                onClick={() =>
-                  isSuspended ? handleUnsuspend() : setSuspendDialogOpen(true)
-                }
+            {(isDeleted || isDeactivated) && (
+              <span
+                className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium mb-4"
                 style={
-                  isSuspended
+                  isDeleted
                     ? {
-                        backgroundColor: 'var(--status-active-bg)',
-                        color: 'var(--status-active-text)',
+                        backgroundColor: 'var(--status-deleted-bg)',
+                        color: 'var(--status-deleted-text)',
                       }
                     : {
-                        backgroundColor: 'var(--status-suspended-bg)',
-                        color: 'var(--status-suspended-text)',
+                        backgroundColor: 'var(--status-deactivated-bg)',
+                        color: 'var(--status-deactivated-text)',
                       }
                 }
               >
-                {isSuspended ? (
-                  <ShieldCheck size={14} />
+                Account {isDeleted ? 'deleted' : 'deactivated'}
+              </span>
+            )}
+
+            {isDeleted ? (
+              <p
+                className="text-sm"
+                style={{ color: 'var(--muted-foreground)' }}
+              >
+                This account has been deleted. No admin actions are available.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {isLocked ? (
+                  <Button
+                    className="w-full"
+                    disabled={busy}
+                    onClick={handleUnlock}
+                    style={{
+                      backgroundColor: 'var(--status-locked-bg)',
+                      color: 'var(--status-locked-text)',
+                    }}
+                  >
+                    <Unlock size={14} />
+                    {busy ? 'Unlocking...' : 'Unlock'}
+                  </Button>
                 ) : (
-                  <ShieldMinus size={14} />
+                  <Button
+                    className="w-full"
+                    disabled={busy}
+                    onClick={() =>
+                      isSuspended
+                        ? handleUnsuspend()
+                        : setSuspendDialogOpen(true)
+                    }
+                    style={
+                      isSuspended
+                        ? {
+                            backgroundColor: 'var(--status-active-bg)',
+                            color: 'var(--status-active-text)',
+                          }
+                        : {
+                            backgroundColor: 'var(--status-suspended-bg)',
+                            color: 'var(--status-suspended-text)',
+                          }
+                    }
+                  >
+                    {isSuspended ? (
+                      <ShieldCheck size={14} />
+                    ) : (
+                      <ShieldMinus size={14} />
+                    )}
+                    {busy
+                      ? isSuspended
+                        ? 'Unsuspending...'
+                        : 'Suspending...'
+                      : isSuspended
+                        ? 'Unsuspend'
+                        : 'Suspend'}
+                  </Button>
                 )}
-                {busy
-                  ? isSuspended
-                    ? 'Unsuspending...'
-                    : 'Suspending...'
-                  : isSuspended
-                    ? 'Unsuspend'
-                    : 'Suspend'}
-              </Button>
 
-              <Button
-                className="w-full"
-                variant="outline"
-                disabled={resetBusy || !data.email}
-                onClick={handleResetPassword}
-                style={{
-                  borderColor: 'var(--border)',
-                  color: 'var(--foreground)',
-                }}
-              >
-                <KeyRound size={14} />
-                {resetBusy ? 'Sending...' : 'Reset Password'}
-              </Button>
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  disabled={resetBusy || !data.email}
+                  onClick={handleResetPassword}
+                  style={{
+                    borderColor: 'var(--border)',
+                    color: 'var(--foreground)',
+                  }}
+                >
+                  <KeyRound size={14} />
+                  {resetBusy ? 'Sending...' : 'Reset Password'}
+                </Button>
 
-              <Button
-                className="w-full"
-                variant="outline"
-                onClick={() =>
-                  router.push(
-                    `/admin/log?userId=${id}&name=${encodeURIComponent(
-                      data.basicInfo.stageName ?? 'User Activity'
-                    )}`
-                  )
-                }
-                style={{
-                  borderColor: 'var(--border)',
-                  color: 'var(--foreground)',
-                }}
-              >
-                <ScrollText size={14} />
-                Activity Logs
-              </Button>
-            </div>
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() =>
+                    router.push(
+                      `/admin/log?userId=${id}&name=${encodeURIComponent(
+                        data.basicInfo.stageName ?? 'User Activity'
+                      )}`
+                    )
+                  }
+                  style={{
+                    borderColor: 'var(--border)',
+                    color: 'var(--foreground)',
+                  }}
+                >
+                  <ScrollText size={14} />
+                  Activity Logs
+                </Button>
+              </div>
+            )}
           </section>
         </div>
       </div>

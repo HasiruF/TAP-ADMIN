@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import { useAdminMessages } from '@/hooks/queries/useAdminMessages'
 import { MessageThread } from '@/components/admin/messages/MessageThread'
 import { useConversationThread } from '@/hooks/queries/useAdminConversations'
@@ -8,15 +8,11 @@ import { Conversation } from '@/types/conversation'
 export default function MessagesPage() {
   const { data: raw = [], isLoading, error } = useAdminMessages()
 
-  const conversations = raw.map((c: any) => ({
+  const conversations = raw.map((c) => ({
     id: c.conversationId,
-    artistId: c.artistId,
-    venueId: c.venueId,
     lastMessageAt: c.lastMessageAt,
-
-    // temporary placeholders
-    artist: { name: c.artistId },
-    venue: { name: c.venueId },
+    artist: c.artist ?? { id: '', name: 'Unknown artist', avatar: null },
+    venue: c.venue ?? { id: '', name: 'Unknown venue', avatar: null },
   }))
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined)
   const [search, setSearch] = useState('')
@@ -24,12 +20,12 @@ export default function MessagesPage() {
 
   const effectiveSelectedId = selectedId || undefined
   const { data: thread } = useConversationThread(effectiveSelectedId)
-  const selected = conversations.find((c: any) => c.id === effectiveSelectedId)
+  const selected = conversations.find((c) => c.id === effectiveSelectedId)
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim()
 
     return conversations
-      .filter((c: any) => {
+      .filter((c) => {
         if (!q) return true
 
         if (searchFilter === 'artist') {
@@ -46,42 +42,42 @@ export default function MessagesPage() {
         )
       })
       .sort(
-        (a: any, b: any) =>
-          new Date(b.lastMessageAt).getTime() -
-          new Date(a.lastMessageAt).getTime()
+        (a, b) =>
+          new Date(b.lastMessageAt ?? 0).getTime() -
+          new Date(a.lastMessageAt ?? 0).getTime()
       )
   }, [conversations, search, searchFilter])
 
-  const conversation = useMemo(() => {
+  const conversation = useMemo<Conversation | null>(() => {
     if (!selected || !thread) return null
 
     return {
       id: selected.id,
 
       artist: {
-        id: selected.artistId,
+        id: selected.artist.id,
         name: selected.artist.name,
         avatar: selected.artist?.avatar,
       },
 
       venue: {
-        id: selected.venueId,
+        id: selected.venue.id,
         name: selected.venue.name,
         avatar: selected.venue?.avatar,
       },
 
-      messages: thread.messages.map((m: any, idx: number) => ({
+      messages: thread.messages.map((m, idx) => ({
         id: `${idx}`, // id
         senderId: m.senderId,
-        senderRole: m.senderRole,
-        content: m.message,
+        content: m.message ?? '',
         timestamp: m.timestamp,
+        isDeleted: m.isDeleted,
 
-        attachments: (m.attachments || []).map((url: string) => ({
-          id: url,
-          type: 'image', // default assumption
-          url,
-          name: 'attachment',
+        attachments: (m.attachments || []).map((a) => ({
+          id: a.id,
+          type: a.type,
+          url: a.url,
+          name: a.name || 'attachment',
         })),
       })),
     }
@@ -169,7 +165,7 @@ export default function MessagesPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {filtered.map((c: any) => {
+            {filtered.map((c) => {
               const lastMessageAt = c.lastMessageAt
               return (
                 <button

@@ -17,3 +17,17 @@ export function rejectVenue(userId: string, feedback: string) {
     body: JSON.stringify({ id: userId, feedback }),
   })
 }
+
+export function addRegionSuggestion(suggestionId: string) {
+  return api('/admin/venue/region-suggestions/add', {
+    method: 'POST',
+    body: JSON.stringify({ id: suggestionId }),
+  })
+}
+
+export function dismissRegionSuggestion(suggestionId: string) {
+  return api('/admin/venue/region-suggestions/dismiss', {
+    method: 'POST',
+    body: JSON.stringify({ id: suggestionId }),
+  })
+}

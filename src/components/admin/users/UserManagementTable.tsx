@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { getAdminUserRoute } from '@/utils/AdminRoutes'
 import { getAdminLogRoute } from '@/utils/AdminRoutes'
+import { formatDateTime as formatDate } from '@/lib/utils/date'
 import {
   Ban,
   ShieldMinus,
@@ -14,6 +15,7 @@ import {
   Eye,
   ScrollText,
   KeyRound,
+  Unlock,
 } from 'lucide-react'
 import { MoreVertical } from 'lucide-react'
 import {
@@ -44,7 +46,12 @@ import { useAdminUsers } from '@/hooks/queries/useAdminUsers'
 import { useRouter } from 'next/navigation'
 import { mapUserToBe } from '@/types/user'
 import { useQueryClient } from '@tanstack/react-query'
-import { suspendUser, unsuspendUser, banUser } from '@/lib/api/admin/users'
+import {
+  suspendUser,
+  unsuspendUser,
+  banUser,
+  unlockUser,
+} from '@/lib/api/admin/users'
 import { approveArtist } from '@/lib/api/admin/artists'
 import { approveVenue } from '@/lib/api/admin/venues'
 import { forgotPassword } from '@/lib/api/auth'
@@ -75,10 +82,25 @@ function getStatusStyles(status: string) {
         backgroundColor: 'var(--status-banned-bg)',
         color: 'var(--status-banned-text)',
       }
+    case 'Locked':
+      return {
+        backgroundColor: 'var(--status-locked-bg)',
+        color: 'var(--status-locked-text)',
+      }
     case 'Inactive':
       return {
         backgroundColor: 'var(--status-pending-bg)',
         color: 'var(--status-pending-text)',
+      }
+    case 'Deactivated':
+      return {
+        backgroundColor: 'var(--status-deactivated-bg)',
+        color: 'var(--status-deactivated-text)',
+      }
+    case 'Deleted':
+      return {
+        backgroundColor: 'var(--status-deleted-bg)',
+        color: 'var(--status-deleted-text)',
       }
   }
 }
@@ -90,30 +112,16 @@ const filterOptions = [
   { label: 'Last Login Date', value: 'lastlogin' },
 ]
 
-function formatDate(date?: string | null) {
-  if (!date) return '-'
-
-  const parsed = new Date(date)
-
-  if (isNaN(parsed.getTime())) return '-'
-
-  return new Intl.DateTimeFormat('en-AU', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(parsed)
-}
-
 const statusOptions = [
   { label: 'All', value: 'all' },
   { label: 'Active', value: 'active' },
   { label: 'Not Approved', value: 'not-approved' },
   { label: 'Inactive', value: 'inactive' },
   { label: 'Suspended', value: 'suspended' },
+  { label: 'Locked', value: 'locked' },
   { label: 'Banned', value: 'banned' },
+  { label: 'Deactivated', value: 'deactivated' },
+  { label: 'Deleted', value: 'deleted' },
 ]
 
 // Persist the User Management filters across navigation (e.g. going into a
@@ -257,6 +265,18 @@ export function UserManagementTable() {
     }
   }
 
+  async function handleUnlock(userId: string) {
+    setActionBusy(userId)
+    try {
+      await unlockUser(userId)
+      await invalidateUsers()
+    } catch {
+      toast.error("We couldn't unlock this account. Please try again.")
+    } finally {
+      setActionBusy(null)
+    }
+  }
+
   async function handleConfirmBan(reason: string) {
     if (!banTarget) return
     const userId = banTarget.id
@@ -356,8 +376,20 @@ export function UserManagementTable() {
             Unsuspend
           </DropdownMenuItem>
         )
+      case 'Locked':
+        return (
+          <DropdownMenuItem
+            disabled={busy}
+            onClick={() => handleUnlock(user.id)}
+          >
+            <Unlock size={14} />
+            Unlock
+          </DropdownMenuItem>
+        )
       case 'Inactive':
       case 'Banned':
+      case 'Deactivated':
+      case 'Deleted':
         return (
           <DropdownMenuItem
             onClick={() => router.push(getAdminUserRoute(user))}
@@ -374,7 +406,8 @@ export function UserManagementTable() {
   function renderActions(user: User) {
     const actionItems = renderActionItems(user)
     const busy = actionBusy === user.id
-    const canResetPassword = user.status !== 'Banned'
+    const canResetPassword =
+      user.status !== 'Banned' && user.status !== 'Deleted'
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

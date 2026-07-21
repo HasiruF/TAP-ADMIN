@@ -32,7 +32,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
 type Props = {
-  onSuccess?: () => any
+  onSuccess?: () => unknown
 }
 
 const emptyValues = {
@@ -43,7 +43,7 @@ const emptyValues = {
   url: '',
   pdfFile: undefined,
   thumbnailFile: undefined,
-} as any
+} as ResourceInput
 
 export function CreateResourceDialog({ onSuccess }: Props) {
   const [open, setOpen] = useState(false)
@@ -91,13 +91,16 @@ export function CreateResourceDialog({ onSuccess }: Props) {
           return
         }
         const media = await uploadMedia(data.pdfFile)
-        url = media.cdnUrl ?? media.storageKey
+        // Store the storageKey, not a resolved URL — the backend resolves it
+        // (signs it, for S3) fresh on every read, so the stored value never
+        // goes stale.
+        url = media.storageKey
       }
 
       let thumbnailUrl: string | undefined
       if (data.thumbnailFile instanceof File) {
         const media = await uploadMedia(data.thumbnailFile)
-        thumbnailUrl = media.cdnUrl ?? media.storageKey
+        thumbnailUrl = media.storageKey
       }
 
       await updateMutation.mutateAsync([
@@ -216,7 +219,9 @@ export function CreateResourceDialog({ onSuccess }: Props) {
 
                 <Select
                   value={type}
-                  onValueChange={(v) => setValue('type', v as any)}
+                  onValueChange={(v) =>
+                    setValue('type', v as ResourceInput['type'])
+                  }
                 >
                   <SelectTrigger
                     className="h-12"

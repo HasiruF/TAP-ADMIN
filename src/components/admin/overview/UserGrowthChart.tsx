@@ -13,6 +13,7 @@ import {
 import { useUserGrowth } from '@/hooks/queries/useAdminAnalytics'
 import type { UserGrowthRange } from '@/lib/api/admin/analytics'
 import { ChartHeader, ChartLoading, ChartError } from './shared'
+import { formatDateOnly } from '@/lib/utils/date'
 
 const RANGES: { value: UserGrowthRange; label: string }[] = [
   { value: '7d', label: '7 Days' },
@@ -26,12 +27,15 @@ const chartConfig: ChartConfig = {
 }
 
 function formatDateLabel(dateStr: string, range: UserGrowthRange) {
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    ...(range === '7d' ? { weekday: 'short' } : {}),
-  })
+  return formatDateOnly(
+    dateStr,
+    {
+      month: 'short',
+      day: 'numeric',
+      ...(range === '7d' ? { weekday: 'short' } : {}),
+    },
+    'en-US'
+  )
 }
 
 export function UserGrowthChart() {

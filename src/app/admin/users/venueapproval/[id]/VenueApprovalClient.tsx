@@ -14,15 +14,28 @@ import {
   Image as ImageIcon,
   ExternalLink,
   KeyRound,
+  Share2,
 } from 'lucide-react'
 import { use } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAdminVenue } from '@/hooks/queries/useAdminVenues'
 import { approveVenue, rejectVenue } from '@/lib/api/admin/venues'
+import { RegionSuggestionsPanel } from '@/components/admin/shared/RegionSuggestionsPanel'
 import { forgotPassword } from '@/lib/api/auth'
 import { useRouter } from 'next/navigation'
 import { formatBudget } from '@/lib/formatters'
-import { getFriendlyErrorMessage } from '@/lib/api/errorMessage'
+import {
+  getFriendlyErrorMessage,
+  BackendErrorShape,
+} from '@/lib/api/errorMessage'
+
+type VenueHistoryEvent = {
+  id: string
+  media?: string | null
+  performanceName?: string | null
+  eventDescription?: string | null
+}
+
 export default function VenueApprovalPage({
   params,
 }: {
@@ -40,7 +53,8 @@ export default function VenueApprovalPage({
 
   if (isLoading) return <div className="p-6">Loading venue...</div>
   if (error || !venue) {
-    const status = (error as any)?.statusCode ?? (error as any)?.status
+    const errorShape = error as BackendErrorShape | null
+    const status = errorShape?.statusCode ?? errorShape?.status
     const notFoundMessage =
       status === 404
         ? 'Venue not found'
@@ -52,6 +66,18 @@ export default function VenueApprovalPage({
   }
 
   const data = venue
+
+  const formatSetLength = (minutes: number): string => {
+    const map: Record<string, string> = {
+      '30': '30 min',
+      '60': '1 hr',
+      '90': '1.5 hr',
+      '120': '2 hr',
+      '180': '3 hr',
+      '210': '3+ hr',
+    }
+    return map[String(minutes)] ?? `${minutes} min`
+  }
 
   const API_BASE = (
     process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'
@@ -210,8 +236,86 @@ export default function VenueApprovalPage({
                 {data.venueDetails.address}, {data.venueDetails.city},{' '}
                 {data.venueDetails.state} {data.venueDetails.zipCode}
               </p>
+
+              <p>
+                <strong>Region(s):</strong>{' '}
+                {data.regions?.length
+                  ? data.regions
+                      .map((r: { id: string; name: string }) => r.name)
+                      .join(', ')
+                  : 'Not set'}
+              </p>
+
+              <p>
+                <strong>Phone:</strong>{' '}
+                {data.venueDetails.phoneNumber || 'Not set'}
+              </p>
+
+              <p>
+                <strong>Website:</strong>{' '}
+                {data.venueDetails.website || 'Not set'}
+              </p>
+
               <p className="mt-3" style={{ color: 'var(--muted-foreground)' }}>
                 {data.venueDetails.description}
+              </p>
+            </div>
+          </section>
+
+          {/* LICENSE — compliance-only, never surfaced publicly */}
+          <section
+            className="p-6 rounded-3xl border"
+            style={{
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
+            }}
+          >
+            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
+              <KeyRound size={16} /> Live Music License
+            </h2>
+
+            <div className="space-y-2 text-sm">
+              <p>
+                <strong>License Name:</strong>{' '}
+                {data.venueDetails.licenseName || 'Not set'}
+              </p>
+              <p>
+                <strong>License Number:</strong>{' '}
+                {data.venueDetails.licenseNumber || 'Not set'}
+              </p>
+            </div>
+          </section>
+
+          {/* SOCIAL LINKS */}
+          <section
+            className="p-6 rounded-3xl border"
+            style={{
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
+            }}
+          >
+            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
+              <Share2 size={16} /> Social Links
+            </h2>
+            <div className="space-y-1 text-sm">
+              <p>
+                <strong>Instagram:</strong>{' '}
+                {data.venueDetails.socialMedia?.instagram ?? '-'}
+              </p>
+              <p>
+                <strong>TikTok:</strong>{' '}
+                {data.venueDetails.socialMedia?.tiktok ?? '-'}
+              </p>
+              <p>
+                <strong>YouTube:</strong>{' '}
+                {data.venueDetails.socialMedia?.youtube ?? '-'}
+              </p>
+              <p>
+                <strong>Facebook:</strong>{' '}
+                {data.venueDetails.socialMedia?.facebook ?? '-'}
+              </p>
+              <p>
+                <strong>X:</strong> {data.venueDetails.socialMedia?.x ?? '-'}
               </p>
             </div>
           </section>
@@ -245,6 +349,10 @@ export default function VenueApprovalPage({
               <p>
                 <strong>Stage Dimensions:</strong>{' '}
                 {data.capacitySpecs.stageDimensions || 'Not set'}
+              </p>
+              <p>
+                <strong>Stage Area Type:</strong>{' '}
+                {data.capacitySpecs.stageAreaType || 'Not set'}
               </p>
               <p>
                 <strong>Sound System:</strong>{' '}
@@ -312,7 +420,7 @@ export default function VenueApprovalPage({
                 Past Performances
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {data.venueHistory.map((event: any) => (
+                {data.venueHistory.map((event: VenueHistoryEvent) => (
                   <div
                     key={event.id}
                     className="text-sm border p-3 rounded-xl"
@@ -385,8 +493,22 @@ export default function VenueApprovalPage({
               </p>
               <p>
                 <strong>Genres:</strong>{' '}
-                {data.bookingPreferences.genres.join(', ') || 'All'}
+                {data.bookingPreferences.genresOpenToAll
+                  ? 'Open to All'
+                  : data.bookingPreferences.genres.join(', ') || 'None'}
               </p>
+
+              <p>
+                <strong>Audience Demographics:</strong>{' '}
+                {data.bookingPreferences.audienceDemographics?.join(', ') ||
+                  'Not set'}
+              </p>
+
+              <p>
+                <strong>Average Audience Size:</strong>{' '}
+                {data.bookingPreferences.averageAudienceSize || 'Not set'}
+              </p>
+
               <p>
                 <strong>Pricing Model:</strong>{' '}
                 {data.bookingPreferences.pricingModel}
@@ -394,11 +516,52 @@ export default function VenueApprovalPage({
               <p>
                 <strong>Budget:</strong> {formatBudget(data.bookingPreferences)}
               </p>
+
+              <p>
+                <strong>Starting Booking Fee:</strong>{' '}
+                {data.bookingPreferences.startingFeeCents != null
+                  ? `$${(data.bookingPreferences.startingFeeCents / 100).toFixed(2)}${
+                      data.bookingPreferences.startingSetLengthMinutes != null
+                        ? ` for ${formatSetLength(data.bookingPreferences.startingSetLengthMinutes)}`
+                        : ''
+                    }`
+                  : 'Not set'}
+              </p>
+
+              <p>
+                <strong>Maximum Set Length:</strong>{' '}
+                {data.bookingPreferences.maxSetLengthMinutes != null
+                  ? formatSetLength(data.bookingPreferences.maxSetLengthMinutes)
+                  : 'Not set'}
+              </p>
+
+              <p>
+                <strong>Payment Preferences:</strong>{' '}
+                {data.bookingPreferences.paymentPreferences?.length
+                  ? data.bookingPreferences.paymentPreferences.join(', ')
+                  : 'Not set'}
+              </p>
+
+              <p>
+                <strong>Booking Lead Time:</strong>{' '}
+                {data.bookingPreferences.bookingLeadTime || 'Not set'}
+              </p>
+
+              <p>
+                <strong>Days for Live Music:</strong>{' '}
+                {data.preferredDays?.join(', ') || 'Not set'}
+              </p>
+
               <p style={{ color: 'var(--muted-foreground)' }}>
                 {data.bookingPreferences.bookingNotes}
               </p>
             </div>
           </section>
+
+          <RegionSuggestionsPanel
+            suggestions={data.regionSuggestions}
+            onResolved={refreshVenue}
+          />
         </div>
 
         {/* RIGHT — ADMIN APPROVAL PANEL */}
@@ -432,7 +595,26 @@ export default function VenueApprovalPage({
               borderColor: 'var(--border)',
             }}
           >
-            <h2 className="mb-6 text-base font-semibold">Approval Decision</h2>
+            <h2 className="mb-3 text-base font-semibold">Approval Decision</h2>
+
+            {(data.deletedAt || data.accountStatus === 'DEACTIVATED') && (
+              <span
+                className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium mb-4"
+                style={
+                  data.deletedAt
+                    ? {
+                        backgroundColor: 'var(--status-deleted-bg)',
+                        color: 'var(--status-deleted-text)',
+                      }
+                    : {
+                        backgroundColor: 'var(--status-deactivated-bg)',
+                        color: 'var(--status-deactivated-text)',
+                      }
+                }
+              >
+                Account {data.deletedAt ? 'deleted' : 'deactivated'}
+              </span>
+            )}
 
             {actionError && (
               <div className="mb-4 text-sm text-red-400">{actionError}</div>
@@ -532,6 +714,28 @@ export default function VenueApprovalPage({
             </p>
           )}
         </div>
+
+        {data.photos?.videos?.length > 0 && (
+          <>
+            <h3
+              className="mt-6 mb-3 text-sm font-semibold"
+              style={{ color: 'var(--muted-foreground)' }}
+            >
+              Gallery Videos
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {data.photos.videos.map((vid: string, i: number) => (
+                <video
+                  key={i}
+                  src={resolveImg(vid)}
+                  controls
+                  className="rounded-xl aspect-square w-full object-cover"
+                  style={{ backgroundColor: 'var(--muted)' }}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </section>
     </div>
   )

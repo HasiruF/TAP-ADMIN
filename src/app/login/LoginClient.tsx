@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Image from 'next/image'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -46,7 +47,7 @@ function getLoginErrorMessage(err: unknown): string {
       typeof err.retryAfter === 'number'
     ) {
       const minutes = Math.ceil(err.retryAfter / 60)
-      return `Too many failed attempts. Please try again in ${minutes} minute${
+      return `Your account has been locked due to too many failed login attempts. Please try again in ${minutes} minute${
         minutes === 1 ? '' : 's'
       }.`
     }
@@ -125,9 +126,11 @@ export default function LoginPage() {
       >
         {/* LOGO */}
         <div className="flex justify-center mb-8">
-          <img
+          <Image
             src="/Primary.svg"
             alt="TAP"
+            width={80}
+            height={80}
             className="w-20 h-20 object-contain"
           />
         </div>
