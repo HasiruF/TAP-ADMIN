@@ -66,26 +66,35 @@ export default function AdminOverviewPage() {
         {stats.map((stat) => (
           <div
             key={stat.title}
-            className="relative overflow-hidden rounded-2xl border p-5"
+            className="group relative overflow-hidden rounded-2xl border p-5 transition-all duration-200 hover:-translate-y-0.5"
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
             <div
-              className="absolute -top-10 -right-10 w-24 h-24 rounded-full blur-2xl opacity-10"
+              className="absolute -top-10 -right-10 w-24 h-24 rounded-full blur-2xl opacity-10 transition-opacity duration-200 group-hover:opacity-20"
               style={{ backgroundColor: 'var(--gold)' }}
+            />
+            <div
+              className="absolute top-0 left-5 right-5 h-px"
+              style={{
+                background:
+                  'linear-gradient(to right, transparent, rgba(201,168,76,0.35), transparent)',
+              }}
             />
 
             <div className="relative z-10 flex items-start justify-between">
               <div>
                 <p
-                  className="mb-1"
+                  className="mb-1.5"
                   style={{
                     color: 'var(--muted-foreground)',
-                    fontSize: '12px',
-                    letterSpacing: '0.08em',
+                    fontSize: '11px',
+                    letterSpacing: '0.1em',
                     textTransform: 'uppercase',
+                    fontWeight: 500,
                   }}
                 >
                   {stat.title}
@@ -93,8 +102,8 @@ export default function AdminOverviewPage() {
 
                 <h2
                   style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '30px',
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '34px',
                     lineHeight: '1',
                     fontWeight: 500,
                     color: 'var(--foreground)',
@@ -105,13 +114,17 @@ export default function AdminOverviewPage() {
               </div>
 
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
                 style={{
                   backgroundColor: 'rgba(201,168,76,0.08)',
-                  border: '1px solid rgba(201,168,76,0.12)',
+                  border: '1px solid rgba(201,168,76,0.16)',
                 }}
               >
-                <stat.icon size={18} style={{ color: 'var(--gold)' }} />
+                <stat.icon
+                  size={18}
+                  strokeWidth={1.8}
+                  style={{ color: 'var(--gold)' }}
+                />
               </div>
             </div>
           </div>

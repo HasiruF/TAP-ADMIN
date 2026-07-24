@@ -2,14 +2,14 @@ import { api } from '@/lib/api/client'
 
 export interface ConversationParticipant {
   id: string
+  role: 'artist' | 'venue' | 'user'
   name: string
   avatar: string | null
 }
 
 export interface Conversation {
   conversationId: string
-  artist: ConversationParticipant | null
-  venue: ConversationParticipant | null
+  participants: [ConversationParticipant, ConversationParticipant]
   lastMessageAt: string | null
 }
 

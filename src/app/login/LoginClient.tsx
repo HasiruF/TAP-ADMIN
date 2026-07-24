@@ -111,13 +111,26 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-6"
+      className="min-h-screen flex items-center justify-center px-6 relative overflow-hidden"
       style={{
         backgroundColor: 'var(--background)',
       }}
     >
       <div
-        className="w-full max-w-md rounded-[32px] border p-8"
+        className="absolute pointer-events-none"
+        style={{
+          top: '-10%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '600px',
+          height: '600px',
+          borderRadius: '50%',
+          background:
+            'radial-gradient(circle, rgba(201,168,76,0.08), transparent 70%)',
+        }}
+      />
+      <div
+        className="w-full max-w-md rounded-[32px] border p-8 relative"
         style={{
           backgroundColor: 'var(--card)',
           borderColor: 'var(--border)',
@@ -174,7 +187,16 @@ export default function LoginPage() {
           )}
           {/* EMAIL */}
           <div className="space-y-2">
-            <label>Email</label>
+            <label
+              style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: 'var(--muted-foreground)',
+                letterSpacing: '0.03em',
+              }}
+            >
+              Email
+            </label>
 
             <Input placeholder="Enter your Email" {...register('email')} />
 
@@ -185,7 +207,16 @@ export default function LoginPage() {
 
           {/* PASSWORD */}
           <div className="space-y-2">
-            <label>Password</label>
+            <label
+              style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: 'var(--muted-foreground)',
+                letterSpacing: '0.03em',
+              }}
+            >
+              Password
+            </label>
 
             <Input
               type="password"
@@ -203,10 +234,11 @@ export default function LoginPage() {
           {/* SUBMIT */}
           <Button
             type="submit"
-            className="w-full h-12 rounded-2xl"
+            className="w-full h-12 rounded-2xl font-semibold transition-transform hover:-translate-y-px"
             disabled={isSubmitting}
             style={{
               backgroundColor: 'var(--gold)',
+              color: '#191305',
             }}
           >
             {login.isPending ? 'Signing in...' : 'Sign In'}

@@ -155,12 +155,20 @@ function LogsView() {
       </div>
 
       <div
-        className="rounded-2xl border overflow-hidden"
+        className="relative rounded-2xl border overflow-hidden"
         style={{
           backgroundColor: 'var(--card)',
           borderColor: 'var(--border)',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
         }}
       >
+        <div
+          className="absolute top-0 left-0 right-0 h-px z-10"
+          style={{
+            background:
+              'linear-gradient(to right, transparent, rgba(201,168,76,0.35), transparent)',
+          }}
+        />
         <table className="w-full text-sm">
           {/* HEADER */}
           <thead>

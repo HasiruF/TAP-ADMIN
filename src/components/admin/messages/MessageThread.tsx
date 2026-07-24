@@ -7,7 +7,20 @@ type Props = {
   conversation: Conversation
 }
 
+const DEFAULT_AVATARS = [
+  'https://images.unsplash.com/photo-1524504388940-b1c1722653e1',
+  'https://images.unsplash.com/photo-1506157786151-b8491531f063',
+]
+
+const ROLE_LABEL: Record<string, string> = {
+  artist: 'Artist',
+  venue: 'Venue',
+  user: 'User',
+}
+
 export function MessageThread({ conversation }: Props) {
+  const [first, second] = conversation.participants
+
   return (
     <div className="h-full flex flex-col">
       {/* HEADER */}
@@ -19,13 +32,9 @@ export function MessageThread({ conversation }: Props) {
       >
         {/* Left side: avatars + names */}
         <div className="flex items-center gap-3">
-          {/* Artist Avatar */}
           <Image
-            src={
-              conversation.artist.avatar ||
-              'https://images.unsplash.com/photo-1524504388940-b1c1722653e1'
-            }
-            alt={conversation.artist.name}
+            src={first.avatar || DEFAULT_AVATARS[0]}
+            alt={first.name}
             width={40}
             height={40}
             className="w-10 h-10 rounded-full object-cover"
@@ -41,8 +50,9 @@ export function MessageThread({ conversation }: Props) {
                 fontWeight: 600,
               }}
             >
-              {conversation.artist.name} <span style={{ opacity: 0.6 }}>↔</span>{' '}
-              {conversation.venue.name}
+              {first.name} ({ROLE_LABEL[first.role]}){' '}
+              <span style={{ opacity: 0.6 }}>↔</span> {second.name} (
+              {ROLE_LABEL[second.role]})
             </h2>
 
             <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
@@ -50,13 +60,9 @@ export function MessageThread({ conversation }: Props) {
             </p>
           </div>
 
-          {/* Venue Avatar */}
           <Image
-            src={
-              conversation.venue.avatar ||
-              'https://images.unsplash.com/photo-1506157786151-b8491531f063'
-            }
-            alt={conversation.venue.name}
+            src={second.avatar || DEFAULT_AVATARS[1]}
+            alt={second.name}
             width={40}
             height={40}
             className="w-10 h-10 rounded-full object-cover"
@@ -67,25 +73,23 @@ export function MessageThread({ conversation }: Props) {
       {/* MESSAGES */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {conversation.messages.map((message) => {
-          const isArtist = message.senderId === conversation.artist.id
-          const isVenue = message.senderId === conversation.venue.id
-
-          let senderLabel = ''
-          if (isArtist) senderLabel = conversation.artist.name
-          else if (isVenue) senderLabel = conversation.venue.name
-          else senderLabel = 'Admin'
+          const sender = conversation.participants.find(
+            (p) => p.id === message.senderId
+          )
+          const isFirst = message.senderId === first.id
+          const senderLabel = sender?.name ?? 'Unknown'
 
           return (
             <div
               key={message.id}
-              className={`flex ${isArtist ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${isFirst ? 'justify-end' : 'justify-start'}`}
             >
               <div
                 className="max-w-[70%] px-4 py-3 rounded-2xl text-sm"
                 style={{
-                  backgroundColor: isArtist ? 'var(--ink)' : 'var(--muted)',
-                  color: isArtist ? 'var(--cream)' : 'var(--foreground)',
-                  border: isArtist ? 'none' : '1px solid var(--border)',
+                  backgroundColor: isFirst ? 'var(--ink)' : 'var(--muted)',
+                  color: isFirst ? 'var(--cream)' : 'var(--foreground)',
+                  border: isFirst ? 'none' : '1px solid var(--border)',
                 }}
               >
                 {/* Sender */}

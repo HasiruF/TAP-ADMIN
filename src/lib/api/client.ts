@@ -126,5 +126,11 @@ export async function api(path: string, options: RequestInit = {}) {
     throw parsed
   }
 
-  return res.json()
+  // 204s and empty-body 200s (e.g. void-returning DELETE endpoints) have no
+  // JSON to parse — calling res.json() on them throws, which would make an
+  // otherwise-successful request register as a failed mutation.
+  if (res.status === 204) return undefined
+  const text = await res.text()
+  if (!text) return undefined
+  return JSON.parse(text)
 }
