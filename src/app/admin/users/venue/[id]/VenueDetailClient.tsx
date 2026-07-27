@@ -512,11 +512,6 @@ export default function VenueDetailPage({
               </p>
 
               <p>
-                <strong>Pricing Model:</strong>{' '}
-                {data.bookingPreferences.pricingModel}
-              </p>
-
-              <p>
                 <strong>Budget:</strong> {formatBudget(data.bookingPreferences)}
               </p>
 
@@ -555,8 +550,11 @@ export default function VenueDetailPage({
                 {data.preferredDays?.join(', ') || 'Not set'}
               </p>
 
+              <p>
+                <strong>Booking Notes:</strong>
+              </p>
               <p style={{ color: 'var(--muted-foreground)' }}>
-                {data.bookingPreferences.bookingNotes}
+                {data.bookingPreferences.bookingNotes || 'Not set'}
               </p>
             </div>
           </section>

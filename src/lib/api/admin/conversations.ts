@@ -10,7 +10,7 @@ export interface MessageAttachment {
 
 export interface Message {
   senderId: string
-  senderRole: string | null
+  senderRole: 'artist' | 'venue' | 'user'
   message: string | null
   isDeleted: boolean
   timestamp: string

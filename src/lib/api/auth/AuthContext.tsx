@@ -94,6 +94,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // ⚠️ Fetch the current user info to populate user context
         const me = await authApi.me()
 
+        // Admin console: only admin accounts may hold a session here. If a
+        // non-admin refresh token is ever restored, discard it rather than
+        // re-establishing the marker cookies (which would fight the middleware
+        // gate and briefly expose the admin shell).
+        if (me.user?.role !== 'admin') {
+          clearAuthState()
+          setState({
+            user: null,
+            accessToken: null,
+            isAuthenticated: false,
+            isLoading: false,
+          })
+          return
+        }
+
         setState({
           user: me.user,
           accessToken: res.token,

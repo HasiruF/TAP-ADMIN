@@ -11,8 +11,7 @@ export default function MessagesPage() {
   const conversations = raw.map((c) => ({
     id: c.conversationId,
     lastMessageAt: c.lastMessageAt,
-    artist: c.artist ?? { id: '', name: 'Unknown artist', avatar: null },
-    venue: c.venue ?? { id: '', name: 'Unknown venue', avatar: null },
+    participants: c.participants,
   }))
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined)
   const [search, setSearch] = useState('')
@@ -28,18 +27,13 @@ export default function MessagesPage() {
       .filter((c) => {
         if (!q) return true
 
-        if (searchFilter === 'artist') {
-          return c.artist.name.toLowerCase().includes(q)
+        if (searchFilter === 'artist' || searchFilter === 'venue') {
+          return c.participants.some(
+            (p) => p.role === searchFilter && p.name.toLowerCase().includes(q)
+          )
         }
 
-        if (searchFilter === 'venue') {
-          return c.venue.name.toLowerCase().includes(q)
-        }
-
-        return (
-          c.artist.name.toLowerCase().includes(q) ||
-          c.venue.name.toLowerCase().includes(q)
-        )
+        return c.participants.some((p) => p.name.toLowerCase().includes(q))
       })
       .sort(
         (a, b) =>
@@ -53,19 +47,7 @@ export default function MessagesPage() {
 
     return {
       id: selected.id,
-
-      artist: {
-        id: selected.artist.id,
-        name: selected.artist.name,
-        avatar: selected.artist?.avatar,
-      },
-
-      venue: {
-        id: selected.venue.id,
-        name: selected.venue.name,
-        avatar: selected.venue?.avatar,
-      },
-
+      participants: selected.participants,
       messages: thread.messages.map((m, idx) => ({
         id: `${idx}`, // id
         senderId: m.senderId,
@@ -178,52 +160,39 @@ export default function MessagesPage() {
                 >
                   {/* HEADER ROW */}
                   <div className="flex flex-col gap-2">
-                    {/* ARTIST */}
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="text-[10px] px-2 py-[2px] rounded-full"
-                        style={{
-                          backgroundColor: 'var(--gold)',
-                          color: 'var(--background)',
-                        }}
-                      >
-                        Artist
-                      </span>
+                    {/* PARTICIPANTS */}
+                    {c.participants.map((p) => (
+                      <div key={p.id} className="flex items-center gap-2">
+                        <span
+                          className="text-[10px] px-2 py-[2px] rounded-full"
+                          style={{
+                            backgroundColor:
+                              p.role === 'artist'
+                                ? 'var(--gold)'
+                                : p.role === 'venue'
+                                  ? 'var(--deep-teal)'
+                                  : 'var(--muted-foreground)',
+                            color: 'var(--background)',
+                          }}
+                        >
+                          {p.role === 'artist'
+                            ? 'Artist'
+                            : p.role === 'venue'
+                              ? 'Venue'
+                              : 'User'}
+                        </span>
 
-                      <span
-                        style={{
-                          color: 'var(--foreground)',
-                          fontWeight: 500,
-                          fontSize: '13px',
-                        }}
-                      >
-                        {c.artist.name}
-                      </span>
-                    </div>
-
-                    {/* VENUE */}
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="text-[10px] px-2 py-[2px] rounded-full"
-                        style={{
-                          backgroundColor: 'var(--deep-teal)',
-                          color: 'var(--background)',
-                        }}
-                      >
-                        Venue
-                      </span>
-
-                      <span
-                        style={{
-                          color: 'var(--foreground)',
-
-                          fontWeight: 500,
-                          fontSize: '13px',
-                        }}
-                      >
-                        {c.venue.name}
-                      </span>
-                    </div>
+                        <span
+                          style={{
+                            color: 'var(--foreground)',
+                            fontWeight: 500,
+                            fontSize: '13px',
+                          }}
+                        >
+                          {p.name}
+                        </span>
+                      </div>
+                    ))}
 
                     {/* LAST MESSAGE + TIME */}
                     <div className="flex gap-2 items-center mt-1">

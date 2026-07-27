@@ -22,6 +22,7 @@ import { ExternalLink } from 'lucide-react'
 import { useAdminArtist } from '@/hooks/queries/useAdminArtists'
 import { formatPerformanceType } from '@/lib/utils/performanceType'
 import { suspendUser, unsuspendUser, unlockUser } from '@/lib/api/admin/users'
+import { mintArtistPreviewLink } from '@/lib/api/admin/artists'
 import { forgotPassword } from '@/lib/api/auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
@@ -38,6 +39,7 @@ export default function ArtistDetailPage({
   const [busy, setBusy] = useState(false)
   const [resetBusy, setResetBusy] = useState(false)
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false)
+  const [previewBusy, setPreviewBusy] = useState(false)
 
   const { data: artist, isLoading, error } = useAdminArtist(id)
 
@@ -280,7 +282,7 @@ export default function ArtistDetailPage({
             </div>
           </section>
           {/* MEMBERS AND INSTRUMENTS*/}
-          {data.members && data.members.numberOfMembers !== 1 && (
+          {data.members && (
             <section
               className="p-6 rounded-3xl border"
               style={{
@@ -720,13 +722,20 @@ export default function ArtistDetailPage({
           <div className="space-y-1">
             <Button
               className="w-full"
-              disabled={!data.slug || data.approvalStatus !== 'APPROVED'}
-              onClick={() =>
-                window.open(
-                  `${process.env.NEXT_PUBLIC_PLATFORM_URL}/artists/${data.slug}`,
-                  '_blank'
-                )
-              }
+              disabled={previewBusy}
+              onClick={async () => {
+                setPreviewBusy(true)
+                try {
+                  const { url } = await mintArtistPreviewLink(id)
+                  window.open(url, '_blank')
+                } catch {
+                  window.alert(
+                    'Failed to generate preview link. Please try again.'
+                  )
+                } finally {
+                  setPreviewBusy(false)
+                }
+              }}
               style={{
                 backgroundColor: 'var(--muted)',
                 color: 'var(--foreground)',
@@ -734,7 +743,7 @@ export default function ArtistDetailPage({
               }}
             >
               <ExternalLink size={14} />
-              Show Preview
+              {previewBusy ? 'Generating link…' : 'Show Preview'}
             </Button>
             {data.approvalStatus !== 'APPROVED' && (
               <p

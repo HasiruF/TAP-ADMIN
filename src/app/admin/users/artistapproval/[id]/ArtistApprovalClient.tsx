@@ -215,9 +215,20 @@ export default function ArtistApprovalPage({
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
-            <h2 className="mb-4 text-base font-semibold">Basic Info</h2>
+            <h2
+              className="mb-4"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--foreground)',
+              }}
+            >
+              Basic Info
+            </h2>
             <div className="space-y-2 text-sm">
               <p>
                 <strong>Stage Name:</strong> {data.basicInfo.stageName}
@@ -256,9 +267,20 @@ export default function ArtistApprovalPage({
               style={{
                 backgroundColor: 'var(--card)',
                 borderColor: 'var(--border)',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
               }}
             >
-              <h2 className="mb-4 text-base font-semibold">Members</h2>
+              <h2
+                className="mb-4"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '20px',
+                  fontWeight: 600,
+                  color: 'var(--foreground)',
+                }}
+              >
+                Members
+              </h2>
               <p className="text-sm">
                 <strong>Number of Members:</strong>{' '}
                 {data.members.numberOfMembers}
@@ -276,9 +298,20 @@ export default function ArtistApprovalPage({
               style={{
                 backgroundColor: 'var(--card)',
                 borderColor: 'var(--border)',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
               }}
             >
-              <h2 className="mb-4 text-base font-semibold">Instruments</h2>
+              <h2
+                className="mb-4"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '20px',
+                  fontWeight: 600,
+                  color: 'var(--foreground)',
+                }}
+              >
+                Instruments
+              </h2>
               <p className="text-sm">
                 {data.instruments.instruments.length > 0
                   ? data.instruments.instruments
@@ -303,9 +336,20 @@ export default function ArtistApprovalPage({
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
-            <h2 className="mb-4 text-base font-semibold">Genres & Style</h2>
+            <h2
+              className="mb-4"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--foreground)',
+              }}
+            >
+              Genres & Style
+            </h2>
             <div className="flex flex-wrap gap-2 mb-4">
               {data.genres.genres.map((g: string) => (
                 <span
@@ -344,9 +388,18 @@ export default function ArtistApprovalPage({
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
-            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
+            <h2
+              className="mb-4 flex items-center gap-2"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--foreground)',
+              }}
+            >
               <ImageIcon size={16} /> Picture Gallery
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -378,9 +431,18 @@ export default function ArtistApprovalPage({
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
-            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
+            <h2
+              className="mb-4 flex items-center gap-2"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--foreground)',
+              }}
+            >
               <Video size={16} /> Video Gallery
             </h2>
             {data.media.livePerformance?.length > 0 && (
@@ -440,9 +502,18 @@ export default function ArtistApprovalPage({
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
-            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
+            <h2
+              className="mb-4 flex items-center gap-2"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--foreground)',
+              }}
+            >
               <Share2 size={16} /> Social Links
             </h2>
             <div className="space-y-1 text-sm">
@@ -470,9 +541,18 @@ export default function ArtistApprovalPage({
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
-            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
+            <h2
+              className="mb-4 flex items-center gap-2"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--foreground)',
+              }}
+            >
               <Music2 size={16} /> Music Links
             </h2>
             <div className="space-y-2 text-sm">
@@ -497,9 +577,20 @@ export default function ArtistApprovalPage({
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
-            <h2 className="mb-4 text-base font-semibold">Booking</h2>
+            <h2
+              className="mb-4"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--foreground)',
+              }}
+            >
+              Booking
+            </h2>
             <p className="text-sm">
               <strong>Starting Booking Fee:</strong>{' '}
               {data.bookingInfo.startingFeeCents != null
@@ -544,9 +635,20 @@ export default function ArtistApprovalPage({
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
-            <h2 className="mb-4 text-base font-semibold">Live Setup</h2>
+            <h2
+              className="mb-4"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--foreground)',
+              }}
+            >
+              Live Setup
+            </h2>
             <p className="text-sm">
               <strong>Setup Type:</strong> {data.liveSetup.setupType ?? '-'}
             </p>
@@ -582,9 +684,20 @@ export default function ArtistApprovalPage({
               style={{
                 backgroundColor: 'var(--card)',
                 borderColor: 'var(--border)',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
               }}
             >
-              <h2 className="mb-4 text-base font-semibold">Past Gigs</h2>
+              <h2
+                className="mb-4"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '20px',
+                  fontWeight: 600,
+                  color: 'var(--foreground)',
+                }}
+              >
+                Past Gigs
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {data.pastGigs.map((gig: PastGig) => (
                   <div
@@ -689,6 +802,7 @@ export default function ArtistApprovalPage({
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
             <h2 className="mb-3 text-base font-semibold">Approval Decision</h2>

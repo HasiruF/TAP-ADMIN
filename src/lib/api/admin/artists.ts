@@ -4,6 +4,10 @@ export async function fetchAdminArtist(id: string) {
   return api(`/admin/artist/${id}`)
 }
 
+export function mintArtistPreviewLink(id: string): Promise<{ url: string }> {
+  return api(`/admin/artist/${id}/preview-token`, { method: 'POST' })
+}
+
 export function approveArtist(userId: string) {
   return api('/admin/user/approve', {
     method: 'POST',

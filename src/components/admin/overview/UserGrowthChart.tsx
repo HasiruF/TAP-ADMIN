@@ -49,9 +49,20 @@ export function UserGrowthChart() {
 
   return (
     <div
-      className="rounded-[32px] border p-8"
-      style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
+      className="relative rounded-[32px] border p-8 overflow-hidden"
+      style={{
+        backgroundColor: 'var(--card)',
+        borderColor: 'var(--border)',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
+      }}
     >
+      <div
+        className="absolute top-0 left-0 right-0 h-px"
+        style={{
+          background:
+            'linear-gradient(to right, transparent, rgba(201,168,76,0.35), transparent)',
+        }}
+      />
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <ChartHeader
           icon={TrendingUp}
@@ -72,11 +83,9 @@ export function UserGrowthChart() {
                 onClick={() => setRange(r.value)}
                 style={{
                   backgroundColor: isActive
-                    ? 'var(--foreground)'
+                    ? 'rgba(201,168,76,0.12)'
                     : 'transparent',
-                  color: isActive
-                    ? 'var(--primary-foreground)'
-                    : 'var(--muted-foreground)',
+                  color: isActive ? 'var(--gold)' : 'var(--muted-foreground)',
                 }}
                 className="rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors"
               >

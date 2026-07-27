@@ -218,9 +218,18 @@ export default function VenueApprovalPage({
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
-            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
+            <h2
+              className="mb-4 flex items-center gap-2"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--foreground)',
+              }}
+            >
               <Building2 size={16} /> Venue Details
             </h2>
             <div className="space-y-2 text-sm">
@@ -268,9 +277,18 @@ export default function VenueApprovalPage({
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
-            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
+            <h2
+              className="mb-4 flex items-center gap-2"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--foreground)',
+              }}
+            >
               <KeyRound size={16} /> Live Music License
             </h2>
 
@@ -292,9 +310,18 @@ export default function VenueApprovalPage({
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
-            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
+            <h2
+              className="mb-4 flex items-center gap-2"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--foreground)',
+              }}
+            >
               <Share2 size={16} /> Social Links
             </h2>
             <div className="space-y-1 text-sm">
@@ -326,9 +353,18 @@ export default function VenueApprovalPage({
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
-            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
+            <h2
+              className="mb-4 flex items-center gap-2"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--foreground)',
+              }}
+            >
               <Users size={16} /> Capacity & Stage
             </h2>
             <div className="space-y-2 text-sm">
@@ -369,9 +405,18 @@ export default function VenueApprovalPage({
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
-            <h2 className="mb-4 text-base font-semibold">
+            <h2
+              className="mb-4"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--foreground)',
+              }}
+            >
               Equipment & Support
             </h2>
             <div className="space-y-2 text-sm">
@@ -414,9 +459,18 @@ export default function VenueApprovalPage({
               style={{
                 backgroundColor: 'var(--card)',
                 borderColor: 'var(--border)',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
               }}
             >
-              <h2 className="mb-4 text-base font-semibold">
+              <h2
+                className="mb-4"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '20px',
+                  fontWeight: 600,
+                  color: 'var(--foreground)',
+                }}
+              >
                 Past Performances
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -481,9 +535,18 @@ export default function VenueApprovalPage({
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
-            <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
+            <h2
+              className="mb-4 flex items-center gap-2"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--foreground)',
+              }}
+            >
               <Music2 size={16} /> Booking Preferences
             </h2>
             <div className="space-y-2 text-sm">
@@ -593,6 +656,7 @@ export default function VenueApprovalPage({
             style={{
               backgroundColor: 'var(--card)',
               borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
             }}
           >
             <h2 className="mb-3 text-base font-semibold">Approval Decision</h2>
@@ -690,7 +754,15 @@ export default function VenueApprovalPage({
         className="p-6 rounded-3xl border"
         style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
       >
-        <h2 className="mb-4 text-base font-semibold flex items-center gap-2">
+        <h2
+          className="mb-4 flex items-center gap-2"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '20px',
+            fontWeight: 600,
+            color: 'var(--foreground)',
+          }}
+        >
           <ImageIcon size={16} /> Picture Gallery
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

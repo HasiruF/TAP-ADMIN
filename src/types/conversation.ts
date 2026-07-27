@@ -16,17 +16,15 @@ export interface Message {
   attachments?: Attachment[]
 }
 
+export interface ConversationParticipant {
+  id: string
+  role: 'artist' | 'venue' | 'user'
+  name: string
+  avatar?: string | null
+}
+
 export interface Conversation {
   id: string
-  artist: {
-    id: string
-    name: string
-    avatar?: string | null
-  }
-  venue: {
-    id: string
-    name: string
-    avatar?: string | null
-  }
+  participants: [ConversationParticipant, ConversationParticipant]
   messages: Message[]
 }

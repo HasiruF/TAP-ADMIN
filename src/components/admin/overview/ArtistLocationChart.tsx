@@ -40,9 +40,20 @@ export function ArtistLocationChart() {
 
   return (
     <div
-      className="flex h-full flex-col rounded-[32px] border p-8"
-      style={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)' }}
+      className="relative flex h-full flex-col rounded-[32px] border p-8 overflow-hidden"
+      style={{
+        backgroundColor: 'var(--card)',
+        borderColor: 'var(--border)',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
+      }}
     >
+      <div
+        className="absolute top-0 left-0 right-0 h-px"
+        style={{
+          background:
+            'linear-gradient(to right, transparent, rgba(201,168,76,0.35), transparent)',
+        }}
+      />
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <ChartHeader
           icon={MapPin}
