@@ -89,13 +89,24 @@ export default function LoginPage() {
     try {
       const res = await login.mutateAsync(data)
 
+      // This is the admin console — only admin accounts may sign in. A valid
+      // artist/venue credential authenticates against the same backend, so we
+      // gate on role here and never persist a session for non-admins.
+      const role = res.user.role?.name?.toLowerCase()
+      if (role !== 'admin') {
+        setServerError(
+          'This account does not have admin access to The Artist Platform.'
+        )
+        return
+      }
+
       setSession(
         res.token,
         {
           id: res.user.id,
           name: `${res.user.firstName} ${res.user.lastName}`.trim(),
           email: res.user.email,
-          role: res.user.role?.name?.toLowerCase() ?? 'admin',
+          role,
         },
         res.refreshToken,
         res.tokenExpires

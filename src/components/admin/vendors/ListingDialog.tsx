@@ -36,7 +36,6 @@ import type {
   VendorListing,
   VendorListingLink,
   VendorListingPhoto,
-  VendorPhotoType,
 } from '@/types/vendor'
 
 // Without a protocol, "instagram.com" resolves as a path relative to
@@ -44,6 +43,17 @@ import type {
 function ensureAbsoluteUrl(url: string): string {
   return /^https?:\/\//i.test(url) ? url : `https://${url}`
 }
+
+const LINK_LABEL_OPTIONS = [
+  'Facebook',
+  'Instagram',
+  'LinkedIn',
+  'TikTok',
+  'X',
+  'Website',
+] as const
+
+const MAX_PHOTOS = 5
 
 type Props = {
   open: boolean
@@ -258,16 +268,27 @@ function ListingForm({
                 <label className="text-sm">Links</label>
                 {links.map((link, i) => (
                   <div key={i} className="flex gap-2">
-                    <Input
-                      placeholder="Label"
+                    <Select
                       value={link.label}
-                      onChange={(e) => updateLink(i, { label: e.target.value })}
-                      className="w-32"
-                      style={{
-                        backgroundColor: 'var(--muted)',
-                        borderColor: 'var(--border)',
-                      }}
-                    />
+                      onValueChange={(v) => updateLink(i, { label: v })}
+                    >
+                      <SelectTrigger
+                        className="w-32"
+                        style={{
+                          backgroundColor: 'var(--muted)',
+                          borderColor: 'var(--border)',
+                        }}
+                      >
+                        <SelectValue placeholder="Platform" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LINK_LABEL_OPTIONS.map((opt) => (
+                          <SelectItem key={opt} value={opt}>
+                            {opt}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Input
                       placeholder="https://…"
                       value={link.url}
@@ -312,15 +333,27 @@ function ListingForm({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm">Discount description</label>
-                  <Input
-                    value={discountDescription}
-                    onChange={(e) => setDiscountDescription(e.target.value)}
-                    style={{
-                      backgroundColor: 'var(--muted)',
-                      borderColor: 'var(--border)',
-                    }}
-                  />
+                  <label className="text-sm">Discount %</label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={discountDescription}
+                      onChange={(e) => setDiscountDescription(e.target.value)}
+                      className="pr-7"
+                      style={{
+                        backgroundColor: 'var(--muted)',
+                        borderColor: 'var(--border)',
+                      }}
+                    />
+                    <span
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none"
+                      style={{ color: 'var(--muted-foreground)' }}
+                    >
+                      %
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -387,18 +420,16 @@ function ListingForm({
 }
 
 function PhotoSlot({
-  photoType,
   label,
   existing,
   busy,
   onUpload,
   onDelete,
 }: {
-  photoType: VendorPhotoType
   label: string
   existing?: VendorListingPhoto
   busy: boolean
-  onUpload: (photoType: VendorPhotoType) => void
+  onUpload: () => void
   onDelete: (id: string) => void
 }) {
   if (existing) {
@@ -442,7 +473,7 @@ function PhotoSlot({
   return (
     <button
       type="button"
-      onClick={() => onUpload(photoType)}
+      onClick={onUpload}
       disabled={busy}
       className="aspect-square rounded-xl border border-dashed flex flex-col items-center justify-center gap-1.5 text-center p-2 hover:border-solid transition-all"
       style={{ borderColor: 'var(--border)', color: 'var(--muted-foreground)' }}
@@ -460,19 +491,11 @@ function PhotosPanel({ vendorListingId }: { vendorListingId: string }) {
   const { data: photos = [] } = useVendorListingPhotos(vendorListingId)
   const createPhoto = useCreateVendorListingPhoto(vendorListingId)
   const deletePhoto = useDeleteVendorListingPhoto(vendorListingId)
-  const [uploadingType, setUploadingType] = useState<VendorPhotoType | null>(
-    null
-  )
+  const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const pendingTypeRef = useRef<VendorPhotoType>('NORMAL')
 
-  const logo = photos.find((p) => p.photoType === 'LOGO')
-  const hero = photos.find((p) => p.photoType === 'HERO')
-  const gallery = photos.filter((p) => p.photoType === 'NORMAL')
-
-  function triggerUpload(photoType: VendorPhotoType) {
-    pendingTypeRef.current = photoType
+  function triggerUpload() {
     fileInputRef.current?.click()
   }
 
@@ -480,16 +503,15 @@ function PhotosPanel({ vendorListingId }: { vendorListingId: string }) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    const photoType = pendingTypeRef.current
-    setUploadingType(photoType)
+    setUploading(true)
     setUploadError(null)
     try {
       const uploaded = await uploadMediaAsset(file)
       await createPhoto.mutateAsync({
         vendorListing: { id: vendorListingId },
         mediaAssetId: uploaded.id,
-        photoType,
-        sortOrder: photoType === 'NORMAL' ? gallery.length : 0,
+        photoType: 'NORMAL',
+        sortOrder: photos.length,
       })
     } catch (err) {
       setUploadError(
@@ -499,7 +521,7 @@ function PhotosPanel({ vendorListingId }: { vendorListingId: string }) {
         )
       )
     } finally {
-      setUploadingType(null)
+      setUploading(false)
     }
   }
 
@@ -513,54 +535,29 @@ function PhotosPanel({ vendorListingId }: { vendorListingId: string }) {
         onChange={handleFileChange}
       />
       <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-        Logo shows on the vendor card and detail page. Hero is the banner on the
-        detail page. Gallery photos appear below the bio.
+        Up to {MAX_PHOTOS} photos. The first photo is used as the vendor&apos;s
+        card thumbnail and detail-page banner.
       </p>
 
-      <div className="space-y-1">
-        <label className="text-sm">Logo &amp; hero</label>
-        <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
+        {photos.map((photo) => (
           <PhotoSlot
-            photoType="LOGO"
-            label="Logo"
-            existing={logo}
-            busy={uploadingType === 'LOGO'}
+            key={photo.id}
+            label="Photo"
+            existing={photo}
+            busy={false}
             onUpload={triggerUpload}
             onDelete={(id) => deletePhoto.mutate(id)}
           />
+        ))}
+        {photos.length < MAX_PHOTOS && (
           <PhotoSlot
-            photoType="HERO"
-            label="Hero"
-            existing={hero}
-            busy={uploadingType === 'HERO'}
-            onUpload={triggerUpload}
-            onDelete={(id) => deletePhoto.mutate(id)}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-1">
-        <label className="text-sm">Gallery</label>
-        <div className="grid grid-cols-3 gap-3">
-          {gallery.map((photo) => (
-            <PhotoSlot
-              key={photo.id}
-              photoType="NORMAL"
-              label="Photo"
-              existing={photo}
-              busy={false}
-              onUpload={triggerUpload}
-              onDelete={(id) => deletePhoto.mutate(id)}
-            />
-          ))}
-          <PhotoSlot
-            photoType="NORMAL"
             label="Add"
-            busy={uploadingType === 'NORMAL'}
+            busy={uploading}
             onUpload={triggerUpload}
             onDelete={(id) => deletePhoto.mutate(id)}
           />
-        </div>
+        )}
       </div>
 
       {uploadError && <p className="text-sm text-red-400">{uploadError}</p>}

@@ -512,11 +512,6 @@ export default function VenueDetailPage({
               </p>
 
               <p>
-                <strong>Pricing Model:</strong>{' '}
-                {data.bookingPreferences.pricingModel || 'Not set'}
-              </p>
-
-              <p>
                 <strong>Budget:</strong> {formatBudget(data.bookingPreferences)}
               </p>
 

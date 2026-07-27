@@ -18,7 +18,9 @@ export const authApi = {
             `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() ||
             user.email,
           email: user.email,
-          role: (user.role?.name ?? 'admin').toLowerCase() as Authuser['role'],
+          // Never default an unknown/missing role to 'admin' — that would grant
+          // the highest privilege on a parse hiccup. Fall back to least-privilege.
+          role: (user.role?.name ?? 'artist').toLowerCase() as Authuser['role'],
         },
       }
     } catch {

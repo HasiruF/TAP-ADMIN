@@ -50,16 +50,6 @@ const navMain: Array<{
     icon: ShieldAlert,
   },
   {
-    title: 'Resources',
-    url: '/admin/resources',
-    icon: BookOpen,
-  },
-  {
-    title: 'Vendors',
-    url: '/admin/vendors',
-    icon: Store,
-  },
-  {
     title: 'Activity Logs',
     url: '/admin/log',
     icon: ScrollText,
@@ -70,6 +60,111 @@ const navMain: Array<{
     icon: MessageSquare,
   },
 ]
+
+const navMarketplace: Array<{
+  title: string
+  url: string
+  icon: typeof LayoutDashboard
+  disabled?: boolean
+}> = [
+  {
+    title: 'Resources',
+    url: '/admin/resources',
+    icon: BookOpen,
+  },
+  {
+    title: 'Products & Services',
+    url: '/admin/vendors',
+    icon: Store,
+  },
+]
+
+function NavItem({
+  item,
+  isActive,
+  isCollapsed,
+}: {
+  item: {
+    title: string
+    url: string
+    icon: typeof LayoutDashboard
+    disabled?: boolean
+  }
+  isActive: boolean
+  isCollapsed: boolean
+}) {
+  const isDisabled = item.disabled
+
+  return (
+    <SidebarMenuItem key={item.title}>
+      <SidebarMenuButton
+        asChild
+        style={{
+          color: isActive ? 'var(--foreground)' : 'var(--muted-foreground)',
+          backgroundColor: isActive ? 'rgba(201,168,76,0.1)' : 'transparent',
+          opacity: isDisabled ? 0.5 : 1,
+          cursor: isDisabled ? 'not-allowed' : undefined,
+          position: 'relative',
+        }}
+        className={`
+          transition-all
+          rounded-xl
+          ${isDisabled ? '' : 'hover:translate-x-[2px] hover:bg-[rgba(255,255,255,0.04)]'}
+          `}
+      >
+        {isDisabled ? (
+          <div
+            aria-disabled="true"
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl cursor-not-allowed
+               ${isCollapsed ? 'justify-center' : ''}`}
+          >
+            <item.icon
+              size={19}
+              strokeWidth={1.8}
+              style={{ color: 'var(--muted-foreground)' }}
+            />
+
+            <span
+              className={isCollapsed ? 'hidden' : 'text-[14px] font-medium'}
+            >
+              {item.title}
+            </span>
+          </div>
+        ) : (
+          <Link
+            href={item.url}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl
+               ${isCollapsed ? 'justify-center' : ''}`}
+          >
+            {isActive && !isCollapsed && (
+              <span
+                className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full"
+                style={{
+                  width: '3px',
+                  height: '18px',
+                  backgroundColor: 'var(--gold)',
+                }}
+              />
+            )}
+            <item.icon
+              size={19}
+              strokeWidth={1.8}
+              style={{
+                color: isActive ? 'var(--gold)' : 'var(--muted-foreground)',
+              }}
+            />
+
+            <span
+              className={isCollapsed ? 'hidden' : 'text-[14px] font-medium'}
+            >
+              {item.title}
+            </span>
+          </Link>
+        )}
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  )
+}
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -179,94 +274,39 @@ export function AppSidebar() {
           </SidebarGroupLabel>
 
           <SidebarMenu className="gap-1">
-            {navMain.map((item) => {
-              const isActive = pathname === item.url
-              const isDisabled = item.disabled
+            {navMain.map((item) => (
+              <NavItem
+                key={item.title}
+                item={item}
+                isActive={pathname === item.url}
+                isCollapsed={isCollapsed}
+              />
+            ))}
+          </SidebarMenu>
 
-              return (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    style={{
-                      color: isActive
-                        ? 'var(--foreground)'
-                        : 'var(--muted-foreground)',
-                      backgroundColor: isActive
-                        ? 'rgba(201,168,76,0.1)'
-                        : 'transparent',
-                      opacity: isDisabled ? 0.5 : 1,
-                      cursor: isDisabled ? 'not-allowed' : undefined,
-                      position: 'relative',
-                    }}
-                    className={`
-                      transition-all
-                      rounded-xl
-                      ${
-                        isDisabled
-                          ? ''
-                          : 'hover:translate-x-[2px] hover:bg-[rgba(255,255,255,0.04)]'
-                      }
-                      `}
-                  >
-                    {isDisabled ? (
-                      <div
-                        aria-disabled="true"
-                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl cursor-not-allowed
-                           ${isCollapsed ? 'justify-center' : ''}`}
-                      >
-                        <item.icon
-                          size={19}
-                          strokeWidth={1.8}
-                          style={{ color: 'var(--muted-foreground)' }}
-                        />
+          {!isCollapsed && (
+            <p
+              className="px-4 mt-4 mb-1"
+              style={{
+                color: 'var(--muted-foreground)',
+                letterSpacing: '0.14em',
+                fontSize: '10px',
+                opacity: 0.7,
+              }}
+            >
+              MARKETPLACE
+            </p>
+          )}
 
-                        <span
-                          className={
-                            isCollapsed ? 'hidden' : 'text-[14px] font-medium'
-                          }
-                        >
-                          {item.title}
-                        </span>
-                      </div>
-                    ) : (
-                      <Link
-                        href={item.url}
-                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl
-                           ${isCollapsed ? 'justify-center' : ''}`}
-                      >
-                        {isActive && !isCollapsed && (
-                          <span
-                            className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full"
-                            style={{
-                              width: '3px',
-                              height: '18px',
-                              backgroundColor: 'var(--gold)',
-                            }}
-                          />
-                        )}
-                        <item.icon
-                          size={19}
-                          strokeWidth={1.8}
-                          style={{
-                            color: isActive
-                              ? 'var(--gold)'
-                              : 'var(--muted-foreground)',
-                          }}
-                        />
-
-                        <span
-                          className={
-                            isCollapsed ? 'hidden' : 'text-[14px] font-medium'
-                          }
-                        >
-                          {item.title}
-                        </span>
-                      </Link>
-                    )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )
-            })}
+          <SidebarMenu className="gap-1">
+            {navMarketplace.map((item) => (
+              <NavItem
+                key={item.title}
+                item={item}
+                isActive={pathname === item.url}
+                isCollapsed={isCollapsed}
+              />
+            ))}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
