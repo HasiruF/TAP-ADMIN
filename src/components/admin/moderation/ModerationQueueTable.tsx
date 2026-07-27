@@ -10,6 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { formatDateTime as formatDate } from '@/lib/utils/date'
 import {
   Select,
   SelectContent,
@@ -17,20 +18,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { RejectReasonDialog } from './RejectReasonDialog'
 
 type ModerationItem = {
   id: string
   userId: string
+  email: string
   name: string
   type: string
   date: string
   role: string
+  reason: string
+  content: string
 }
 
 interface Props {
   data: ModerationItem[]
   onApprove: (id: string) => void
-  onReject: (id: string) => void
+  onReject: (id: string, reviewNotes: string) => void
   onRowClick: (item: ModerationItem) => void
 }
 
@@ -41,16 +46,19 @@ export function ModerationQueueTable({
 
   onRowClick,
 }: Props) {
-  const [roleFilter, setRoleFilter] = useState('all')
+  const [roleFilter, setRoleFilter] = useState('artist')
   const [typeFilter, setTypeFilter] = useState('all')
+  const [rejectingId, setRejectingId] = useState<string | null>(null)
 
-  const filteredData = data.filter((item) => {
-    const matchesRole = roleFilter === 'all' ? true : item.role === roleFilter
+  const filteredData = data
+    .filter((item) => {
+      const matchesRole = roleFilter === 'all' ? true : item.role === roleFilter
 
-    const matchesType = typeFilter === 'all' ? true : item.type === typeFilter
+      const matchesType = typeFilter === 'all' ? true : item.type === typeFilter
 
-    return matchesRole && matchesType
-  })
+      return matchesRole && matchesType
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   return (
     <div
@@ -130,8 +138,8 @@ export function ModerationQueueTable({
       <Table>
         <TableHeader>
           <TableRow style={{ borderColor: 'var(--border)' }}>
-            <TableHead className="text-center">User ID</TableHead>
             <TableHead className="text-center">Name</TableHead>
+            <TableHead className="text-center">Email</TableHead>
             <TableHead className="text-center">Type</TableHead>
             <TableHead className="text-center">Date</TableHead>
             <TableHead className="text-center">Actions</TableHead>
@@ -146,20 +154,20 @@ export function ModerationQueueTable({
               className="cursor-pointer"
               style={{ borderColor: 'var(--border)' }}
             >
-              {/* USER ID */}
-              <TableCell
-                className="text-center"
-                style={{ color: 'var(--muted-foreground)' }}
-              >
-                {item.userId}
-              </TableCell>
-
               {/* NAME */}
               <TableCell
                 className="text-center"
                 style={{ color: 'var(--foreground)', fontWeight: 500 }}
               >
                 {item.name}
+              </TableCell>
+
+              {/* EMAIL */}
+              <TableCell
+                className="text-center"
+                style={{ color: 'var(--muted-foreground)' }}
+              >
+                {item.email}
               </TableCell>
 
               {/* TYPE */}
@@ -180,7 +188,7 @@ export function ModerationQueueTable({
                 className="text-center"
                 style={{ color: 'var(--muted-foreground)' }}
               >
-                {item.date ? String(item.date).slice(0, 10) : '-'}
+                {formatDate(item.date)}
               </TableCell>
 
               {/* ACTIONS */}
@@ -208,7 +216,7 @@ export function ModerationQueueTable({
                     }}
                     onClick={(e) => {
                       e.stopPropagation()
-                      onReject(item.id)
+                      setRejectingId(item.id)
                     }}
                   >
                     Reject
@@ -219,6 +227,17 @@ export function ModerationQueueTable({
           ))}
         </TableBody>
       </Table>
+
+      <RejectReasonDialog
+        open={rejectingId !== null}
+        onOpenChange={(open) => {
+          if (!open) setRejectingId(null)
+        }}
+        onConfirm={(reviewNotes) => {
+          if (rejectingId) onReject(rejectingId, reviewNotes)
+          setRejectingId(null)
+        }}
+      />
     </div>
   )
 }

@@ -6,10 +6,10 @@ export function fetchAdminUsers(page: number, role?: string) {
   return api(`/admin/users?${params.toString()}`)
 }
 
-export function suspendUser(userId: string) {
+export function suspendUser(userId: string, reason: string) {
   return api('/admin/user/suspend', {
     method: 'POST',
-    body: JSON.stringify({ id: userId }),
+    body: JSON.stringify({ id: userId, reason }),
   })
 }
 
@@ -20,9 +20,15 @@ export function unsuspendUser(userId: string) {
   })
 }
 
-export function banUser(userId: string, reason?: string) {
+export function banUser(userId: string, reason: string) {
   return api('/admin/user/ban', {
     method: 'POST',
-    body: JSON.stringify({ id: userId, ...(reason ? { reason } : {}) }),
+    body: JSON.stringify({ id: userId, reason }),
+  })
+}
+
+export function unlockUser(userId: string) {
+  return api(`/admin/users/${userId}/unlock`, {
+    method: 'PATCH',
   })
 }

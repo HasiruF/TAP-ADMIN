@@ -3,9 +3,20 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { getAdminUserRoute } from '@/utils/AdminRoutes'
 import { getAdminLogRoute } from '@/utils/AdminRoutes'
-import { Ban, ShieldMinus, ShieldCheck, Check } from 'lucide-react'
+import { formatDateTime as formatDate } from '@/lib/utils/date'
+import {
+  Ban,
+  ShieldMinus,
+  ShieldCheck,
+  Check,
+  Eye,
+  ScrollText,
+  KeyRound,
+  Unlock,
+} from 'lucide-react'
 import { MoreVertical } from 'lucide-react'
 import {
   Select,
@@ -14,6 +25,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Table,
   TableBody,
@@ -28,9 +46,16 @@ import { useAdminUsers } from '@/hooks/queries/useAdminUsers'
 import { useRouter } from 'next/navigation'
 import { mapUserToBe } from '@/types/user'
 import { useQueryClient } from '@tanstack/react-query'
-import { suspendUser, unsuspendUser, banUser } from '@/lib/api/admin/users'
+import {
+  suspendUser,
+  unsuspendUser,
+  banUser,
+  unlockUser,
+} from '@/lib/api/admin/users'
 import { approveArtist } from '@/lib/api/admin/artists'
 import { approveVenue } from '@/lib/api/admin/venues'
+import { forgotPassword } from '@/lib/api/auth'
+import { ReasonPromptDialog } from '@/components/admin/shared/ReasonPromptDialog'
 
 function getStatusStyles(status: string) {
   switch (status) {
@@ -57,10 +82,25 @@ function getStatusStyles(status: string) {
         backgroundColor: 'var(--status-banned-bg)',
         color: 'var(--status-banned-text)',
       }
+    case 'Locked':
+      return {
+        backgroundColor: 'var(--status-locked-bg)',
+        color: 'var(--status-locked-text)',
+      }
     case 'Inactive':
       return {
         backgroundColor: 'var(--status-pending-bg)',
         color: 'var(--status-pending-text)',
+      }
+    case 'Deactivated':
+      return {
+        backgroundColor: 'var(--status-deactivated-bg)',
+        color: 'var(--status-deactivated-text)',
+      }
+    case 'Deleted':
+      return {
+        backgroundColor: 'var(--status-deleted-bg)',
+        color: 'var(--status-deleted-text)',
       }
   }
 }
@@ -72,30 +112,16 @@ const filterOptions = [
   { label: 'Last Login Date', value: 'lastlogin' },
 ]
 
-function formatDate(date?: string | null) {
-  if (!date) return '-'
-
-  const parsed = new Date(date)
-
-  if (isNaN(parsed.getTime())) return '-'
-
-  return new Intl.DateTimeFormat('en-AU', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(parsed)
-}
-
 const statusOptions = [
   { label: 'All', value: 'all' },
   { label: 'Active', value: 'active' },
   { label: 'Not Approved', value: 'not-approved' },
   { label: 'Inactive', value: 'inactive' },
   { label: 'Suspended', value: 'suspended' },
+  { label: 'Locked', value: 'locked' },
   { label: 'Banned', value: 'banned' },
+  { label: 'Deactivated', value: 'deactivated' },
+  { label: 'Deleted', value: 'deleted' },
 ]
 
 // Persist the User Management filters across navigation (e.g. going into a
@@ -135,6 +161,8 @@ export function UserManagementTable() {
     () => loadStoredFilters().statusFilter ?? 'all'
   )
   const [actionBusy, setActionBusy] = useState<string | null>(null)
+  const [suspendTarget, setSuspendTarget] = useState<User | null>(null)
+  const [banTarget, setBanTarget] = useState<User | null>(null)
 
   const [currentPage, setCurrentPage] = useState(
     () => loadStoredFilters().currentPage ?? 1
@@ -167,7 +195,12 @@ export function UserManagementTable() {
   const users = usersBe.map(mapUserToBe)
 
   if (isLoading) return <div className="p-6">Loading users...</div>
-  if (error) return <div className="p-6 text-red-500">Failed to load users</div>
+  if (error)
+    return (
+      <div className="p-6 text-red-500">
+        Failed to load users. Please refresh the page or try again shortly.
+      </div>
+    )
 
   // Client-side filters: search + status only (role is already handled server-side)
   const filteredUsers = users.filter((user: User) => {
@@ -205,15 +238,18 @@ export function UserManagementTable() {
   const invalidateUsers = () =>
     queryClient.invalidateQueries({ queryKey: ['admin-users'] })
 
-  async function handleSuspend(userId: string) {
+  async function handleConfirmSuspend(reason: string) {
+    if (!suspendTarget) return
+    const userId = suspendTarget.id
     setActionBusy(userId)
     try {
-      await suspendUser(userId)
+      await suspendUser(userId, reason)
       await invalidateUsers()
     } catch {
-      /* error surfaced via table state */
+      toast.error("We couldn't suspend this user. Please try again.")
     } finally {
       setActionBusy(null)
+      setSuspendTarget(null)
     }
   }
 
@@ -223,26 +259,36 @@ export function UserManagementTable() {
       await unsuspendUser(userId)
       await invalidateUsers()
     } catch {
-      /* error surfaced via table state */
+      toast.error("We couldn't unsuspend this user. Please try again.")
     } finally {
       setActionBusy(null)
     }
   }
 
-  async function handleBan(user: User) {
-    const label = user.name?.trim() || user.email || user.id
-    const confirmed = window.confirm(
-      `Permanently ban ${label}?\n\nThis removes the account from the platform and blocks this email from ever registering again. This action cannot be undone.`
-    )
-    if (!confirmed) return
-    setActionBusy(user.id)
+  async function handleUnlock(userId: string) {
+    setActionBusy(userId)
     try {
-      await banUser(user.id)
+      await unlockUser(userId)
       await invalidateUsers()
     } catch {
-      /* error surfaced via table state */
+      toast.error("We couldn't unlock this account. Please try again.")
     } finally {
       setActionBusy(null)
+    }
+  }
+
+  async function handleConfirmBan(reason: string) {
+    if (!banTarget) return
+    const userId = banTarget.id
+    setActionBusy(userId)
+    try {
+      await banUser(userId, reason)
+      await invalidateUsers()
+    } catch {
+      toast.error("We couldn't ban this user. Please try again.")
+    } finally {
+      setActionBusy(null)
+      setBanTarget(null)
     }
   }
 
@@ -256,124 +302,141 @@ export function UserManagementTable() {
       }
       await invalidateUsers()
     } catch {
-      /* error surfaced via table state */
+      toast.error("We couldn't approve this user. Please try again.")
     } finally {
       setActionBusy(null)
     }
   }
 
-  function renderActions(user: User) {
+  async function handleResetPassword(user: User) {
+    const label = user.name?.trim() || user.email || user.id
+    const confirmed = window.confirm(
+      `Send a password reset email to ${label} (${user.email})?`
+    )
+    if (!confirmed) return
+    setActionBusy(user.id)
+    try {
+      await forgotPassword(user.email)
+      window.alert(`Password reset email sent to ${user.email}.`)
+    } catch {
+      window.alert('Failed to send password reset email. Please try again.')
+    } finally {
+      setActionBusy(null)
+    }
+  }
+
+  function renderActionItems(user: User) {
     const busy = actionBusy === user.id
     switch (user.status) {
       case 'Not-approved':
         return (
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              size="sm"
+          <>
+            <DropdownMenuItem
               disabled={busy}
-              onClick={(e) => {
-                e.stopPropagation()
-                handleApprove(user)
-              }}
-              style={{
-                backgroundColor: 'var(--status-active-bg)',
-                color: 'var(--status-active-text)',
-              }}
+              onClick={() => handleApprove(user)}
             >
               <Check size={14} />
-              {busy ? '...' : 'Approve'}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={busy}
-              onClick={(e) => {
-                e.stopPropagation()
-                router.push(getAdminUserRoute(user))
-              }}
+              Approve
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => router.push(getAdminUserRoute(user))}
             >
+              <Eye size={14} />
               Review
-            </Button>
-          </div>
+            </DropdownMenuItem>
+          </>
         )
       case 'Active':
         return (
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
+          <>
+            <DropdownMenuItem
               disabled={busy}
-              onClick={(e) => {
-                e.stopPropagation()
-                handleSuspend(user.id)
-              }}
+              onClick={() => setSuspendTarget(user)}
             >
               <ShieldMinus size={14} />
-              {busy ? '...' : 'Suspend'}
-            </Button>
-            <Button
+              Suspend
+            </DropdownMenuItem>
+            <DropdownMenuItem
               variant="destructive"
-              size="sm"
               disabled={busy}
-              onClick={(e) => {
-                e.stopPropagation()
-                handleBan(user)
-              }}
+              onClick={() => setBanTarget(user)}
             >
               <Ban size={14} />
-              {busy ? '...' : 'Ban'}
-            </Button>
-          </div>
-        )
-      case 'Inactive':
-        return (
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                router.push(getAdminUserRoute(user))
-              }}
-            >
-              View
-            </Button>
-          </div>
+              Ban
+            </DropdownMenuItem>
+          </>
         )
       case 'Suspended':
         return (
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              size="sm"
-              disabled={busy}
-              onClick={(e) => {
-                e.stopPropagation()
-                handleUnsuspend(user.id)
-              }}
-            >
-              <ShieldCheck size={14} />
-              {busy ? '...' : 'Unsuspend'}
-            </Button>
-          </div>
+          <DropdownMenuItem
+            disabled={busy}
+            onClick={() => handleUnsuspend(user.id)}
+          >
+            <ShieldCheck size={14} />
+            Unsuspend
+          </DropdownMenuItem>
         )
-      case 'Banned':
+      case 'Locked':
         return (
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                router.push(getAdminUserRoute(user))
-              }}
-            >
-              View
-            </Button>
-          </div>
+          <DropdownMenuItem
+            disabled={busy}
+            onClick={() => handleUnlock(user.id)}
+          >
+            <Unlock size={14} />
+            Unlock
+          </DropdownMenuItem>
+        )
+      case 'Inactive':
+      case 'Banned':
+      case 'Deactivated':
+      case 'Deleted':
+        return (
+          <DropdownMenuItem
+            onClick={() => router.push(getAdminUserRoute(user))}
+          >
+            <Eye size={14} />
+            View
+          </DropdownMenuItem>
         )
       default:
         return null
     }
+  }
+
+  function renderActions(user: User) {
+    const actionItems = renderActionItems(user)
+    const busy = actionBusy === user.id
+    const canResetPassword =
+      user.status !== 'Banned' && user.status !== 'Deleted'
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.04)] transition"
+          >
+            <MoreVertical size={18} style={{ color: 'var(--foreground)' }} />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+          {actionItems}
+          {actionItems && <DropdownMenuSeparator />}
+          {canResetPassword && (
+            <DropdownMenuItem
+              disabled={busy}
+              onClick={() => handleResetPassword(user)}
+            >
+              <KeyRound size={14} />
+              Reset Password
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem onClick={() => router.push(getAdminLogRoute(user))}>
+            <ScrollText size={14} />
+            Activity Logs
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
   }
 
   return (
@@ -506,8 +569,7 @@ export function UserManagementTable() {
               Last Login Date
             </TableHead>
             <TableHead className="text-center w-[10%]">Status</TableHead>
-            <TableHead className="text-center w-[16%]">Actions</TableHead>
-            <TableHead className="text-center w-[4%]"></TableHead>
+            <TableHead className="text-center w-[10%]">Actions</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -561,26 +623,9 @@ export function UserManagementTable() {
 
               {/* ACTIONS */}
               <TableCell className="text-center">
-                {renderActions(user)}
-              </TableCell>
-
-              {/* LOG */}
-              <TableCell
-                className="text-center"
-                style={{ color: 'var(--muted-foreground)' }}
-              >
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    router.push(getAdminLogRoute(user))
-                  }}
-                  className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.04)] transition"
-                >
-                  <MoreVertical
-                    size={18}
-                    style={{ color: 'var(--foreground)' }}
-                  />
-                </button>
+                <div className="flex items-center justify-center">
+                  {renderActions(user)}
+                </div>
               </TableCell>
             </TableRow>
           ))}
@@ -643,6 +688,42 @@ export function UserManagementTable() {
           </Button>
         </div>
       </div>
+
+      <ReasonPromptDialog
+        open={suspendTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setSuspendTarget(null)
+        }}
+        onConfirm={handleConfirmSuspend}
+        eyebrow="Admin • User Management"
+        title={`Suspend ${suspendTarget?.name?.trim() || suspendTarget?.email || 'user'}`}
+        description="This will block the account from logging in. The reason is emailed to the user."
+        confirmLabel="Confirm Suspension"
+        confirmingLabel="Suspending..."
+        confirmColor={{
+          backgroundColor: 'var(--status-suspended-bg)',
+          color: 'var(--status-suspended-text)',
+        }}
+        isSubmitting={actionBusy === suspendTarget?.id}
+      />
+
+      <ReasonPromptDialog
+        open={banTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setBanTarget(null)
+        }}
+        onConfirm={handleConfirmBan}
+        eyebrow="Admin • User Management"
+        title={`Ban ${banTarget?.name?.trim() || banTarget?.email || 'user'}`}
+        description="This permanently removes the account and blocks the email from ever registering again. This cannot be undone. The reason is emailed to the user."
+        confirmLabel="Confirm Ban"
+        confirmingLabel="Banning..."
+        confirmColor={{
+          backgroundColor: 'var(--status-banned-bg)',
+          color: 'var(--status-banned-text)',
+        }}
+        isSubmitting={actionBusy === banTarget?.id}
+      />
     </div>
   )
 }

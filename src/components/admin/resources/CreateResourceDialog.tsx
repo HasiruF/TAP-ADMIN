@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { resourceSchema, ResourceInput } from '@/lib/schemas/resourceSchema'
 import { toResourceItemInput } from '@/types/resource'
 import { useResources, useUpdateResources } from '@/hooks/queries/useResources'
 import { uploadMedia } from '@/lib/api/media'
+import { getFriendlyErrorMessage } from '@/lib/api/errorMessage'
+import { compressImage } from '@/lib/utils/compressImage'
 
 import { Plus, Upload, ImagePlus } from 'lucide-react'
 
@@ -30,12 +32,24 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
 type Props = {
-  onSuccess?: () => any
+  onSuccess?: () => unknown
 }
+
+const emptyValues = {
+  type: 'youtube',
+  title: '',
+  description: '',
+  category: '',
+  url: '',
+  pdfFile: undefined,
+  thumbnailFile: undefined,
+} as ResourceInput
 
 export function CreateResourceDialog({ onSuccess }: Props) {
   const [open, setOpen] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const pdfInputRef = useRef<HTMLInputElement>(null)
+  const thumbnailInputRef = useRef<HTMLInputElement>(null)
 
   const { data: resources = [] } = useResources()
   const updateMutation = useUpdateResources()
@@ -50,18 +64,13 @@ export function CreateResourceDialog({ onSuccess }: Props) {
     formState: { errors, isSubmitting },
   } = useForm<ResourceInput>({
     resolver: zodResolver(resourceSchema),
-    defaultValues: {
-      type: 'youtube',
-    } as any,
+    defaultValues: emptyValues,
   })
-  const handleClose = () => {
-    reset({
-      type: 'youtube',
-      title: '',
-      description: '',
-      url: '',
-    })
-    setOpen(false)
+
+  const resetForm = () => {
+    reset(emptyValues)
+    if (pdfInputRef.current) pdfInputRef.current.value = ''
+    if (thumbnailInputRef.current) thumbnailInputRef.current.value = ''
   }
 
   const type = useWatch({
@@ -82,6 +91,9 @@ export function CreateResourceDialog({ onSuccess }: Props) {
           return
         }
         const media = await uploadMedia(data.pdfFile)
+        // Store the storageKey, not a resolved URL — the backend resolves it
+        // (signs it, for S3) fresh on every read, so the stored value never
+        // goes stale.
         url = media.storageKey
       }
 
@@ -104,11 +116,14 @@ export function CreateResourceDialog({ onSuccess }: Props) {
         },
       ])
       await onSuccess?.()
-      reset({ type: 'youtube' } as any)
+      resetForm()
       setOpen(false)
     } catch (err) {
       setSubmitError(
-        err instanceof Error ? err.message : 'Failed to create resource'
+        getFriendlyErrorMessage(
+          err,
+          "We couldn't create this resource. Please try again."
+        )
       )
     }
   }
@@ -117,7 +132,7 @@ export function CreateResourceDialog({ onSuccess }: Props) {
     setOpen(v)
     if (!v) {
       setSubmitError(null)
-      reset({ type: 'youtube' } as any)
+      resetForm()
     }
   }
 
@@ -204,7 +219,9 @@ export function CreateResourceDialog({ onSuccess }: Props) {
 
                 <Select
                   value={type}
-                  onValueChange={(v) => setValue('type', v as any)}
+                  onValueChange={(v) =>
+                    setValue('type', v as ResourceInput['type'])
+                  }
                 >
                   <SelectTrigger
                     className="h-12"
@@ -335,6 +352,7 @@ export function CreateResourceDialog({ onSuccess }: Props) {
                     </p>
 
                     <input
+                      ref={pdfInputRef}
                       type="file"
                       accept=".pdf"
                       className="hidden"
@@ -384,13 +402,15 @@ export function CreateResourceDialog({ onSuccess }: Props) {
                     </p>
 
                     <input
+                      ref={thumbnailInputRef}
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files?.[0]
                         if (file) {
-                          setValue('thumbnailFile', file, {
+                          const compressed = await compressImage(file)
+                          setValue('thumbnailFile', compressed, {
                             shouldDirty: true,
                           })
                         }

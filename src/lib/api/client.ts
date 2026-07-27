@@ -115,12 +115,15 @@ export async function api(path: string, options: RequestInit = {}) {
 
   if (!res.ok) {
     const text = await res.text()
+    let parsed: unknown
 
     try {
-      throw JSON.parse(text)
+      parsed = JSON.parse(text)
     } catch {
       throw new Error(text || 'API Error')
     }
+
+    throw parsed
   }
 
   return res.json()

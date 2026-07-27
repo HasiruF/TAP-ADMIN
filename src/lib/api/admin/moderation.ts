@@ -3,6 +3,7 @@ import { api } from '@/lib/api/client'
 export interface ModerationItem {
   contentModId: string
   userId: string | null
+  email: string | null
   name: string | null
   type: 'images' | 'video' | string
   role: 'artist' | 'venue' | string | null
@@ -26,7 +27,7 @@ export function resolveContentUrl(link: string | null): string | null {
   return link.startsWith('http') ? link : `${ORIGIN}${link}`
 }
 
-export function fetchModerationQueue() {
+export function fetchModerationQueue(): Promise<ModerationItem[]> {
   return api('/admin/moderation')
 }
 
@@ -37,9 +38,15 @@ export function approveModeration(contentModId: string) {
   })
 }
 
-export function rejectModeration(contentModId: string) {
+export function rejectModeration({
+  contentModId,
+  reviewNotes,
+}: {
+  contentModId: string
+  reviewNotes: string
+}) {
   return api('/admin/moderation/reject', {
     method: 'POST',
-    body: JSON.stringify({ contentModId }),
+    body: JSON.stringify({ contentModId, reviewNotes }),
   })
 }

@@ -1,17 +1,20 @@
 'use client'
 
+import { useState } from 'react'
+import Image from 'next/image'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { RejectReasonDialog } from './RejectReasonDialog'
 
 type ModerationItem = {
   id: string
   userId: string
+  email: string
   name: string
   type: string
   role?: string
@@ -25,7 +28,7 @@ interface Props {
   onOpenChange: (open: boolean) => void
   item: ModerationItem | null
   onApprove: (id: string) => void
-  onReject: (id: string) => void
+  onReject: (id: string, reviewNotes: string) => void
 }
 
 export function ModerationPreviewDialog({
@@ -35,7 +38,19 @@ export function ModerationPreviewDialog({
   onApprove,
   onReject,
 }: Props) {
+  const [rejecting, setRejecting] = useState(false)
+
   if (!item) return null
+
+  const handleApprove = () => {
+    onApprove(item.id)
+    onOpenChange(false)
+  }
+
+  const handleConfirmReject = (reviewNotes: string) => {
+    onReject(item.id, reviewNotes)
+    onOpenChange(false)
+  }
 
   const renderContent = () => {
     switch (item.type) {
@@ -48,22 +63,34 @@ export function ModerationPreviewDialog({
           return (
             <div className="grid grid-cols-2 gap-3">
               {list.map((img: string, i: number) => (
-                <img
+                <div
                   key={i}
-                  src={img}
-                  className="rounded-xl w-full h-40 object-cover border"
+                  className="relative w-full h-40 rounded-xl border overflow-hidden"
                   style={{ borderColor: 'var(--border)' }}
-                />
+                >
+                  <Image
+                    src={img}
+                    alt={`${item.name} submission ${i + 1}`}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
               ))}
             </div>
           )
         } catch {
           return (
-            <img
-              src={item.content}
-              className="rounded-xl w-full max-h-[300px] object-cover border"
+            <div
+              className="relative w-full h-[300px] rounded-xl border overflow-hidden"
               style={{ borderColor: 'var(--border)' }}
-            />
+            >
+              <Image
+                src={item.content}
+                alt={`${item.name} submission`}
+                fill
+                className="object-cover"
+              />
+            </div>
           )
         }
 
@@ -90,30 +117,34 @@ export function ModerationPreviewDialog({
       case 'social-links':
       case 'music-links':
         try {
-          const links = JSON.parse(item.content)
+          const links: unknown = JSON.parse(item.content)
           return (
             <div className="space-y-2">
               {Array.isArray(links)
-                ? links.map((l: any, i: number) => (
+                ? (
+                    links as Array<{ platform?: string; url: string } | string>
+                  ).map((l, i) => (
                     <a
                       key={i}
-                      href={l.url}
+                      href={typeof l === 'string' ? l : l.url}
                       target="_blank"
                       className="text-sm underline text-blue-400"
                     >
-                      {l.platform || l}
+                      {typeof l === 'string' ? l : l.platform || l.url}
                     </a>
                   ))
-                : Object.entries(links).map(([k, v]: any) => (
-                    <a
-                      key={k}
-                      href={v}
-                      target="_blank"
-                      className="text-sm underline text-blue-400 block"
-                    >
-                      {k}
-                    </a>
-                  ))}
+                : Object.entries(links as Record<string, string>).map(
+                    ([k, v]) => (
+                      <a
+                        key={k}
+                        href={v}
+                        target="_blank"
+                        className="text-sm underline text-blue-400 block"
+                      >
+                        {k}
+                      </a>
+                    )
+                  )}
             </div>
           )
         } catch {
@@ -229,7 +260,7 @@ export function ModerationPreviewDialog({
                 fontSize: '13px',
               }}
             >
-              User ID: {item.userId}
+              Email: {item.email}
             </p>
 
             <p
@@ -259,7 +290,7 @@ export function ModerationPreviewDialog({
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
-              onClick={() => onReject(item.id)}
+              onClick={() => setRejecting(true)}
               style={{
                 borderColor: 'var(--status-banned-text)',
                 color: 'var(--status-banned-text)',
@@ -269,7 +300,7 @@ export function ModerationPreviewDialog({
             </Button>
 
             <Button
-              onClick={() => onApprove(item.id)}
+              onClick={handleApprove}
               style={{
                 backgroundColor: 'var(--status-active-bg)',
                 color: 'var(--status-active-text)',
@@ -280,6 +311,12 @@ export function ModerationPreviewDialog({
           </div>
         </div>
       </DialogContent>
+
+      <RejectReasonDialog
+        open={rejecting}
+        onOpenChange={setRejecting}
+        onConfirm={handleConfirmReject}
+      />
     </Dialog>
   )
 }

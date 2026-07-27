@@ -1,4 +1,6 @@
 'use client'
+import Image from 'next/image'
+import Link from 'next/link'
 import {
   Sidebar,
   SidebarContent,
@@ -20,14 +22,17 @@ import {
   LayoutDashboard,
   Users,
   ShieldAlert,
-  BadgeCheck,
-  Settings,
   MessageSquare,
   LogOut,
   BookOpen,
   ScrollText,
 } from 'lucide-react'
-const navMain = [
+const navMain: Array<{
+  title: string
+  url: string
+  icon: typeof LayoutDashboard
+  disabled?: boolean
+}> = [
   {
     title: 'Overview',
     url: '/admin',
@@ -44,6 +49,11 @@ const navMain = [
     icon: ShieldAlert,
   },
   {
+    title: 'Resources',
+    url: '/admin/resources',
+    icon: BookOpen,
+  },
+  {
     title: 'Activity Logs',
     url: '/admin/log',
     icon: ScrollText,
@@ -52,11 +62,6 @@ const navMain = [
     title: 'Message Moderation',
     url: '/admin/messages',
     icon: MessageSquare,
-  },
-  {
-    title: 'Help Resources',
-    url: '/admin/resources',
-    icon: BookOpen,
   },
 ]
 
@@ -74,7 +79,7 @@ export function AppSidebar() {
       queryClient.removeQueries({ queryKey: ['me'] })
 
       router.push('/login')
-    } catch (err) {
+    } catch {
       queryClient.removeQueries({ queryKey: ['me'] })
 
       router.push('/login')
@@ -105,9 +110,11 @@ export function AppSidebar() {
                   borderColor: 'var(--sidebar-border)',
                 }}
               >
-                <img
+                <Image
                   src="/Primary.svg"
                   alt="TAP Logo"
+                  width={48}
+                  height={48}
                   className="w-12 h-12 object-contain"
                 />
               </div>
@@ -149,6 +156,7 @@ export function AppSidebar() {
           <SidebarMenu>
             {navMain.map((item) => {
               const isActive = pathname === item.url
+              const isDisabled = item.disabled
 
               return (
                 <SidebarMenuItem key={item.title}>
@@ -161,34 +169,57 @@ export function AppSidebar() {
                       backgroundColor: isActive
                         ? 'var(--foreground)'
                         : 'transparent',
+                      opacity: isDisabled ? 0.5 : 1,
+                      cursor: isDisabled ? 'not-allowed' : undefined,
                     }}
-                    className="
+                    className={`
                       transition-all
                       rounded-2xl
-                      hover:translate-x-[2px]
-                      hover:bg-[rgba(255,255,255,0.04)]
-                      "
+                      ${
+                        isDisabled
+                          ? ''
+                          : 'hover:translate-x-[2px] hover:bg-[rgba(255,255,255,0.04)]'
+                      }
+                      `}
                   >
-                    <a
-                      href={item.url}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl
-                         ${isCollapsed ? 'justify-center' : ''}`}
-                    >
-                      <item.icon
-                        size={24}
-                        style={{
-                          color: isActive ? 'var(--gold)' : 'var(--gold)',
-                        }}
-                      />
-
-                      <span
-                        className={
-                          isCollapsed ? 'hidden' : 'text-[15px] font-medium'
-                        }
+                    {isDisabled ? (
+                      <div
+                        aria-disabled="true"
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-not-allowed
+                           ${isCollapsed ? 'justify-center' : ''}`}
                       >
-                        {item.title}
-                      </span>
-                    </a>
+                        <item.icon size={24} style={{ color: 'var(--gold)' }} />
+
+                        <span
+                          className={
+                            isCollapsed ? 'hidden' : 'text-[15px] font-medium'
+                          }
+                        >
+                          {item.title}
+                        </span>
+                      </div>
+                    ) : (
+                      <Link
+                        href={item.url}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl
+                           ${isCollapsed ? 'justify-center' : ''}`}
+                      >
+                        <item.icon
+                          size={24}
+                          style={{
+                            color: isActive ? 'var(--gold)' : 'var(--gold)',
+                          }}
+                        />
+
+                        <span
+                          className={
+                            isCollapsed ? 'hidden' : 'text-[15px] font-medium'
+                          }
+                        >
+                          {item.title}
+                        </span>
+                      </Link>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )
@@ -205,11 +236,17 @@ export function AppSidebar() {
         >
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2 rounded-xl hover:bg-[rgba(255,255,255,0.04)] transition"
+            className={`flex items-center gap-3 w-full px-3 py-2 rounded-xl cursor-pointer transition-all hover:translate-x-[2px] hover:bg-[rgba(255,255,255,0.06)] active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${
+              isCollapsed ? 'justify-center' : ''
+            }`}
             style={{ color: 'var(--foreground)' }}
           >
             <LogOut size={18} style={{ color: 'var(--muted-foreground)' }} />
-            <span className="text-sm">Logout</span>
+            <span
+              className={`text-sm font-medium ${isCollapsed ? 'hidden' : ''}`}
+            >
+              Logout
+            </span>
           </button>
         </div>
       </SidebarFooter>

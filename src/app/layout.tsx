@@ -1,9 +1,9 @@
-import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { Cormorant_Garamond, Inter } from 'next/font/google'
 import QueryProvider from '@/lib/providers/QueryProvider'
 import { AuthProvider } from '@/lib/api/auth/AuthContext'
+import { Toaster } from 'sonner'
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
@@ -47,6 +47,7 @@ export default function RootLayout({
         <QueryProvider>
           <AuthProvider>{children}</AuthProvider>
         </QueryProvider>
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   )
