@@ -1,9 +1,33 @@
 name: Deploy PROD to AWS
 # Manual only — production never deploys automatically on push.
+# You must type "deploy" in the confirmation input to run (see the guard job).
 on:
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to confirm a production release'
+        required: true
+        default: ''
+
+# Never run two production deploys at once.
+concurrency:
+  group: deploy-ecs-prod
+  cancel-in-progress: false
+
 jobs:
+  guard:
+    name: Confirm input
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "deploy" ]; then
+            echo "::error::You must type 'deploy' to confirm. Got: '${{ github.event.inputs.confirm }}'"
+            exit 1
+          fi
+
   build:
+    needs: guard
     runs-on: ubuntu-latest
     environment: prod
     permissions:
@@ -42,7 +66,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment: production
+    environment: prod
     permissions:
       id-token: write
       contents: read
@@ -73,4 +97,4 @@ jobs:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
           service: prod-admin-panel
           cluster: tap-prod
-          wait-for-service-stability: true
+          wait-for-service-stability: false
