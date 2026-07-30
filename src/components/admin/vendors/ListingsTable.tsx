@@ -36,6 +36,39 @@ import type { VendorListing } from '@/types/vendor'
 
 const ALL_CATEGORIES = '__all__'
 
+/** Top-level category slugs, set by the vendor-category seed — mirrors tap-fe's VendorDirectoryPanel. */
+type TypeFilter = 'all' | 'services' | 'products-and-tools'
+
+const TYPE_FILTERS: { id: TypeFilter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'services', label: 'Service' },
+  { id: 'products-and-tools', label: 'Product & Tool' },
+]
+
+function vendorTypeSlug(listing: VendorListing): TypeFilter {
+  return listing.category.parentCategory?.slug === 'products-and-tools'
+    ? 'products-and-tools'
+    : 'services'
+}
+
+function TypeBadge({ listing }: { listing: VendorListing }) {
+  const isProduct = vendorTypeSlug(listing) === 'products-and-tools'
+  return (
+    <span
+      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
+      style={{
+        backgroundColor: isProduct
+          ? 'rgba(159,209,196,0.18)'
+          : 'rgba(174,190,221,0.18)',
+        color: isProduct ? '#2f6a5c' : '#3c4f78',
+        border: `1px solid ${isProduct ? 'rgba(159,209,196,0.5)' : 'rgba(174,190,221,0.5)'}`,
+      }}
+    >
+      {isProduct ? 'Product & Tool' : 'Service'}
+    </span>
+  )
+}
+
 export function ListingsTable() {
   const { data: categories = [] } = useVendorCategories()
   const { data: listings = [], isLoading } = useVendorListings()
@@ -43,6 +76,7 @@ export function ListingsTable() {
 
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES)
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogTab, setDialogTab] = useState<'details' | 'photos'>('details')
   const [editing, setEditing] = useState<VendorListing | null>(null)
@@ -55,9 +89,11 @@ export function ListingsTable() {
       const matchesSearch = !q || l.name.toLowerCase().includes(q)
       const matchesCategory =
         categoryFilter === ALL_CATEGORIES || l.category.id === categoryFilter
-      return matchesSearch && matchesCategory
+      const matchesType =
+        typeFilter === 'all' || vendorTypeSlug(l) === typeFilter
+      return matchesSearch && matchesCategory && matchesType
     })
-  }, [listings, search, categoryFilter])
+  }, [listings, search, categoryFilter, typeFilter])
 
   function openCreate() {
     setEditing(null)
@@ -124,6 +160,28 @@ export function ListingsTable() {
             ))}
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-1.5">
+          {TYPE_FILTERS.map((f) => {
+            const isActive = typeFilter === f.id
+            return (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setTypeFilter(f.id)}
+                className="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors"
+                style={{
+                  border: `1px solid ${isActive ? 'var(--gold)' : 'var(--border)'}`,
+                  backgroundColor: isActive
+                    ? 'rgba(201,168,76,0.12)'
+                    : 'transparent',
+                  color: isActive ? 'var(--gold)' : 'var(--muted-foreground)',
+                }}
+              >
+                {f.label}
+              </button>
+            )
+          })}
+        </div>
         <div className="flex-1" />
         <Button
           onClick={openCreate}
@@ -149,14 +207,27 @@ export function ListingsTable() {
               'linear-gradient(to right, transparent, rgba(201,168,76,0.35), transparent)',
           }}
         />
-        <table className="w-full text-sm">
+        <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
-              <th className="text-left p-3">Name</th>
-              <th className="text-left p-3">Category</th>
-              <th className="text-left p-3">Discount</th>
-              <th className="text-left p-3">Status</th>
-              <th className="text-right p-3">Actions</th>
+              <th className="text-left p-3" style={{ width: '220px' }}>
+                Name
+              </th>
+              <th className="text-left p-3" style={{ width: '150px' }}>
+                Type
+              </th>
+              <th className="text-left p-3" style={{ width: '180px' }}>
+                Category
+              </th>
+              <th className="text-left p-3" style={{ width: '130px' }}>
+                Discount
+              </th>
+              <th className="text-left p-3" style={{ width: '100px' }}>
+                Status
+              </th>
+              <th className="text-right p-3" style={{ width: '70px' }}>
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -165,9 +236,16 @@ export function ListingsTable() {
                 key={listing.id}
                 style={{ borderTop: '1px solid var(--border)' }}
               >
-                <td className="p-3 font-medium">{listing.name}</td>
+                <td className="p-3 font-medium truncate" title={listing.name}>
+                  {listing.name}
+                </td>
                 <td className="p-3">
-                  <Badge variant="outline">{listing.category.name}</Badge>
+                  <TypeBadge listing={listing} />
+                </td>
+                <td className="p-3 truncate" title={listing.category.name}>
+                  <Badge variant="outline" className="max-w-full truncate">
+                    {listing.category.name}
+                  </Badge>
                 </td>
                 <td className="p-3">
                   {listing.discountCode ? (
@@ -223,7 +301,7 @@ export function ListingsTable() {
             {!isLoading && filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="p-8 text-center"
                   style={{ color: 'var(--muted-foreground)' }}
                 >

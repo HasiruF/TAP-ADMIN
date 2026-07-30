@@ -48,20 +48,27 @@ export default function MessagesPage() {
     return {
       id: selected.id,
       participants: selected.participants,
-      messages: thread.messages.map((m, idx) => ({
-        id: `${idx}`, // id
-        senderId: m.senderId,
-        content: m.message ?? '',
-        timestamp: m.timestamp,
-        isDeleted: m.isDeleted,
+      // Backend order isn't guaranteed — sort oldest first to match the
+      // artist/venue-facing thread view.
+      messages: [...thread.messages]
+        .sort(
+          (a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        )
+        .map((m, idx) => ({
+          id: `${idx}`, // id
+          senderId: m.senderId,
+          content: m.message ?? '',
+          timestamp: m.timestamp,
+          isDeleted: m.isDeleted,
 
-        attachments: (m.attachments || []).map((a) => ({
-          id: a.id,
-          type: a.type,
-          url: a.url,
-          name: a.name || 'attachment',
+          attachments: (m.attachments || []).map((a) => ({
+            id: a.id,
+            type: a.type,
+            url: a.url,
+            name: a.name || 'attachment',
+          })),
         })),
-      })),
     }
   }, [selected, thread])
 

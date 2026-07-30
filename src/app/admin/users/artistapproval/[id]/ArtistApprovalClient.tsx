@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   MapPin,
   Music2,
+  Disc3,
   Video,
   Share2,
   Link as LinkIcon,
@@ -24,6 +25,11 @@ import {
   getFriendlyErrorMessage,
   BackendErrorShape,
 } from '@/lib/api/errorMessage'
+import {
+  splitReleases,
+  STREAMING_PLATFORMS,
+  platformLabel,
+} from '@/lib/artist/streamingLinks'
 
 type LivePerformance = { id: string; url: string; name?: string | null }
 
@@ -64,6 +70,9 @@ export default function ArtistApprovalPage({
   }
 
   const data = artist
+  const { streamingLinksRelease, releases: musicReleases } = splitReleases(
+    data.releases ?? []
+  )
 
   const formatSetLength = (minutes: string): string => {
     const map: Record<string, string> = {
@@ -535,7 +544,7 @@ export default function ArtistApprovalPage({
             </div>
           </section>
 
-          {/* MUSIC LINKS */}
+          {/* STREAMING LINKS */}
           <section
             className="p-6 rounded-3xl border"
             style={{
@@ -553,20 +562,79 @@ export default function ArtistApprovalPage({
                 color: 'var(--foreground)',
               }}
             >
-              <Music2 size={16} /> Music Links
+              <Music2 size={16} /> Streaming Links
             </h2>
-            <div className="space-y-2 text-sm">
-              {data.musicLinks.links.length > 0 ? (
-                data.musicLinks.links.map(
-                  (l: { id: string; platform: string; url: string }) => (
-                    <div key={l.id} className="flex items-center gap-2">
-                      <LinkIcon size={12} style={{ color: 'var(--gold)' }} />
-                      <strong>{l.platform}:</strong> {l.url}
-                    </div>
-                  )
+            <div className="space-y-1 text-sm">
+              {STREAMING_PLATFORMS.map((p) => {
+                const url = streamingLinksRelease?.links.find(
+                  (l) => l.platform === p.enum
+                )?.url
+                return (
+                  <p key={p.enum}>
+                    <strong>{p.label}:</strong> {url ?? '-'}
+                  </p>
                 )
+              })}
+            </div>
+          </section>
+
+          {/* MUSIC RELEASES */}
+          <section
+            className="p-6 rounded-3xl border"
+            style={{
+              backgroundColor: 'var(--card)',
+              borderColor: 'var(--border)',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
+            }}
+          >
+            <h2
+              className="mb-4 flex items-center gap-2"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--foreground)',
+              }}
+            >
+              <Disc3 size={16} /> Music Releases
+            </h2>
+            <div className="space-y-3 text-sm">
+              {musicReleases.length > 0 ? (
+                musicReleases.map((r) => (
+                  <div
+                    key={r.id}
+                    className="rounded-xl border p-3"
+                    style={{ borderColor: 'var(--border)' }}
+                  >
+                    <p className="font-semibold">{r.title}</p>
+                    <p
+                      className="text-xs"
+                      style={{ color: 'var(--muted-foreground)' }}
+                    >
+                      {r.releaseType}
+                      {r.releaseDate ? ` · ${r.releaseDate}` : ''}
+                    </p>
+                    {r.links.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {r.links.map((l) => (
+                          <div
+                            key={l.platform}
+                            className="flex items-center gap-2"
+                          >
+                            <LinkIcon
+                              size={12}
+                              style={{ color: 'var(--gold)' }}
+                            />
+                            <strong>{platformLabel(l.platform)}:</strong>{' '}
+                            {l.url}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))
               ) : (
-                <p className="text-muted-foreground">No music links</p>
+                <p className="text-muted-foreground">No releases</p>
               )}
             </div>
           </section>
