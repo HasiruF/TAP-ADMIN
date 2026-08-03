@@ -109,6 +109,12 @@ export default function VenueApprovalPage({
     setActionError(null)
     try {
       await approveVenue(id)
+      // Also mark this venue's own detail-page cache stale (not awaited —
+      // we're redirecting to /admin/users/venue/[id], which reads the same
+      // ['admin-venue', id] key this page just populated; without this it'd
+      // still be "fresh" under the global staleTime and show pre-approval
+      // data on arrival).
+      queryClient.invalidateQueries({ queryKey: ['admin-venue', id] })
       await refreshUsersTable()
       router.push(`/admin/users/venue/${id}`)
     } catch (e) {
