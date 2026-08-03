@@ -21,6 +21,7 @@ import { forgotPassword } from '@/lib/api/auth'
 import { formatPerformanceType } from '@/lib/utils/performanceType'
 import { use } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   getFriendlyErrorMessage,
   BackendErrorShape,
@@ -48,6 +49,7 @@ export default function ArtistApprovalPage({
 }) {
   const { id } = use(params)
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   const { data: artist, isLoading, error } = useAdminArtist(id)
   const [busy, setBusy] = useState(false)
@@ -105,7 +107,11 @@ export default function ArtistApprovalPage({
     setActionError(null)
     try {
       await approveArtist(id)
-      router.push('/admin/users')
+      // Invalidate the table's own cache (not this page's — we're navigating
+      // away from it) so the table shows the updated status next time it's
+      // visited, instead of routing back here from a stale row.
+      await queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      router.push(`/admin/users/artist/${id}`)
     } catch (e) {
       setActionError(
         getFriendlyErrorMessage(
@@ -129,6 +135,7 @@ export default function ArtistApprovalPage({
     setActionError(null)
     try {
       await rejectArtist(id, feedback.trim())
+      await queryClient.invalidateQueries({ queryKey: ['admin-users'] })
       router.push('/admin/users')
     } catch (e) {
       setActionError(
