@@ -1,6 +1,8 @@
 # TAP Admin — Action Workflows
 
 > 🗂️ **AUDIT NOTE — 2026-06-24:** Several workflows marked "stubbed/console.log" below are now wired to the real backend (approval approve/reject/req-changes, moderation approve/reject, resources CRUD, user suspend/ban). Verify each "Stubbed" entry against current handlers. Consolidated state: `../tap-platform/projectUpdate24June.md`.
+>
+> 🗂️ **AUDIT NOTE — 2026-07-31:** A few more specifics as of today: the Artist/Venue **Approval pages only expose Approve and Reject** — there is no "Request Changes" button in the current UI (the `req-changes`/`requestArtistChanges` API function still exists but is unused). **Resource drag-reorder is persisted** (`PUT /admin/resources` bulk-replace), not local-only. A new **Vendor Management** screen (`/admin/vendors` — categories + listings CRUD) and a **dashboard analytics section** (user growth, artist genre/location charts) were added and aren't covered by this document. See [tap_admin_screens_inventory.md](tap_admin_screens_inventory.md) and [tap_admin_data_contracts.md](tap_admin_data_contracts.md) for current, maintained coverage of all workflows.
 
 > **Every interactive workflow that changes state, triggers navigation, or sends data.**
 > "Stubbed" means the button exists in the UI but the handler is a `console.log` or absent — no real API call is wired yet.
