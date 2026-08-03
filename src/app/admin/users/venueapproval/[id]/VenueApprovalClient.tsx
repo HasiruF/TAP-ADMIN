@@ -85,6 +85,18 @@ export default function VenueApprovalPage({
   const resolveImg = (url: string) =>
     url.startsWith('http') ? url : `${API_BASE}${url}`
 
+  // Only invalidate the table's cache here — not this page's own
+  // ['admin-venue', id] query. We're navigating away immediately after, so
+  // refetching data for a page we're about to abandon just risks a slow or
+  // failing refetch delaying (or visibly interrupting) the navigation.
+  async function refreshUsersTable() {
+    await queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+  }
+
+  // Used for in-place updates that stay on this page (e.g. resolving a
+  // region suggestion below) — unlike approve/reject, there's no navigation
+  // afterward, so refreshing this page's own venue data is exactly what's
+  // needed here.
   async function refreshVenue() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['admin-venue', id] }),
@@ -97,8 +109,14 @@ export default function VenueApprovalPage({
     setActionError(null)
     try {
       await approveVenue(id)
-      await refreshVenue()
-      router.push('/admin/users')
+      // Also mark this venue's own detail-page cache stale (not awaited —
+      // we're redirecting to /admin/users/venue/[id], which reads the same
+      // ['admin-venue', id] key this page just populated; without this it'd
+      // still be "fresh" under the global staleTime and show pre-approval
+      // data on arrival).
+      queryClient.invalidateQueries({ queryKey: ['admin-venue', id] })
+      await refreshUsersTable()
+      router.push(`/admin/users/venue/${id}`)
     } catch (e) {
       setActionError(
         getFriendlyErrorMessage(
@@ -122,7 +140,7 @@ export default function VenueApprovalPage({
     setActionError(null)
     try {
       await rejectVenue(id, feedback.trim())
-      await refreshVenue()
+      await refreshUsersTable()
       router.push('/admin/users')
     } catch (e) {
       setActionError(
