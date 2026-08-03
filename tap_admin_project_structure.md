@@ -1,8 +1,6 @@
 # TAP Admin — Project Structure Analysis
 
-> 🗂️ **AUDIT NOTE — 2026-06-24:** Structure largely current, but the app now includes live BFF API routes (`src/app/api/**`) and moderation/approval screens added since. Consolidated state: `../tap-platform/projectUpdate24June.md`.
-
-> Generated: 2026-06-03
+> Last verified: 2026-07-31, against the working tree (`src/` as currently on disk).
 
 ---
 
@@ -17,113 +15,176 @@ tap-admin/
 │   └── (default Next.js SVGs)
 ├── src/
 │   ├── app/                     # Next.js App Router root
-│   │   ├── layout.tsx           # Root layout (fonts, QueryProvider)
+│   │   ├── layout.tsx           # Root layout (fonts, QueryProvider, AuthProvider, Sonner Toaster)
 │   │   ├── page.tsx             # Root page → redirects to /login
 │   │   ├── globals.css          # Global CSS / design tokens
 │   │   ├── favicon.ico
 │   │   ├── login/
-│   │   │   └── page.tsx         # Login screen (mock only)
+│   │   │   ├── page.tsx         # Server wrapper (sets <title>) → renders LoginClient
+│   │   │   └── LoginClient.tsx  # Login form, real POST /auth/email/login
 │   │   ├── admin/
 │   │   │   ├── layout.tsx       # Admin shell (SidebarProvider + AppSidebar)
-│   │   │   ├── page.tsx         # /admin — Overview / dashboard
+│   │   │   ├── page.tsx         # /admin — thin wrapper, renders stats + <AnalyticsOverview>
+│   │   │   ├── OverviewClient.tsx
 │   │   │   ├── log/
-│   │   │   │   └── page.tsx     # /admin/log — Activity log viewer
+│   │   │   │   ├── page.tsx
+│   │   │   │   └── LogClient.tsx        # /admin/log — Activity log viewer (reads ?userId=&name=)
 │   │   │   ├── messages/
-│   │   │   │   └── page.tsx     # /admin/messages — Message moderation
+│   │   │   │   ├── page.tsx
+│   │   │   │   └── MessagesClient.tsx   # /admin/messages — Message moderation
 │   │   │   ├── moderation/
-│   │   │   │   └── page.tsx     # /admin/moderation — Content moderation queue
+│   │   │   │   ├── page.tsx
+│   │   │   │   └── ModerationClient.tsx # /admin/moderation — Content moderation queue
 │   │   │   ├── resources/
-│   │   │   │   ├── page.tsx     # /admin/resources — Help resource management
+│   │   │   │   ├── page.tsx
+│   │   │   │   ├── ResourcesClient.tsx  # /admin/resources — Resource management
 │   │   │   │   └── SortableRow.tsx
+│   │   │   ├── vendors/
+│   │   │   │   ├── page.tsx
+│   │   │   │   └── VendorsClient.tsx    # /admin/vendors — Marketplace vendor categories + listings
 │   │   │   └── users/
-│   │   │       ├── page.tsx     # /admin/users — User management table
-│   │   │       ├── artist/
-│   │   │       │   ├── page.tsx          # /admin/users/artist — (unused, artist list)
-│   │   │       │   └── [id]/page.tsx     # /admin/users/artist/[id] — Artist detail/inspection
-│   │   │       ├── artistapproval/
-│   │   │       │   ├── page.tsx          # /admin/users/artistapproval — (list)
-│   │   │       │   └── [id]/page.tsx     # /admin/users/artistapproval/[id] — Artist approval screen
-│   │   │       ├── venue/
-│   │   │       │   ├── page.tsx          # /admin/users/venue — (unused, venue list)
-│   │   │       │   └── [id]/page.tsx     # /admin/users/venue/[id] — Venue detail/inspection
-│   │   │       └── venueapproval/
-│   │   │           ├── page.tsx          # /admin/users/venueapproval — (list)
-│   │   │           └── [id]/page.tsx     # /admin/users/venueapproval/[id] — Venue approval screen
+│   │   │       ├── page.tsx             # /admin/users
+│   │   │       ├── UsersClient.tsx      # renders <UserManagementTable>
+│   │   │       ├── artist/[id]/
+│   │   │       │   ├── page.tsx
+│   │   │       │   └── ArtistDetailClient.tsx      # Artist profile inspection
+│   │   │       ├── artistapproval/[id]/
+│   │   │       │   ├── page.tsx
+│   │   │       │   └── ArtistApprovalClient.tsx    # Artist approval decision screen
+│   │   │       ├── venue/[id]/
+│   │   │       │   ├── page.tsx
+│   │   │       │   └── VenueDetailClient.tsx       # Venue profile inspection
+│   │   │       └── venueapproval/[id]/
+│   │   │           ├── page.tsx
+│   │   │           └── VenueApprovalClient.tsx     # Venue approval decision screen
 │   │   └── api/
-│   │       └── admin/
-│   │           ├── artist/
-│   │           │   ├── route.ts          # GET /api/admin/artist
-│   │           │   └── [id]/route.ts     # GET /api/admin/artist/[id]
-│   │           ├── venue/
-│   │           │   ├── route.ts          # GET /api/admin/venue
-│   │           │   └── [id]/route.ts     # GET /api/admin/venue/[id]
-│   │           ├── users/route.ts        # GET /api/admin/users
-│   │           ├── logs/route.ts         # GET /api/admin/logs
-│   │           ├── messages/route.ts     # GET /api/admin/messages
-│   │           ├── moderation/route.ts   # GET /api/admin/moderation
-│   │           └── resources/route.ts    # GET /api/admin/resources
+│   │       └── health/
+│   │           └── route.ts     # GET /api/health — liveness probe for ALB/ECS only, never calls the backend
 │   ├── components/
 │   │   ├── admin/
 │   │   │   ├── layout/SideBar.tsx
 │   │   │   ├── messages/MessageThread.tsx
 │   │   │   ├── moderation/
 │   │   │   │   ├── ModerationPreviewDialog.tsx
-│   │   │   │   └── ModerationQueueTable.tsx
-│   │   │   ├── overview/GrowthChart.tsx
+│   │   │   │   ├── ModerationQueueTable.tsx
+│   │   │   │   └── RejectReasonDialog.tsx
+│   │   │   ├── overview/
+│   │   │   │   ├── AnalyticsOverview.tsx
+│   │   │   │   ├── UserGrowthChart.tsx
+│   │   │   │   ├── ArtistGenreChart.tsx
+│   │   │   │   ├── ArtistLocationChart.tsx
+│   │   │   │   └── shared.tsx
 │   │   │   ├── resources/
 │   │   │   │   ├── CreateResourceDialog.tsx
 │   │   │   │   └── ViewResourceDialog.tsx
-│   │   │   └── users/UserManagementTable.tsx
+│   │   │   ├── shared/
+│   │   │   │   ├── ReasonPromptDialog.tsx      # generic "reason required" dialog (suspend/ban)
+│   │   │   │   └── RegionSuggestionsPanel.tsx  # venue-submitted region suggestions, add/dismiss
+│   │   │   ├── users/UserManagementTable.tsx
+│   │   │   └── vendors/
+│   │   │       ├── CategoriesTable.tsx
+│   │   │       ├── CategoryDialog.tsx
+│   │   │       ├── ListingsTable.tsx
+│   │   │       └── ListingDialog.tsx
 │   │   └── ui/                  # shadcn/ui primitives
 │   │       ├── avatar, badge, button, card, chart, dialog
 │   │       ├── dropdown-menu, input, label, radio-group
 │   │       ├── scroll-area, select, separator, sheet
 │   │       ├── sidebar, skeleton, table, tabs
 │   │       ├── textarea, tooltip
-│   ├── data_mock/               # ALL data is currently mock (in-memory)
-│   │   ├── activityLogs.ts
-│   │   ├── artists.ts
-│   │   ├── conversations.ts
-│   │   ├── moderation.ts
-│   │   ├── resources.ts
-│   │   ├── users.ts
-│   │   └── venues.ts
-│   ├── hooks/queries/           # TanStack Query hooks
-│   │   ├── useAdminArtists.ts
-│   │   ├── useAdminLogs.ts
-│   │   ├── useAdminMessages.ts
-│   │   ├── useAdminUsers.ts
-│   │   ├── useAdminVenues.ts
-│   │   ├── useModerationQueue.ts
-│   │   └── useResources.ts
+│   ├── data_mock/               # LEGACY — no longer imported by any live route.
+│   │   │                        # Kept as fixtures only (activityLogs.ts, artists.ts,
+│   │   │                        # moderation.ts, users.ts, venues.ts).
+│   ├── features/
+│   │   └── auth/
+│   │       ├── api.ts           # authApi.login/me/logout — thin wrappers over api()
+│   │       └── hooks.ts         # useMe / useLogin / useLogout (React Query)
+│   ├── hooks/
+│   │   ├── queries/              # TanStack Query hooks, one per resource
+│   │   │   ├── useAdminAnalytics.ts   # useUserGrowth / useArtistGenreDistribution / useArtistLocationDistribution
+│   │   │   ├── useAdminArtists.ts
+│   │   │   ├── useAdminConversations.ts
+│   │   │   ├── useAdminLogs.ts
+│   │   │   ├── useAdminMessages.ts
+│   │   │   ├── useAdminOverview.ts
+│   │   │   ├── useAdminUsers.ts
+│   │   │   ├── useAdminVenues.ts
+│   │   │   ├── useModerationActions.ts
+│   │   │   ├── useModerationQueue.ts
+│   │   │   ├── useResources.ts
+│   │   │   ├── useUpdateResources.ts
+│   │   │   ├── useUploadFiles.ts
+│   │   │   ├── useVendorCategories.ts
+│   │   │   ├── useVendorListingPhotos.ts
+│   │   │   └── useVendorListings.ts
+│   │   └── use-mobile.ts
 │   ├── lib/
-│   │   ├── api/admin/           # Thin fetch wrappers (no base URL config)
-│   │   │   ├── artists.ts
-│   │   │   ├── logs.ts
-│   │   │   ├── messages.ts
-│   │   │   ├── moderation.ts
-│   │   │   ├── resources.ts
-│   │   │   ├── users.ts
-│   │   │   └── venues.ts
+│   │   ├── api/
+│   │   │   ├── admin/            # Fetch wrappers, one per backend resource — no relative-URL
+│   │   │   │   │                 # BFF calls, every function hits NEXT_PUBLIC_API_URL directly.
+│   │   │   │   ├── analytics.ts
+│   │   │   │   ├── artists.ts
+│   │   │   │   ├── conversations.ts
+│   │   │   │   ├── logs.ts
+│   │   │   │   ├── mediaAssets.ts
+│   │   │   │   ├── messages.ts
+│   │   │   │   ├── moderation.ts
+│   │   │   │   ├── overview.ts
+│   │   │   │   ├── resources.ts
+│   │   │   │   ├── uploadfiles.ts
+│   │   │   │   ├── users.ts
+│   │   │   │   ├── vendorCategories.ts
+│   │   │   │   ├── vendorListingPhotos.ts
+│   │   │   │   ├── vendorListings.ts
+│   │   │   │   └── venues.ts
+│   │   │   ├── auth/
+│   │   │   │   └── AuthContext.tsx   # AuthProvider / useAuthContext
+│   │   │   ├── auth.ts               # forgotPassword(), refresh() (token refresh)
+│   │   │   ├── client.ts             # api() — the one fetch wrapper everything else calls; owns the in-memory access token
+│   │   │   ├── errorMessage.ts       # getFriendlyErrorMessage() — maps backend error shapes to UI copy
+│   │   │   └── media.ts              # uploadMedia() — multipart upload helper
+│   │   ├── artist/
+│   │   │   └── streamingLinks.ts     # splitReleases(), STREAMING_PLATFORMS, platformLabel()
 │   │   ├── providers/
 │   │   │   └── QueryProvider.tsx
-│   │   └── utils.ts             # clsx/tailwind-merge helper
+│   │   ├── schemas/
+│   │   │   ├── loginSchema.ts        # zod schema for LoginClient
+│   │   │   └── resourceSchema.ts
+│   │   ├── utils/
+│   │   │   ├── compressImage.ts
+│   │   │   ├── date.ts               # formatDateTime()
+│   │   │   └── performanceType.ts    # formatPerformanceType()
+│   │   ├── formatters.ts             # formatBudget()
+│   │   └── utils.ts                  # cn() (clsx + tailwind-merge)
 │   ├── types/
+│   │   ├── authuser.ts
 │   │   ├── conversation.ts
 │   │   ├── logs.ts
 │   │   ├── resource.ts
-│   │   └── user.ts
-│   └── utils/
-│       └── AdminRoutes.ts       # Route helpers (artist/venue/approval routing logic)
+│   │   ├── user.ts                   # User, UserBe, mapUserToBe()
+│   │   └── vendor.ts
+│   ├── utils/
+│   │   └── AdminRoutes.ts            # getAdminUserRoute(), getAdminLogRoute()
+│   ├── middleware.ts                 # standard Next.js middleware (not renamed/relocated)
+│   └── _tests_/
+│       ├── authContext.test.tsx
+│       └── client.test.ts
 ├── components.json              # shadcn/ui config
-├── next.config.ts               # Empty (default config)
+├── next.config.ts               # output: 'standalone'; images.remotePatterns for backend/localstack hosts
 ├── tsconfig.json
 ├── eslint.config.mjs
 ├── .prettierrc
-├── .husky/pre-commit            # lint-staged hook
+├── .husky/pre-commit             # lint-staged hook
 ├── Dockerfile
 └── docker-compose.yml
 ```
+
+**Note on `src/data_mock/`:** these fixture files still exist on disk but are
+**not imported by any route, hook, or component** anymore (verified by
+search — nothing under `src/app`, `src/hooks`, or `src/lib` references
+`data_mock`). Every screen fetches from the live backend. Treat this
+directory as dead weight / historical leftovers, not as evidence that any
+screen is still mock-backed.
 
 ---
 
@@ -131,73 +192,126 @@ tap-admin/
 
 | Category | Choice |
 |---|---|
-| **Framework** | Next.js 16.2.6 (App Router) |
+| **Framework** | Next.js `^15.5.19` (App Router). `eslint-config-next` is pinned to `16.2.6` — intentionally ahead of the `next` version, not a bug. |
 | **React** | 19.2.4 |
 | **Language** | TypeScript 5 |
-| **UI Library** | shadcn/ui (components.json configured) built on Radix UI |
+| **UI Library** | shadcn/ui (components.json configured) built on `radix-ui` (single unified package) |
 | **Styling** | Tailwind CSS v4 + `tw-animate-css` + CSS variables for design tokens |
 | **State Management** | None — server state only via TanStack React Query v5 |
 | **Data Fetching** | TanStack Query v5 (`@tanstack/react-query`) |
-| **Charts** | Recharts v3 |
+| **Forms / Validation** | `react-hook-form` + `@hookform/resolvers` (zod) + `zod` — used on Login and Resources |
+| **Charts** | Recharts v3 — user growth line chart, artist genre/location distribution charts |
 | **Icons** | Lucide React v1.14 |
-| **Drag & Drop** | `@dnd-kit/core` + `@dnd-kit/sortable` (used on Resources page) |
+| **Drag & Drop** | `@dnd-kit/core` + `@dnd-kit/sortable` (Resources page, reorder is persisted — see §3) |
 | **Animation** | Framer Motion v12 |
 | **Date Formatting** | date-fns v4 |
-| **Toasts** | Sonner v2 |
+| **Toasts** | Sonner v2 (mounted globally in root layout) |
 | **Linting / Formatting** | ESLint 9 + Prettier 3 + Husky + lint-staged |
-| **Containerisation** | Docker + docker-compose |
+| **Testing** | Jest 30 + Testing Library (`src/_tests_/`, 2 test files) |
+| **Containerisation** | Docker (multi-stage, `output: 'standalone'`) + docker-compose |
 
 ---
 
 ## 3. API Call Architecture
 
-The project uses a 3-layer pattern: **page → React Query hook → fetch wrapper → Next.js API route → mock data**.
+**There is no Backend-For-Frontend layer.** The browser calls the real TAP
+backend directly. The pattern is a 3-layer stack:
 
-### Layer 1 — Fetch wrappers (`src/lib/api/admin/`)
-Thin functions that call Next.js API routes using relative paths (no base URL, no axios, no shared client):
+**page/client component → React Query hook (`src/hooks/queries/`) → fetch
+wrapper (`src/lib/api/admin/*.ts` or `src/features/auth/api.ts`) → `api()`
+in `src/lib/api/client.ts` → `${NEXT_PUBLIC_API_URL}${path}`**
 
-| File | Function | Calls |
+- `api()` attaches `Authorization: Bearer <in-memory access token>`,
+  proactively refreshes the token before it expires, and retries once on a
+  401 by refreshing reactively (see §4).
+- Almost every wrapper hits `/admin/...` (e.g. `/admin/users`,
+  `/admin/artist/:id`, `/admin/moderation`) — these are real NestJS backend
+  routes, not local Next.js routes.
+- The vendor marketplace wrappers (`vendorCategories.ts`, `vendorListings.ts`,
+  `vendorListingPhotos.ts`) call `/vendors/...` instead of `/admin/vendors/...`.
+- File/media uploads (`mediaAssets.ts`, `uploadfiles.ts`) POST multipart
+  `FormData` to `/media-assets/upload` and `/files/upload` respectively —
+  they bypass `api()` because it always sets a JSON `Content-Type` header,
+  which must not be set for `FormData` requests.
+- The **only** route under `src/app/api/**` is `GET /api/health`
+  (`src/app/api/health/route.ts`) — a static liveness check for the ALB/ECS
+  target group. It returns `{ status: 'ok' }` and never calls the backend.
+
+### Mutations are wired to real endpoints
+
+Contrary to older analyses of this codebase, admin actions are **not**
+UI-only anymore:
+
+| Action | Wrapper | Endpoint |
 |---|---|---|
-| `artists.ts` | `fetchAdminArtist(id)` | `GET /api/admin/artist/:id` |
-| `venues.ts` | `fetchAdminVenue(id)` | `GET /api/admin/venue/:id` |
-| `users.ts` | `fetchAdminUsers()` | `GET /api/admin/users` |
-| `logs.ts` | `fetchAdminLogs()` | `GET /api/admin/logs` |
-| `messages.ts` | `fetchAdminMessages()` | `GET /api/admin/messages` |
-| `moderation.ts` | `fetchModerationQueue()` | `GET /api/admin/moderation` |
-| `resources.ts` | `fetchResources()` | `GET /api/admin/resources` |
+| Approve/reject artist | `artists.ts` | `POST /admin/user/approve`, `POST /admin/user/reject` |
+| Suspend artist/venue/user | `users.ts` | `POST /admin/user/suspend` |
+| Unsuspend | `users.ts` | `POST /admin/user/unsuspend` |
+| Ban | `users.ts` | `POST /admin/user/ban` |
+| Unlock | `users.ts` | `PATCH /admin/users/:id/unlock` |
+| Approve/reject venue | `venues.ts` | `POST /admin/venue/approve`, `POST /admin/venue/reject` |
+| Region suggestion add/dismiss | `venues.ts` | `POST /admin/venue/region-suggestions/add|dismiss` |
+| Mint artist preview link | `artists.ts` | `POST /admin/artist/:id/preview-token` |
+| Moderation approve/reject | `moderation.ts` | `POST /admin/moderation/approve`, `POST /admin/moderation/reject` |
+| Resources bulk save/reorder | `resources.ts` | `PUT /admin/resources` |
+| Vendor category/listing CRUD | `vendorCategories.ts` / `vendorListings.ts` | `POST/PATCH/DELETE /vendors/categories`, `/vendors/listings` |
+| Password reset (admin-triggered) | `auth.ts` | `POST /auth/forgot/password` |
 
-> **Note:** There is no central API client, no base URL env var, no axios instance, no auth header injection. All calls use native `fetch` with relative URLs.
-
-> **Note:** The API layer only has GET endpoints for `artist` and `venue` by ID. There is no `GET /api/admin/artist` (list) used by any hook — the user list uses a separate `users` endpoint. The `/api/admin/venue` list route exists but no hook calls it.
-
-### Layer 2 — React Query hooks (`src/hooks/queries/`)
-Each hook wraps a fetch function with `useQuery`. Default cache config: `staleTime: 2min`, `retry: 1`, `refetchOnWindowFocus: false`.
-
-### Layer 3 — Next.js API routes (`src/app/api/admin/`)
-Every route handler imports directly from `src/data_mock/` and returns `NextResponse.json(mockData)`. No database, no external HTTP calls, no auth checks.
+`requestArtistChanges()` still exists in `src/lib/api/admin/artists.ts` but
+is **not called from any component** — the "Request Changes" three-way
+decision described in older docs has been reduced to a two-way
+Approve/Reject decision in the current UI.
 
 ---
 
 ## 4. Authentication & Session Management
 
-**Current state: implemented (JWT against the backend).** Centralised in `<AuthProvider>` / `useAuthContext()` ([src/lib/api/auth/AuthContext.tsx](src/lib/api/auth/AuthContext.tsx)), mounted in the root layout.
+**Current state: fully implemented (JWT against the real backend).**
+Centralised in `<AuthProvider>` / `useAuthContext()`
+([src/lib/api/auth/AuthContext.tsx](src/lib/api/auth/AuthContext.tsx)),
+mounted in the root layout.
 
 **Token storage model:**
-- **Access token → in-memory only** (module variable in [src/lib/api/client.ts](src/lib/api/client.ts)). Never persisted to cookies/localStorage; restored on reload via the refresh token. Minimises XSS exposure.
-- **Refresh token → `localStorage`** (`tap_refresh_token`) so sessions survive reloads.
-- **`tap_session` + `tap_role` → marker cookies** (client-set, `SameSite=Lax`, `Secure` in prod). Non-secret flags used **only** by middleware; the backend must validate every request independently.
+- **Access token → in-memory only** (module variable in
+  [src/lib/api/client.ts](src/lib/api/client.ts)). Never persisted to
+  cookies/localStorage; restored on reload via the refresh token.
+- **Refresh token → `localStorage`** (`tap_refresh_token`) so sessions
+  survive reloads.
+- **`tap_session` + `tap_role` → marker cookies** (client-set, `SameSite=Lax`,
+  `Secure` in prod). Non-secret flags used **only** by middleware; the
+  backend still enforces `@Roles(admin)` on every admin endpoint
+  independently.
 
 **Flow:**
-- **Login** (`src/app/login/page.tsx`) → `POST /auth/email/login` → `setSession(token, user, refreshToken, tokenExpires)` stores token in memory, refresh token in localStorage, sets the marker cookies.
-- **Session restore** — on app load `AuthProvider` runs `refresh()` once, then `authApi.me()` to hydrate `user`; admin queries are gated on `!isLoading` so none fire before restore completes.
-- **Refresh** — `api()` refreshes proactively before expiry and reactively on 401, both through a shared `refreshWithLock()` (single in-flight refresh). Any failure calls `clearAuthState()` (wipes in-memory token + `tap_refresh_token` + both cookies).
-- **Route protection** — [src/middleware.ts](src/middleware.ts) on `/admin/:path*` and `/login` gates on the `tap_session` cookie.
-- **Logout** — `useAuthContext().logout()` → `POST /auth/logout` then `clearAuthState()`.
+- **Login** (`src/app/login/LoginClient.tsx`) → `POST /auth/email/login` →
+  rejects non-`admin` roles client-side → `setSession(token, user,
+  refreshToken, tokenExpires)` stores the token in memory, refresh token in
+  localStorage, sets the marker cookies.
+- **Session restore** — on app load `AuthProvider` calls `refresh()` once,
+  then `authApi.me()` (`GET /auth/me`) to hydrate `user`; non-admin sessions
+  are discarded (`clearAuthState()`), never granted the admin shell. Admin
+  queries are gated on `!isLoading` so nothing fires before restore
+  completes.
+- **Refresh** — `api()` refreshes proactively before expiry and reactively
+  on 401, both through a shared `refreshWithLock()` (single in-flight
+  refresh). Any failure calls `clearAuthState()` (wipes in-memory token +
+  `tap_refresh_token` + both cookies).
+- **Route protection** — [src/middleware.ts](src/middleware.ts), matcher
+  `/admin/:path*` and `/login`, requires both `tap_session` present **and**
+  `tap_role === 'admin'`; a stale non-admin session is bounced to `/login`
+  and its marker cookies deleted.
+- **Logout** — `useAuthContext().logout()` → `POST /auth/logout` then
+  `clearAuthState()` (sidebar footer button).
+- **Admin-triggered password reset** — `forgotPassword(email)` →
+  `POST /auth/forgot/password`, used from the Artist/Venue detail and
+  approval pages' "Reset Password" action.
 
-**Known limitations / hardening TODO:**
-- Refresh token in `localStorage` is XSS-readable; recommended hardening is a backend-issued HttpOnly Secure cookie + CSP (documented in the threat-model comment in `AuthContext.tsx`).
-- `tap_session`/`tap_role` are client-trusted markers, not server-validated sessions — middleware does no role check (role assumed `admin`).
-- Server-side `backendFetch()` still reads a `token` cookie the new flow no longer sets (legacy BFF path).
+**Known limitations (documented in-code, `AuthContext.tsx` threat-model
+comment):**
+- Refresh token in `localStorage` is XSS-readable; hardening would move it
+  to a backend-issued HttpOnly Secure cookie + CSP.
+- `tap_session`/`tap_role` are client-trusted markers, not server-validated
+  sessions — the backend re-validates role independently.
 
 ---
 
@@ -208,79 +322,88 @@ All routing uses Next.js App Router file-based routing.
 | URL | Page File | Screen Description |
 |---|---|---|
 | `/` | `src/app/page.tsx` | Redirects to `/login` |
-| `/login` | `src/app/login/page.tsx` | Login form (mock, no real auth) |
-| `/admin` | `src/app/admin/page.tsx` | Overview dashboard — stats cards + growth chart |
-| `/admin/users` | `src/app/admin/users/page.tsx` | User management table (all users: artists + venues) |
-| `/admin/users/artist/[id]` | `src/app/admin/users/artist/[id]/page.tsx` | Artist profile inspection (active artist detail view) |
-| `/admin/users/artistapproval/[id]` | `src/app/admin/users/artistapproval/[id]/page.tsx` | Artist approval screen (approve / request changes / reject) |
-| `/admin/users/venue/[id]` | `src/app/admin/users/venue/[id]/page.tsx` | Venue profile inspection |
-| `/admin/users/venueapproval/[id]` | `src/app/admin/users/venueapproval/[id]/page.tsx` | Venue approval screen |
-| `/admin/moderation` | `src/app/admin/moderation/page.tsx` | Content moderation queue (images/videos awaiting review) |
-| `/admin/messages` | `src/app/admin/messages/page.tsx` | Message moderation — read-only view of artist↔venue conversations |
-| `/admin/log` | `src/app/admin/log/page.tsx` | Activity log viewer (currently hardcoded to user "Aria Stone") |
-| `/admin/resources` | `src/app/admin/resources/page.tsx` | Help resource management with drag-to-reorder |
+| `/login` | `src/app/login/LoginClient.tsx` | Login form, real backend auth, admin-role gate |
+| `/admin` | `src/app/admin/OverviewClient.tsx` | Overview dashboard — live stat cards + analytics charts |
+| `/admin/users` | `src/app/admin/users/UsersClient.tsx` | User management table (all users, paginated server-side) |
+| `/admin/users/artist/[id]` | `.../artist/[id]/ArtistDetailClient.tsx` | Artist profile inspection + suspend/ban/unlock/reset-password |
+| `/admin/users/artistapproval/[id]` | `.../artistapproval/[id]/ArtistApprovalClient.tsx` | Artist approval screen (Approve / Reject with required feedback) |
+| `/admin/users/venue/[id]` | `.../venue/[id]/VenueDetailClient.tsx` | Venue profile inspection + region suggestions panel |
+| `/admin/users/venueapproval/[id]` | `.../venueapproval/[id]/VenueApprovalClient.tsx` | Venue approval screen (Approve / Reject with required feedback) |
+| `/admin/moderation` | `src/app/admin/moderation/ModerationClient.tsx` | Content moderation queue (images/video, approve/reject with reason) |
+| `/admin/messages` | `src/app/admin/messages/MessagesClient.tsx` | Message moderation — read-only artist↔venue conversation viewer |
+| `/admin/log` | `src/app/admin/log/LogClient.tsx` | Activity log viewer — `?userId=&name=` scopes to one user, otherwise shows all activity |
+| `/admin/resources` | `src/app/admin/resources/ResourcesClient.tsx` | Resource management with drag-to-reorder (persisted) |
+| `/admin/vendors` | `src/app/admin/vendors/VendorsClient.tsx` | Marketplace vendor category taxonomy + listings CRUD |
+| `/api/health` | `src/app/api/health/route.ts` | Liveness probe, not a UI route |
 
-**Route helper:** `src/utils/AdminRoutes.ts` — `getAdminUserRoute()` routes to the correct detail or approval page based on a user's `role` and `status`. Used by `UserManagementTable` to navigate on row click.
+There are no more "stub" `/admin/users/artist`, `/venue`, `/artistapproval`,
+`/venueapproval` list routes without an `[id]` segment — the current file
+tree only has the dynamic `[id]` routes under each of those four folders.
 
-**Sidebar nav items:**
-- Overview → `/admin`
-- User Management → `/admin/users`
-- Content Moderation → `/admin/moderation`
-- Message Moderation → `/admin/messages`
-- Help Resources → `/admin/resources`
+**Route helper:** `src/utils/AdminRoutes.ts`:
+- `getAdminUserRoute(user)` — routes to the correct detail or approval page
+  based on a user's `role` and `status`. Used by `UserManagementTable` to
+  navigate on row click.
+- `getAdminLogRoute(user)` — builds `/admin/log?userId=<id>&name=<name>` so
+  the "view logs" action opens that specific user's activity, not the global
+  feed.
+
+**Sidebar nav (two groups, `src/components/admin/layout/SideBar.tsx`):**
+- **Management:** Overview (`/admin`) · User Management (`/admin/users`) ·
+  Content Moderation (`/admin/moderation`) · Activity Logs (`/admin/log`) ·
+  Message Moderation (`/admin/messages`)
+- **Marketplace:** Resources (`/admin/resources`) · Products & Services
+  (`/admin/vendors`)
 
 ---
 
 ## 6. Environment Variables
 
-**No `.env`, `.env.local`, or `.env.example` file exists in the project.**
+`.env` and `.env.local` exist in the repo (both gitignored). Currently set:
 
-The `next.config.ts` is empty (default config, no `env` or `publicRuntimeConfig` entries). No `process.env.*` references appear anywhere in the source code.
+```bash
+# .env
+NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 
-**Implication:** When integrating a real backend, the following env vars will need to be added at minimum:
-- `NEXT_PUBLIC_API_URL` or similar for the backend base URL
-- `NEXTAUTH_SECRET` / `JWT_SECRET` for auth
-- Any third-party service keys (storage, email, etc.)
+# .env.local
+PUBLIC_API_URL=http://localhost:3000/api/v1   # unused — not NEXT_PUBLIC_-prefixed, never read
+```
 
----
+The app reads exactly two env vars at build time, both via `process.env.*`
+inlined into the client bundle (no `next.config.ts` `env`/
+`publicRuntimeConfig` block is needed or used):
 
-## 7. Hardcoded Values & Backend-Readiness Issues
+| Variable | Used by | Purpose |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | `src/lib/api/client.ts`, `auth.ts`, `media.ts`, `admin/mediaAssets.ts`, `admin/moderation.ts` (origin-stripped, to resolve relative content links), and several detail-page components (image URL resolution) | Base URL for every backend API call |
+| `NEXT_PUBLIC_PLATFORM_URL` | `VenueDetailClient.tsx` | Builds the "view live profile" link to the public marketing site for approved venues |
 
-### Hardcoded external URLs
-- `https://civic-sauna-76601524.figma.site/` — hardcoded in every artist/venue detail page as the "Show Preview" button target. This links to a Figma prototype, clearly a placeholder.
+`BACKEND_API_URL` is set in the ECS task definition and `docker-compose.yml`
+but is **not read anywhere in `src/`** — it's a leftover from a
+now-removed server-side BFF layer (see §3 and [DEPLOYMENT.md](DEPLOYMENT.md)).
 
-### All data is mock
-Every Next.js API route returns data from `src/data_mock/`. The mock data includes:
-- 2 artists (both named "Luna Reverie", IDs `"1"` and `"3"`)
-- 2 venues (both named "The Glass Warehouse", IDs `"2"` and `"5"`)
-- 5 users
-- 8 moderation items
-- 4 conversations
-- 12 resources
-- 16 activity log entries (all for user `usr_1001`)
-
-### Missing list endpoints / hooks
-- `fetchAdminArtists()` (list) is missing — `useAdminArtists` only fetches by ID
-- `fetchAdminVenues()` (list) is missing — `useAdminVenues` only fetches by ID
-- The artist/venue list pages (`/admin/users/artist/page.tsx`, `/admin/users/venue/page.tsx`) exist as files but were not inspected for content — they may be empty stubs
-
-### Activity log is not user-contextual
-The `/admin/log` page hardcodes `user = { name: "Aria Stone", id: "usr_1001" }` and loads all logs (which happen to all be for that user). There is no mechanism to navigate to a specific user's log.
-
-### Admin actions are UI-only
-Suspend, Ban, Reset Password, Approve, Reject, and Request Changes buttons in detail/approval pages have no `onClick` handlers wired to any API call — they are purely decorative at this stage.
-
-### Resource reorder is local state only
-The drag-to-reorder on the Resources page uses local `useState` — reordering is lost on page refresh and there is no PATCH/PUT endpoint to persist order.
+`next.config.ts` also configures `images.remotePatterns` for
+`localhost:3001` (backend dev), `localhost:4566` (LocalStack, dev S3), and
+`https://**` (any HTTPS host, e.g. production S3/CDN URLs).
 
 ---
 
-## Summary
+## 7. Remaining Hardcoded / Notable Items
 
-The project is a well-structured **UI prototype** built for a TAP (artist-venue booking) platform admin dashboard. The entire stack — framework, component library, query layer, routing — is properly scaffolded and production-ready in terms of architecture. However:
-
-1. **No real backend integration exists** — everything is in-memory mock data served by Next.js API routes.
-2. **Authentication is completely absent** — login is a visual stub.
-3. **No environment config** — no `.env` files or env var usage anywhere.
-4. **Admin actions are non-functional** — all moderation/approval/suspension buttons are UI-only.
-5. **No base URL abstraction** — API calls use relative paths, which works for the current Next.js-internal mock setup but will need a wrapper when pointing to a real external backend.
+- **Preview links are dynamic, not hardcoded.** The old Figma-prototype
+  "Show Preview" placeholder is gone. Artist pages mint a one-time preview
+  token (`mintArtistPreviewLink` → `POST /admin/artist/:id/preview-token`);
+  the venue detail page links straight to
+  `${NEXT_PUBLIC_PLATFORM_URL}/venues/${slug}` when the venue is
+  `marketplaceUnlocked`.
+- **Activity log is user-contextual.** `/admin/log` reads `?userId=` and
+  `?name=` from the query string (set by `getAdminLogRoute`) and calls
+  `fetchAdminLogs(userId)`; with no `userId` it shows the platform-wide feed.
+- **Admin actions call real endpoints** — see the table in §3. This
+  supersedes older documentation describing every action button as
+  UI-only/`console.log`.
+- **Resource reorder is persisted.** `useUpdateResources()` issues a
+  `PUT /admin/resources` bulk-replace on drop, syncing local dnd-kit state
+  back to the server; it is not local-only.
+- **`src/data_mock/`** is unused dead weight (see §1) — do not treat its
+  presence as evidence any screen still serves mock data.

@@ -1,6 +1,8 @@
 # TAP Admin — Codebase Analysis
 
 > 🗂️ **AUDIT NOTE — 2026-06-24:** Undated. The admin is **now connected to the real backend** via Next.js BFF routes (`src/app/api/**` → `backendFetch` → `${BACKEND_API_URL}` = `http://localhost:3001/api/v1`); earlier "all mock" claims are stale (though a few routes may still return mock data — verify per route). Approval, moderation, resources, and users screens call live endpoints. Consolidated cross-app state: `../tap-platform/projectUpdate24June.md`.
+>
+> 🗂️ **AUDIT NOTE — 2026-07-31:** Superseded further. The BFF layer described above has since been **removed entirely** — there is no `backendFetch`/`BACKEND_API_URL` route handler left in the codebase. The only route under `src/app/api/**` is `src/app/api/health/route.ts` (a static liveness probe). Every admin screen now calls the backend directly from the browser via `NEXT_PUBLIC_API_URL` (see [tap_admin_project_structure.md](tap_admin_project_structure.md) §3 for the current architecture). The Vendors screen (`/admin/vendors`, categories + listings) and a full analytics section on the dashboard were also added since this analysis was written and are not covered below.
 
 > Generated from a full read of the source under `src/`. Every claim below is drawn from the actual code, not assumptions. Where the code is incomplete, mocked, or inconsistent, this is called out explicitly.
 

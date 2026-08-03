@@ -2,6 +2,9 @@
 
 > ## ✅ AUDIT UPDATE — 2026-06-24: THE ARTIST FLOW IS IMPLEMENTED
 > The artist `DRAFT → PENDING_APPROVAL → APPROVED/REJECTED` workflow this plan describes now works end-to-end: backend `POST /artist/profile/submit` (+ `submitProfileForReview`), admin `POST /admin/user/approve|reject|req-changes`, and frontend `submitArtistForReview()` called at end of onboarding. Approved artists get `marketplace_unlocked = true` and appear in `GET /discover/artists`. **Venues are not yet on this workflow** — `POST /admin/venue/approve` only flips `marketplace_unlocked` (no `approval_status`/pending state). Consolidated state: `../tap-platform/projectUpdate24June.md`.
+>
+> ## ✅ AUDIT UPDATE — 2026-07-31: Bug 4 ("Show Preview" / hardcoded Figma link) and the Artist Detail suspend gap are also resolved
+> **Bug 4** below no longer applies as described: there is no hardcoded Figma URL anywhere in `src/` today. The venue detail page links to `${NEXT_PUBLIC_PLATFORM_URL}/venues/${slug}` (disabled unless the venue is `marketplaceUnlocked`); the artist detail/approval pages mint a real one-time preview link via `POST /admin/artist/:id/preview-token`. Separately, "What Is Built Today" listed Artist Detail's Suspend/Reset Password buttons as having no `onClick` — those are now wired (`suspendUser`/`unsuspendUser`/`unlockUser`/`forgotPassword`), matching the Approval pages' state. See [tap_admin_project_structure.md](tap_admin_project_structure.md) §3 and §7 for current behavior. The rest of this document's backend-side findings (venue approval state, discovery gating) were not re-verified in this pass — check against `tab-be` directly if still relevant.
 
 > **Goal:** Complete the user registration → admin review → public listing workflow across all three codebases so that when an admin approves an artist or venue profile, it becomes visible in the public Artist/Venue Directory.
 

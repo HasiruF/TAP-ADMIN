@@ -1,11 +1,9 @@
 # TAP Admin — Data Contracts
 
-> 🗂️ **AUDIT NOTE — 2026-06-24:** Field contracts here largely predate live backend wiring; many "dummy-data shapes" are now served by real endpoints. Cross-check shapes against the backend DTOs / OpenAPI spec. Consolidated state: `../tap-platform/projectUpdate24June.md`.
+> Last verified: 2026-07-31, against the working tree.
+> **Source of truth for every field the admin UI reads, renders, sends, or filters on**, drawn from actual usage in `src/`. There is no server-side BFF — every endpoint below is a real TAP backend route called directly from the browser via `NEXT_PUBLIC_API_URL` (see [tap_admin_project_structure.md](tap_admin_project_structure.md) §3). Nothing here is proxied through a Next.js API route except `/api/health`.
 >
-> **Update 2026-06-25:** Artist/venue inspection responses now include `basicInfo.profilePicture` (string URL, resolved `cdnUrl → storageKey`; null when none). The artist/venue/artist-approval/venue-approval inspection pages render this avatar next to the name.
-
-> **Source of truth for every field the admin UI reads, renders, sends, or filters on.**
-> Generated from full static analysis of `src/`. All dummy-data shapes represent what the real API **must** return.
+> **No formal `Artist`/`Venue` response type exists in the codebase.** `fetchAdminArtist()` / `fetchAdminVenue()` return whatever `api()` parses (untyped `JSON.parse` result); components consume fields ad hoc. The `Artist`/`Venue` shapes below are reconstructed from every `data.<field>` access found in `ArtistDetailClient.tsx` / `ArtistApprovalClient.tsx` / `VenueDetailClient.tsx` / `VenueApprovalClient.tsx` — treat them as "known-used fields," not a guaranteed exhaustive DTO.
 
 ---
 
@@ -14,37 +12,61 @@
 1. [Shared Types](#1-shared-types)
 2. [Dashboard (Overview)](#2-dashboard-overview)
 3. [User Management](#3-user-management)
-4. [Artist Detail (Inspection)](#4-artist-detail-inspection)
-5. [Artist Approval](#5-artist-approval)
-6. [Venue Detail (Inspection)](#6-venue-detail-inspection)
-7. [Venue Approval](#7-venue-approval)
-8. [Message Moderation](#8-message-moderation)
-9. [Content Moderation Queue](#9-content-moderation-queue)
-10. [Activity Logs](#10-activity-logs)
-11. [Resources Management](#11-resources-management)
-12. [API Endpoint Summary](#12-api-endpoint-summary)
-13. [React Query Hook Contracts](#13-react-query-hook-contracts)
+4. [Artist Detail (Inspection) / Approval](#4-artist-detail-inspection--approval)
+5. [Venue Detail (Inspection) / Approval](#5-venue-detail-inspection--approval)
+6. [Message Moderation](#6-message-moderation)
+7. [Content Moderation Queue](#7-content-moderation-queue)
+8. [Activity Logs](#8-activity-logs)
+9. [Resources Management](#9-resources-management)
+10. [Vendor Management (Marketplace)](#10-vendor-management-marketplace)
+11. [API Endpoint Summary](#11-api-endpoint-summary)
+12. [React Query Hook Contracts](#12-react-query-hook-contracts)
 
 ---
 
 ## 1. Shared Types
 
-Defined in `src/types/`.
-
-### `User`
+### `User` / `UserBe`
 **File:** `src/types/user.ts`
 
+`UserBe` is the raw backend shape; `mapUserToBe()` derives the UI-facing
+`User` from it (note the function name is misleading — it maps *from*
+`UserBe` *to* `User`, not the reverse).
+
 ```typescript
+export interface UserBe {
+  id: string
+  email: string | null
+  firstName: string | null
+  lastName: string | null
+  profileName: string | null       // artist stage name / venue name, if a profile exists
+  role: { id: number; name: string }
+  accountStatus: string            // ACTIVE | PENDING_VERIFICATION | SUSPENDED | ANONYMISED | LOCKED | DEACTIVATED
+  deletedAt: string | null
+  profileApprovalStatus: string | null   // DRAFT | PENDING_APPROVAL | APPROVED | REJECTED
+  createdAt: string
+  updatedAt: string
+  lastLoginAt: string | null
+}
+
 export interface User {
   id: string
-  name: string
+  name: string     // profileName → firstName+lastName → email → id, in that order
   email: string
-  role: 'artist' | 'venue'
-  joined: string          // human-readable date e.g. "Jan 14, 2026"
-  lastlogin: string       // human-readable date e.g. "Jan 14, 2026"
-  status: 'active' | 'not-approved' | 'suspended' | 'banned'
+  role: string
+  status: string    // human-readable label, see mapUserToBe() below
+  joined: string    // = createdAt
+  lastLogin: string // = lastLoginAt ?? updatedAt
 }
 ```
+
+`status` derivation (in priority order): soft-deleted → `Deleted`;
+`accountStatus` SUSPENDED/LOCKED/ANONYMISED/DEACTIVATED →
+`Suspended`/`Locked`/`Banned`/`Deactivated`; `PENDING_VERIFICATION` →
+`Not-approved`; else if a profile exists, `profileApprovalStatus` maps
+DRAFT/REJECTED → `Inactive`, PENDING_APPROVAL → `Not-approved`, APPROVED →
+`Active`; artist/venue with no profile yet → `Inactive`; anything else
+(e.g. admin accounts) → `accountStatus` verbatim-mapped.
 
 ---
 
@@ -53,66 +75,34 @@ export interface User {
 
 ```typescript
 export type EventType =
-  | 'login'
-  | 'logout'
-  | 'approval'
-  | 'name-change'
-  | 'profile-update'
-  | 'media-upload'
-  | 'password-reset'
-  | 'suspended'
-  | 'banned'
-  | 'other'
+  | 'account-created' | 'go-live' | 'approval' | 'rejection'
+  | 'profile-picture' | 'media-upload' | 'media-delete'
+  | 'media-accepted' | 'media-rejected' | 'password-reset'
+  | 'suspension' | 'account-deleted' | 'other'
 
 export interface ActivityLog {
   id: string
-  userId: string
-  time: Date              // ISO datetime string from API; parsed as Date on client
+  userId: string | null          // the entry's subject (target, falling back to actor)
+  actorUserId?: string | null    // who performed the action
+  actorName?: string | null
+  actorEmail?: string | null
+  actorRole?: string | null
+  targetId?: string | null       // who the action was performed on
+  targetName?: string | null
+  targetEmail?: string | null
+  time: string | Date
   event: EventType
-  change: string          // plain-text description of what changed
-  changeFrom?: string     // previous value (optional)
-  changeTo?: string       // new value (optional)
+  action?: string                // raw backend action code, e.g. ADMIN_APPROVED_USER
+  change: string
+  changeFrom?: string | null
+  changeTo?: string | null
+  metadata?: Record<string, unknown> | null
 }
 ```
 
----
-
-### `Conversation` / `Message` / `Attachment`
-**File:** `src/types/conversation.ts`
-
-```typescript
-export interface Attachment {
-  id: string
-  type: 'image' | 'video' | 'audio' | 'pdf' | 'document'
-  name: string
-  url: string
-  size?: string           // human-readable e.g. "2.4 MB"
-}
-
-export interface Message {
-  id: string
-  senderId: string        // matches artist.id or venue.id in parent Conversation
-  content: string
-  timestamp: Date         // ISO datetime string from API; parsed as Date on client
-  isRead?: boolean
-  attachments?: Attachment[]
-}
-
-export interface Conversation {
-  id: string
-  artist: {
-    id: string
-    name: string
-    avatar?: string       // used by MessageThread but absent in mock — include in API
-  }
-  venue: {
-    id: string
-    name: string
-    avatar?: string       // used by MessageThread but absent in mock — include in API
-  }
-  messages: Message[]
-}
-```
+This is a materially different (richer, actor/target-aware) shape than the
+older `EventType` union (`login | logout | approval | name-change | ...`) —
+do not assume the two are interchangeable.
 
 ---
 
@@ -120,15 +110,135 @@ export interface Conversation {
 **File:** `src/types/resource.ts`
 
 ```typescript
-export type ResourceType = 'youtube' | 'website' | 'document'
+export type ResourceType = 'youtube' | 'website' | 'pdf'   // NOT 'document'
 
 export interface Resource {
   id: string
+  index: number             // sort position
   type: ResourceType
   title: string
-  description: string
-  url: string             // YouTube/website URL, or PDF file URL
-  fileName?: string       // display name for document type
+  description: string | null
+  url: string
+  category: string | null
+  thumbnailUrl: string | null
+  createdAt?: string
+  updatedAt?: string
+}
+
+/** Accepted by PUT /admin/resources (bulk replace). */
+export interface ResourceItemInput {
+  id?: string
+  index: number
+  type: ResourceType
+  title: string
+  description?: string
+  url: string
+  category?: string
+  thumbnailUrl?: string
+}
+```
+
+---
+
+### Vendor types
+**File:** `src/types/vendor.ts`
+
+```typescript
+export interface VendorCategory {
+  id: string
+  name: string
+  slug: string
+  parentCategory: VendorCategory | null   // self-referencing, one level of nesting used in the UI
+  isActive: boolean
+  sortOrder: number
+}
+
+export interface VendorListingLink {
+  label: string   // one of Facebook | Instagram | LinkedIn | TikTok | X | Website (UI-enforced, not type-enforced)
+  url: string
+}
+
+export interface VendorListing {
+  id: string
+  name: string
+  category: VendorCategory
+  bio: string | null
+  links: VendorListingLink[]
+  discountCode: string | null
+  discountDescription: string | null
+  isActive: boolean
+  sortOrder: number
+}
+
+export type VendorPhotoType = 'LOGO' | 'HERO' | 'NORMAL'
+
+export interface VendorListingPhoto {
+  id: string
+  vendorListing: { id: string }
+  mediaAssetId: string
+  photoUrl: string | null
+  photoType: VendorPhotoType
+  caption: string | null
+  sortOrder: number
+}
+```
+
+---
+
+### `Authuser`
+**File:** `src/types/authuser.ts`
+
+```typescript
+export type Authuser = {
+  id: string
+  name: string
+  email: string
+  role: 'admin' | 'artist' | 'venue'
+}
+```
+
+---
+
+### Conversation / Message — two different shapes coexist
+
+There are **two, non-identical** sets of conversation/message types:
+
+**UI-facing (`src/types/conversation.ts`)** — used by `MessageThread` props
+after `MessagesClient` reshapes the raw responses:
+```typescript
+export interface Attachment {
+  id: string; type: 'IMAGE' | 'PDF' | 'LINK'; name: string; url: string; size?: string
+}
+export interface Message {
+  id: string; senderId: string; content: string; timestamp: string
+  isRead?: boolean; isDeleted: boolean; attachments?: Attachment[]
+}
+export interface ConversationParticipant {
+  id: string; role: 'artist' | 'venue' | 'user'; name: string; avatar?: string | null
+}
+export interface Conversation {
+  id: string; participants: [ConversationParticipant, ConversationParticipant]; messages: Message[]
+}
+```
+
+**Wire shapes (`src/lib/api/admin/messages.ts`, `conversations.ts`)** —
+what the backend actually returns, before `MessagesClient` remaps field
+names (`conversationId` → `id`, adds `content` from `message`, etc.):
+```typescript
+// GET /admin/conversations
+interface Conversation { conversationId: string; participants: [Participant, Participant]; lastMessageAt: string | null }
+
+// GET /admin/conversations/:id
+interface ConversationThreadResponse {
+  conversationId: string
+  messages: Array<{
+    senderId: string
+    senderRole: 'artist' | 'venue' | 'user'
+    message: string | null
+    isDeleted: boolean
+    timestamp: string
+    attachments: Array<{ id: string; type: 'IMAGE' | 'PDF' | 'LINK'; url: string; name: string | null; previewUrl: string | null }>
+  }>
 }
 ```
 
@@ -136,741 +246,584 @@ export interface Resource {
 
 ## 2. Dashboard (Overview)
 
-**File:** `src/app/admin/page.tsx`
+**File:** `src/app/admin/OverviewClient.tsx`
 
-### UI Fields Rendered
+### API Call
 
-| Field   | Type              | Notes                                     |
-|---------|-------------------|-------------------------------------------|
-| `title` | `string`          | Stat card label                           |
-| `value` | `string`          | Formatted count e.g. `"1,284"`           |
-| `icon`  | React component   | Lucide icon — UI only, not from API       |
-
-### Hardcoded Dummy Data Shape
-
-The four stat cards are fully hardcoded. When connected to a real API, the endpoint must return these four counts:
+| Property | Value |
+|---|---|
+| Function | `fetchAdminOverview()` |
+| Method / URL | `GET /admin/overview` |
+| Response shape | `AdminOverviewResponse` |
 
 ```typescript
-interface DashboardStats {
-  totalArtists: number            // rendered as "Artists"
-  totalVenues: number             // rendered as "Venues"
-  pendingArtistApprovals: number  // rendered as "Pending Artist Approvals"
-  pendingVenueApprovals: number   // rendered as "Pending Venue Approvals"
+interface AdminOverviewResponse {
+  totArtists: number
+  totVenues: number
+  totPendingArtist: number
+  totPendingVenue: number
 }
 ```
 
-### API Calls
+Stat cards render `data?.totArtists` etc. (title-cased as "Artists",
+"Venues", "Pending Artist Approvals", "Pending Venue Approvals"), `'...'`
+while loading, `'0'` when the field is missing. **Not hardcoded** — this
+supersedes older documentation.
 
-None currently. Stat values are hardcoded strings.
+### Analytics endpoints (`src/lib/api/admin/analytics.ts`)
+
+```typescript
+type UserGrowthRange = '7d' | '30d' | '3m'
+interface UserGrowthPoint { date: string; artists: number; venues: number }
+interface UserGrowthResponse {
+  range: UserGrowthRange; from: string; to: string
+  totals: { artists: number; venues: number }
+  series: UserGrowthPoint[]
+}
+// GET /admin/analytics/user-growth?range=7d|30d|3m
+
+interface GenreDistributionItem { genreId: string | null; genreName: string; count: number }
+interface ArtistGenreDistributionResponse { totalArtists: number; items: GenreDistributionItem[] }
+// GET /admin/analytics/artist-genres
+
+interface LocationRegionCount { regionId: string; regionName: string; count: number }
+interface LocationCityCount { cityId: string; cityName: string; count: number; regions: LocationRegionCount[] }
+interface ArtistLocationDistributionResponse { totalArtists: number; unspecifiedCount: number; cities: LocationCityCount[] }
+// GET /admin/analytics/artist-locations
+```
+
+All three poll every 30s (`REALTIME_POLL_MS`) rather than pushing over a
+socket.
 
 ---
 
 ## 3. User Management
 
-**File:** `src/app/admin/users/page.tsx`
-**Table component:** `src/components/admin/users/UserManagementTable.tsx`
+**File:** `src/components/admin/users/UserManagementTable.tsx`
 
 ### API Call
 
-| Property        | Value                 |
-|-----------------|-----------------------|
-| Function        | `fetchAdminUsers()`   |
-| Method          | `GET`                 |
-| URL             | `/api/admin/users`    |
-| Request body    | None                  |
-| Response shape  | `User[]`              |
+| Property | Value |
+|---|---|
+| Function | `fetchAdminUsers(page, role?)` |
+| Method / URL | `GET /admin/users?page=&limit=50&role=` (role omitted when `'all'`) |
+| Response | array mapped through `mapUserToBe()` per row (see §1) |
 
-### UI Fields Rendered (per row)
+### Mutations
 
-| Field       | Type                                              | Notes                          |
-|-------------|---------------------------------------------------|--------------------------------|
-| `id`        | `string`                                          | Displayed in table             |
-| `name`      | `string`                                          | Clickable — navigates to detail|
-| `email`     | `string`                                          |                                |
-| `role`      | `'artist' \| 'venue'`                             | Badge                          |
-| `joined`    | `string`                                          |                                |
-| `lastlogin` | `string`                                          |                                |
-| `status`    | `'active' \| 'not-approved' \| 'suspended' \| 'banned'` | Badge + drives action buttons|
+| Action | Function | Endpoint |
+|---|---|---|
+| Suspend | `suspendUser(id, reason)` | `POST /admin/user/suspend` `{ id, reason }` |
+| Unsuspend | `unsuspendUser(id)` | `POST /admin/user/unsuspend` `{ id }` |
+| Ban | `banUser(id, reason)` | `POST /admin/user/ban` `{ id, reason }` |
+| Unlock | `unlockUser(id)` | `PATCH /admin/users/:id/unlock` |
+| Approve (artist row) | `approveArtist(id)` | `POST /admin/user/approve` `{ id }` |
+| Approve (venue row) | `approveVenue(id)` | `POST /admin/venue/approve` `{ id }` |
+| Reset password | `forgotPassword(email)` | `POST /auth/forgot/password` `{ email }` |
 
-### Filter & Search Query State (client-side, no server params)
+### Filter/Search state (client-side, persisted to `sessionStorage`)
 
 ```typescript
-search: string                                      // free-text search value
-filter: 'name' | 'id' | 'email' | 'joined' | 'lastlogin'  // field to search on
-roleFilter: 'artist' | 'venue'                      // tab selection
-statusFilter: 'all' | 'active' | 'not-approved' | 'suspended' | 'banned'
-currentPage: number                                 // 1-indexed
-ITEMS_PER_PAGE: 50                                  // constant
+search: string
+filter: 'name' | 'email' | 'joined' | 'lastlogin'
+roleFilter: 'artist' | 'venue'
+statusFilter: 'all' | 'active' | 'not-approved' | 'inactive' | 'suspended' | 'locked' | 'banned' | 'deactivated' | 'deleted'
+currentPage: number
 ```
 
-### Action Buttons (by status)
-
-| User Status     | Available Actions                |
-|-----------------|----------------------------------|
-| `active`        | Suspend, Ban                     |
-| `not-approved`  | Approve, Reject                  |
-| `suspended`     | Unsuspend, Ban                   |
-| `banned`        | Unban                            |
-
-Action button clicks are handled by a more-menu and individual row actions. The exact mutation payloads are not yet wired — see [Approval/Rejection payloads in §4 and §5](#5-artist-approval).
-
 ### Navigation
-
-- Row click / name click → `getAdminUserRoute(user)` → artist or venue detail page
-- More menu → `getAdminLogRoute(user)` → activity log filtered to user
+- Row click → `getAdminUserRoute(user)` (`src/utils/AdminRoutes.ts`)
+- ⋮ menu → `getAdminLogRoute(user)` → `/admin/log?userId=<id>&name=<name>`
 
 ---
 
-## 4. Artist Detail (Inspection)
+## 4. Artist Detail (Inspection) / Approval
 
-**File:** `src/app/admin/users/artist/[id]/page.tsx`
+**Files:** `ArtistDetailClient.tsx`, `ArtistApprovalClient.tsx`
 
 ### API Call
 
-| Property        | Value                         |
-|-----------------|-------------------------------|
-| Function        | `fetchAdminArtist(id: string)`|
-| Method          | `GET`                         |
-| URL             | `/api/admin/artist/:id`       |
-| Path param      | `id: string`                  |
-| Request body    | None                          |
-| Response shape  | `Artist` (see below)          |
+| Property | Value |
+|---|---|
+| Function | `fetchAdminArtist(id)` |
+| Method / URL | `GET /admin/artist/:id` |
 
-### Full `Artist` Interface (derived from `src/data_mock/artists.ts`)
+### Known-used response fields (reconstructed from usage — see header note)
 
 ```typescript
-interface Artist {
+{
   id: string
+  email: string
+  accountStatus: string          // e.g. ACTIVE, SUSPENDED, LOCKED, DEACTIVATED
+  deletedAt: string | null
+  hasProfile: boolean            // false → "No Profile Set Up" placeholder is shown instead of the full layout
+  approvalStatus: string
 
   basicInfo: {
+    profilePicture: string | null
     stageName: string
-    profilePicture: string          // URL
-    shortBio: string
-    extendedBio: string
-    location: {
-      city: string
-      regions: string[]
-    } | string                      // mock has both shapes — normalise to object in API
     artistType: string
-    openToTravel: boolean
-    travelRadius: string            // e.g. "50km"
+    phoneNumber: string
+    location: unknown             // rendered directly; shape not narrowed in the component
+    shortBio: string
   }
+
+  members: { numberOfMembers: number; memberNames: string[] }
+  instruments: { instruments: string[] }
 
   genres: {
     genres: string[]
     performanceType: string
-    performanceStyle: string
     actType: string
     energyLevel: string
   }
 
   media: {
-    images: string[]                // array of image URLs (empty in some mocks)
-    videoUrl: string                // URL to embedded/linked video
-    socialMedia: {
-      instagram: string
-      tiktok: string
-      youtube: string
-      facebook: string
-      x: string
-    }
-  }
-
-  photos: {
-    images: Array<{ url: string }>
-  }
-
-  musicLinks: {
-    links: Array<{
-      id: string
-      platform: string              // e.g. "Spotify", "SoundCloud"
-      url: string
-    }>
+    images: string[]
+    livePerformance: unknown      // rendered conditionally; embed logic detects YouTube URLs
+    socialMedia: Record<string, string>
   }
 
   bookingInfo: {
-    availability: string[]          // e.g. ["Weekends", "Weekdays"]
-    feeRange: {
-      min: string                   // e.g. "500"
-      max: string                   // e.g. "2000"
-      currency: string              // e.g. "AUD"
-    }
-    setLengths: string[]            // e.g. ["30 min", "1 hour"]
+    startingFeeCents: number
+    startingSetLengthMinutes: number
+    performanceFee: unknown
+    feeRange: unknown
+    maxSetLengthMinutes: number
+    feeNegotiable: boolean
+    availability: string[]
+    paymentPreferences: unknown
+    setLengths: string[]
   }
 
   liveSetup: {
-    setupType: string               // e.g. "Solo", "Band"
-    equipment: string[]
+    setupType: string
+    equipmentProvided: string[]
+    equipmentRequired: string[]
+    techRiderTags: string[]
     technicalNotes: string
   }
+
+  releases: Array<{ /* split by splitReleases() into streaming-platform links vs. other releases */ }>
+  pastGigs: Array<{ id: string; media?: string | null; venueName?: string | null; date?: string | null; testimonial?: string | null }>
 }
 ```
 
-### Action Buttons
+### Mutations
 
-| Button           | Payload (not yet wired)                          |
-|------------------|--------------------------------------------------|
-| Suspend          | `{ artistId: string, action: 'suspend' }`        |
-| Ban              | `{ artistId: string, action: 'ban' }`            |
-| Reset Password   | `{ artistId: string, action: 'reset-password' }` |
+| Action | Function | Endpoint |
+|---|---|---|
+| Approve | `approveArtist(id)` | `POST /admin/user/approve` `{ id }` |
+| Reject | `rejectArtist(id, feedback)` | `POST /admin/user/reject` `{ id, feedback }` |
+| Suspend | `suspendUser(id, reason)` | `POST /admin/user/suspend` |
+| Unsuspend | `unsuspendUser(id)` | `POST /admin/user/unsuspend` |
+| Unlock | `unlockUser(id)` | `PATCH /admin/users/:id/unlock` |
+| Reset password | `forgotPassword(email)` | `POST /auth/forgot/password` |
+| Mint preview link | `mintArtistPreviewLink(id)` | `POST /admin/artist/:id/preview-token` → `{ url }` |
 
----
+`requestArtistChanges(id, feedback)` (`POST /admin/user/req-changes`) exists
+in `src/lib/api/admin/artists.ts` but is **not called from any component** —
+there is no "Request Changes" UI action currently wired up.
 
-## 5. Artist Approval
-
-**File:** `src/app/admin/users/artistapproval/[id]/page.tsx`
-
-### API Call (fetch)
-
-Same as §4 — `GET /api/admin/artist/:id` → `Artist`
-
-### Approval Form Fields
-
-| Field      | Type     | Input type | Notes                               |
-|------------|----------|------------|-------------------------------------|
-| `feedback` | `string` | `textarea` | Placeholder: "Write feedback for the user..." |
-
-### Action Button Payloads
-
-Each button submits the feedback text along with the action:
+### Approval feedback (controlled input, not uncontrolled as in older docs)
 
 ```typescript
-// Approve
-interface ApproveArtistPayload {
-  artistId: string
-  action: 'approve'
-  feedback: string
-}
-
-// Request Changes
-interface RequestChangesArtistPayload {
-  artistId: string
-  action: 'request-changes'
-  feedback: string
-}
-
-// Reject
-interface RejectArtistPayload {
-  artistId: string
-  action: 'reject'
-  feedback: string
-}
-```
-
-Suggested single endpoint:
-
-```
-POST /api/admin/artist/:id/decision
-Body: { action: 'approve' | 'request-changes' | 'reject', feedback: string }
+feedback: string   // required (validated client-side) before Reject is allowed; sent verbatim as rejectArtist's second arg
 ```
 
 ---
 
-## 6. Venue Detail (Inspection)
+## 5. Venue Detail (Inspection) / Approval
 
-**File:** `src/app/admin/users/venue/[id]/page.tsx`
+**Files:** `VenueDetailClient.tsx`, `VenueApprovalClient.tsx`
 
 ### API Call
 
-| Property        | Value                         |
-|-----------------|-------------------------------|
-| Function        | `fetchAdminVenue(id: string)` |
-| Method          | `GET`                         |
-| URL             | `/api/admin/venue/:id`        |
-| Path param      | `id: string`                  |
-| Request body    | None                          |
-| Response shape  | `Venue` (see below)           |
+| Property | Value |
+|---|---|
+| Function | `fetchAdminVenue(id)` |
+| Method / URL | `GET /admin/venue/:id` |
 
-### Full `Venue` Interface (derived from `src/data_mock/venues.ts`)
+### Known-used response fields
 
 ```typescript
-interface Venue {
+{
   id: string
+  email: string
+  accountStatus: string
+  deletedAt: string | null
+  slug: string | null              // used to build the public profile URL
+  marketplaceUnlocked: boolean     // gates the "View Live Profile" button
+  regions: string[]
+  regionSuggestions: Array<{ id: string; cityName: string; suggestedName: string; dismissed: boolean; resolved: boolean }>
+  preferredDays: string[]
 
   venueDetails: {
+    profilePicture: string | null
     venueName: string
-    address: string
-    city: string
-    state: string
-    zipCode: string
+    venueType: string
+    address: string; city: string; state: string; zipCode: string
+    phoneNumber: string
+    website: string
     description: string
+    licenseName: string
+    licenseNumber: string
+    socialMedia: Record<string, string>
   }
 
   capacitySpecs: {
     capacity: number
     hasStage: boolean
-    stageDimensions: string         // e.g. "8m x 5m"
-    soundSystem: string[]           // e.g. ["PA System", "Monitors"]
+    stageSize: string
+    stageDimensions: string
+    stageAreaType: string
+    soundSystem: string[]
     soundSystemNotes: string
-    amenities: string[]             // e.g. ["Green Room", "Parking"]
+    fullBandSupport: boolean
+    audioMixersAvailable: boolean
+    soundEngineerAvailable: boolean
+    productionTeamAvailable: boolean
+    equipmentProvided: string[]
+    amenities: string[]
   }
 
-  photos: {
-    images: Array<{ url: string }>
-  }
+  venueHistory: Array<{ id: string; media?: string | null; performanceName?: string | null; eventDescription?: string | null }>
 
   bookingPreferences: {
-    eventTypes: string[]            // e.g. ["Live Music", "Corporate"]
+    eventTypes: string[]
+    genresOpenToAll: boolean
     genres: string[]
-    pricingModel: string            // e.g. "Per Event", "Hourly"
-    minPrice: string                // e.g. "500"
-    maxPrice: string                // e.g. "5000"
+    audienceDemographics: unknown
+    averageAudienceSize: unknown
+    startingFeeCents: number
+    startingSetLengthMinutes: number
+    maxSetLengthMinutes: number
+    paymentPreferences: unknown
+    bookingLeadTime: unknown
     bookingNotes: string
   }
+
+  photos: { images: unknown; videos: unknown }
 }
 ```
 
-### Action Buttons
+### Mutations
 
-| Button           | Payload (not yet wired)                        |
-|------------------|------------------------------------------------|
-| Suspend Venue    | `{ venueId: string, action: 'suspend' }`       |
-| Ban Venue        | `{ venueId: string, action: 'ban' }`           |
-| Reset Password   | `{ venueId: string, action: 'reset-password'}` |
+| Action | Function | Endpoint |
+|---|---|---|
+| Approve | `approveVenue(id)` | `POST /admin/venue/approve` `{ id }` |
+| Reject | `rejectVenue(id, feedback)` | `POST /admin/venue/reject` `{ id, feedback }` |
+| Suspend | `suspendUser(id, reason)` | `POST /admin/user/suspend` |
+| Unsuspend | `unsuspendUser(id)` | `POST /admin/user/unsuspend` |
+| Reset password | `forgotPassword(email)` | `POST /auth/forgot/password` |
+| Add region suggestion | `addRegionSuggestion(suggestionId)` | `POST /admin/venue/region-suggestions/add` `{ id }` |
+| Dismiss region suggestion | `dismissRegionSuggestion(suggestionId)` | `POST /admin/venue/region-suggestions/dismiss` `{ id }` |
+
+The "Show Preview" button is now
+`window.open(`${NEXT_PUBLIC_PLATFORM_URL}/venues/${data.slug}`)`, disabled
+unless `data.slug && data.marketplaceUnlocked` — not a call to any
+preview-token endpoint (that pattern is artist-only).
 
 ---
 
-## 7. Venue Approval
+## 6. Message Moderation
 
-**File:** `src/app/admin/users/venueapproval/[id]/page.tsx`
+**Files:** `MessagesClient.tsx`, `MessageThread.tsx`, `src/lib/api/admin/messages.ts`, `conversations.ts`
 
-### API Call (fetch)
+### API Calls
 
-Same as §6 — `GET /api/admin/venue/:id` → `Venue`
+| Property | Value |
+|---|---|
+| List | `fetchAdminConversations(filters?)` → `GET /admin/conversations?id=&artistId=&venueId=` → `Conversation[]` (`conversationId`, `participants`, `lastMessageAt`) |
+| Thread | `fetchConversationThread(id)` → `GET /admin/conversations/:id` → `ConversationThreadResponse` |
 
-### Approval Form Fields
+See §1 for the full wire shapes and how `MessagesClient` remaps them into
+the UI-facing `Conversation`/`Message` types before handing them to
+`MessageThread`.
 
-| Field      | Type     | Input type | Notes                               |
-|------------|----------|------------|-------------------------------------|
-| `feedback` | `string` | `textarea` | Placeholder: "Write feedback for the user..." |
-
-### Action Button Payloads
-
+### Filter/Search (client-side)
 ```typescript
-// Approve
-interface ApproveVenuePayload {
-  venueId: string
-  action: 'approve'
-  feedback: string
-}
-
-// Request Changes
-interface RequestChangesVenuePayload {
-  venueId: string
-  action: 'request-changes'
-  feedback: string
-}
-
-// Reject
-interface RejectVenuePayload {
-  venueId: string
-  action: 'reject'
-  feedback: string
-}
+search: string
+searchFilter: 'all' | 'artist' | 'venue'
+// sorted by participants[].role match, then by lastMessageAt descending
 ```
 
-Suggested single endpoint:
-
-```
-POST /api/admin/venue/:id/decision
-Body: { action: 'approve' | 'request-changes' | 'reject', feedback: string }
-```
+Read-only screen — no send/moderate mutation exists for messages.
 
 ---
 
-## 8. Message Moderation
+## 7. Content Moderation Queue
 
-**File:** `src/app/admin/messages/page.tsx`
-**Thread component:** `src/components/admin/messages/MessageThread.tsx`
+**Files:** `ModerationClient.tsx`, `ModerationQueueTable.tsx`, `ModerationPreviewDialog.tsx`, `RejectReasonDialog.tsx`, `src/lib/api/admin/moderation.ts`
 
 ### API Call
 
-| Property        | Value                     |
-|-----------------|---------------------------|
-| Function        | `fetchAdminMessages()`    |
-| Method          | `GET`                     |
-| URL             | `/api/admin/messages`     |
-| Request body    | None                      |
-| Response shape  | `Conversation[]`          |
-
-### UI Fields Rendered
-
-**Conversation list panel:**
-
-| Field                          | Type     | Notes                             |
-|--------------------------------|----------|-----------------------------------|
-| `conversation.id`              | `string` |                                   |
-| `conversation.artist.name`     | `string` |                                   |
-| `conversation.venue.name`      | `string` |                                   |
-| `conversation.messages` (last) | `Message`| Preview of last message + timestamp|
-
-**Message thread panel (per message):**
-
-| Field                     | Type                                          | Notes                        |
-|---------------------------|-----------------------------------------------|------------------------------|
-| `message.id`              | `string`                                      |                              |
-| `message.senderId`        | `string`                                      | Determines left/right bubble |
-| `message.content`         | `string`                                      | Message body text            |
-| `message.timestamp`       | `Date`                                        | Formatted for display        |
-| `message.isRead`          | `boolean \| undefined`                        |                              |
-| `message.attachments`     | `Attachment[] \| undefined`                   |                              |
-| `attachment.id`           | `string`                                      |                              |
-| `attachment.type`         | `'image' \| 'video' \| 'audio' \| 'pdf' \| 'document'` | Drives rendering |
-| `attachment.name`         | `string`                                      | File display name            |
-| `attachment.url`          | `string`                                      | Direct link/src              |
-| `attachment.size`         | `string \| undefined`                         | e.g. `"2.4 MB"`             |
-
-### Filter & Search (client-side)
-
-```typescript
-search: string                          // free-text input value
-searchFilter: 'all' | 'artist' | 'venue'  // dropdown selection
-
-// Filtering logic:
-// if searchFilter === 'artist' → match conversation.artist.name
-// if searchFilter === 'venue'  → match conversation.venue.name
-// else                         → match either name
-
-// Sort: conversations sorted by messages[last].timestamp descending
-```
-
-### `MessageThread` Component Props
-
-```typescript
-type MessageThreadProps = {
-  conversation: {
-    id: string
-    artist: { id: string; name: string; avatar?: string }
-    venue:  { id: string; name: string; avatar?: string }
-    messages: Message[]
-  }
-}
-```
-
-> **Note:** `avatar` is used in the component but absent from the Conversation mock. The API should include it.
-
----
-
-## 9. Content Moderation Queue
-
-**File:** `src/app/admin/moderation/page.tsx`
-**Table component:** `src/components/admin/moderation/ModerationQueueTable.tsx`
-**Preview dialog:** `src/components/admin/moderation/ModerationPreviewDialog.tsx`
-
-### API Call
-
-| Property        | Value                       |
-|-----------------|-----------------------------|
-| Function        | `fetchModerationQueue()`    |
-| Method          | `GET`                       |
-| URL             | `/api/admin/moderation`     |
-| Request body    | None                        |
-| Response shape  | `ModerationItem[]`          |
-
-### `ModerationItem` Interface
+| Property | Value |
+|---|---|
+| Function | `fetchModerationQueue()` |
+| Method / URL | `GET /admin/moderation` |
+| Response | `ModerationItem[]` |
 
 ```typescript
 interface ModerationItem {
-  id: string
-  userId: string
-  name: string                    // display name of the user who uploaded
-  type: 'images' | 'video'
-  role: 'artist' | 'venue'
-  date: string                    // format: "YYYY-MM-DD"
-  content: string                 // URL to the image or video to preview
+  contentModId: string
+  userId: string | null
+  email: string | null
+  name: string | null
+  type: 'images' | 'video' | string
+  role: 'artist' | 'venue' | string | null
+  reason: string
+  date: string
+  contentLink: string | null   // absolute URL or a relative backend storage path
 }
 ```
 
-### UI Fields Rendered (table columns)
+`resolveContentUrl(contentLink)` prefixes relative links with
+`NEXT_PUBLIC_API_URL` (with the `/api/v1` suffix stripped) to produce a
+loadable URL.
 
-| Field         | Type                   | Notes             |
-|---------------|------------------------|-------------------|
-| `item.userId` | `string`               | "User ID" column  |
-| `item.name`   | `string`               | "Name" column     |
-| `item.type`   | `'images' \| 'video'`  | "Type" column     |
-| `item.date`   | `string`               | "Date" column     |
+### Mutations
+
+| Action | Function | Endpoint |
+|---|---|---|
+| Approve | `approveModeration(contentModId)` | `POST /admin/moderation/approve` `{ contentModId }` |
+| Reject | `rejectModeration({ contentModId, reviewNotes })` | `POST /admin/moderation/reject` `{ contentModId, reviewNotes }` |
+
+`reviewNotes` is required — `RejectReasonDialog` blocks submission until
+non-empty. Both mutations are wired through `useModerationActions()`, which
+invalidates `['moderation-queue']` on success and toasts a generic error
+message on failure.
 
 ### Filter Controls (client-side)
-
 ```typescript
-roleFilter: 'artist' | 'venue'          // default: 'artist'
-typeFilter: 'all' | 'images' | 'video'  // default: 'all'
-
-// Filtering logic:
-// matchesRole = roleFilter === 'all' ? true : item.role === roleFilter
-// matchesType = typeFilter === 'all' ? true : item.type === typeFilter
+roleFilter: 'artist' | 'venue' | 'all'   // default 'artist'
+typeFilter: 'all' | 'images' | 'video'   // default 'all'
 ```
-
-### Action Payloads
-
-```typescript
-// Approve content item
-interface ApproveModerationPayload {
-  id: string   // ModerationItem.id
-}
-// → onApprove(id: string)
-
-// Reject content item
-interface RejectModerationPayload {
-  id: string   // ModerationItem.id
-}
-// → onReject(id: string)
-```
-
-Suggested endpoints:
-```
-POST /api/admin/moderation/:id/approve
-POST /api/admin/moderation/:id/reject
-```
-
-### `ModerationPreviewDialog` Props
-
-```typescript
-interface ModerationPreviewDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  item: ModerationItem | null
-  onApprove: (id: string) => void
-  onReject: (id: string) => void
-}
-```
-
-The dialog renders `item.content` (URL) as either an `<img>` or `<video>` depending on `item.type`.
 
 ---
 
-## 10. Activity Logs
+## 8. Activity Logs
 
-**File:** `src/app/admin/log/page.tsx`
+**File:** `LogClient.tsx`
 
 ### API Call
 
-| Property        | Value                  |
-|-----------------|------------------------|
-| Function        | `fetchAdminLogs()`     |
-| Method          | `GET`                  |
-| URL             | `/api/admin/logs`      |
-| Request body    | None                   |
-| Response shape  | `ActivityLog[]`        |
+| Property | Value |
+|---|---|
+| Function | `fetchAdminLogs(userId?)` |
+| Method / URL | `GET /admin/logs?userId=` (param omitted for the global feed) |
+| Response | `ActivityLog[]` (see §1) |
 
-### UI Fields Rendered (table columns)
-
-| Field              | Type          | Notes                                        |
-|--------------------|---------------|----------------------------------------------|
-| `log.id`           | `string`      | Key only                                     |
-| `log.userId`       | `string`      |                                              |
-| `log.time`         | `Date`        | Formatted as `"yyyy-MM-dd HH:mm"`           |
-| `log.event`        | `EventType`   | Displayed with `-` replaced by ` `           |
-| `log.change`       | `string`      | Plain description                            |
-| `log.changeFrom`   | `string?`     | "Previous" value in expandable diff row      |
-| `log.changeTo`     | `string?`     | "New" value in expandable diff row           |
-
-### Change Diff Display Logic
-
+### Route params (read via `useSearchParams()`, not a dynamic `[id]` segment)
 ```
-if (changeFrom && changeTo) → show "changeFrom → changeTo"
-if (changeFrom only)        → show "changeFrom removed"
-if (changeTo only)          → show "changeTo added"
+/admin/log                         → all activity, "All Activity" heading
+/admin/log?userId=<id>&name=<name> → that user's activity, heading = name
 ```
+Set by `getAdminLogRoute(user)` in `src/utils/AdminRoutes.ts`.
 
-### Filter/Search
+### Client-side search
+Filters across `targetEmail`, `actorEmail`, `targetName`, `actorName`,
+`event`, `action`, `change`.
 
-No server-side filter params documented in the current implementation. Filtering (if any) is client-side.
+### Change diff display
+```
+changeFrom && changeTo → "changeFrom → changeTo"
+changeFrom only        → shown as a "removed" pill
+changeTo only           → shown as an "added" pill
+```
+An additional "· by {actorName}" suffix appears when `actorUserId !==
+targetId` (an admin or another party acted on this account).
 
 ---
 
-## 11. Resources Management
+## 9. Resources Management
 
-**File:** `src/app/admin/resources/page.tsx`
-**Create dialog:** `src/components/admin/resources/CreateResourceDialog.tsx`
-**View/Edit dialog:** `src/components/admin/resources/ViewResourceDialog.tsx`
+**Files:** `ResourcesClient.tsx`, `CreateResourceDialog.tsx`, `ViewResourceDialog.tsx`, `src/lib/api/admin/resources.ts`
 
-### API Call (fetch)
+### API Calls
 
-| Property        | Value                   |
-|-----------------|-------------------------|
-| Function        | `fetchResources()`      |
-| Method          | `GET`                   |
-| URL             | `/api/admin/resources`  |
-| Request body    | None                    |
-| Response shape  | `Resource[]`            |
+| Property | Value |
+|---|---|
+| List | `fetchResources()` → `GET /admin/resources` → `Resource[]` |
+| Bulk save/reorder | `updateResources(items: ResourceItemInput[])` → `PUT /admin/resources` `{ items }` → `{ message: string }` |
 
-### UI Fields Rendered (table columns)
+There is no separate create/update/delete/reorder endpoint — Create, Edit,
+and drag-reorder all funnel through the same bulk `PUT`, with the client
+rebuilding the full ordered `ResourceItemInput[]` (via
+`toResourceItemInput()`) each time.
 
-| Field               | Type           | Notes               |
-|---------------------|----------------|---------------------|
-| `resource.id`       | `string`       | Key only            |
-| `resource.type`     | `ResourceType` | "Type" column       |
-| `resource.title`    | `string`       | "Title" column      |
-
-### Drag-and-Drop Reorder
-
-User can reorder resources via dnd-kit. This likely requires a reorder endpoint:
-
+### Create/Edit form fields
 ```typescript
-// Suggested payload
-POST /api/admin/resources/reorder
-Body: { orderedIds: string[] }
+type: 'youtube' | 'website' | 'pdf'   // NOT 'document'
+title: string
+description: string
+category: string
+url: string            // for youtube/website
+pdfFile?: File          // for pdf, uploaded via uploadMedia() before save
+thumbnailFile?: File    // optional, compressed client-side (compressImage()) then uploaded via uploadMedia()
 ```
+Validated with `resourceSchema.ts` (zod) through react-hook-form.
 
-### Create Resource Form
-
-**Fields:**
-
-| Field         | Type                                   | Input type   | Condition                  |
-|---------------|----------------------------------------|--------------|----------------------------|
-| `type`        | `'youtube' \| 'website' \| 'document'`| select/tabs  | Always visible             |
-| `title`       | `string`                               | text input   | Always visible             |
-| `description` | `string`                               | textarea     | Always visible             |
-| `url`         | `string`                               | text input   | Only for `youtube`/`website`|
-| `pdfFile`     | `File \| null`                         | file input   | Only for `document`         |
-
-**Create Payload:**
-
-```typescript
-// For youtube or website:
-interface CreateYouTubeOrWebsitePayload {
-  type: 'youtube' | 'website'
-  title: string
-  description: string
-  url: string
-}
-
-// For document:
-interface CreateDocumentPayload {
-  type: 'document'
-  title: string
-  description: string
-  pdfFile: File           // multipart/form-data upload
-}
-```
-
-Suggested endpoint:
-```
-POST /api/admin/resources
-Content-Type: application/json  (for youtube/website)
-Content-Type: multipart/form-data  (for document)
-Response: Resource
-```
-
-### View / Edit Resource Form
-
-**Component Props:**
-```typescript
-interface ViewResourceDialogProps {
-  open: boolean
-  onOpenChange: (v: boolean) => void
-  resource: {
-    id: string
-    type: ResourceType
-    title: string
-    description: string
-    url?: string
-    fileName?: string
-  }
-}
-```
-
-**Editable fields:**
-
-| Field         | Type           |
-|---------------|----------------|
-| `type`        | `ResourceType` |
-| `title`       | `string`       |
-| `description` | `string`       |
-| `url`         | `string`       |
-
-**Save Payload:**
-
-```typescript
-interface UpdateResourcePayload {
-  type: ResourceType
-  title: string
-  description: string
-  url: string
-}
-```
-
-Suggested endpoint:
-```
-PATCH /api/admin/resources/:id
-Body: UpdateResourcePayload
-Response: Resource
-```
-
-**Preview rendering by type:**
-
-| Type       | Preview                                          |
-|------------|--------------------------------------------------|
-| `youtube`  | `<iframe>` with extracted YouTube video ID       |
-| `website`  | External link (opens in new tab)                 |
-| `document` | Text label showing `resource.fileName`           |
+> **Known inconsistency:** two `useUpdateResources()` hooks exist —
+> `src/hooks/queries/useResources.ts` (invalidates `['admin-resources']`)
+> and `src/hooks/queries/useUpdateResources.ts` (invalidates
+> `['resources']`). `ResourcesClient.tsx` imports the one from
+> `useResources.ts`; its own list query key is `['resources']`, so that
+> hook's invalidation of `['admin-resources']` doesn't actually refetch the
+> list — the page relies on the query's own `refetch()` after a save
+> instead. `useUpdateResources.ts` appears to be unused dead code.
 
 ---
 
-## 12. API Endpoint Summary
+## 10. Vendor Management (Marketplace)
 
-| Method | URL                              | Request Body                            | Response              |
-|--------|----------------------------------|-----------------------------------------|-----------------------|
-| GET    | `/api/admin/users`               | —                                       | `User[]`              |
-| GET    | `/api/admin/artist/:id`          | —                                       | `Artist`              |
-| POST   | `/api/admin/artist/:id/decision` | `{ action, feedback }`                  | `Artist` or `{ ok }`  |
-| GET    | `/api/admin/venue/:id`           | —                                       | `Venue`               |
-| POST   | `/api/admin/venue/:id/decision`  | `{ action, feedback }`                  | `Venue` or `{ ok }`   |
-| GET    | `/api/admin/messages`            | —                                       | `Conversation[]`      |
-| GET    | `/api/admin/logs`                | —                                       | `ActivityLog[]`       |
-| GET    | `/api/admin/moderation`          | —                                       | `ModerationItem[]`    |
-| POST   | `/api/admin/moderation/:id/approve` | —                                    | `{ ok }`              |
-| POST   | `/api/admin/moderation/:id/reject`  | —                                    | `{ ok }`              |
-| GET    | `/api/admin/resources`           | —                                       | `Resource[]`          |
-| POST   | `/api/admin/resources`           | `CreatePayload` (see §11)               | `Resource`            |
-| PATCH  | `/api/admin/resources/:id`       | `UpdateResourcePayload`                 | `Resource`            |
-| POST   | `/api/admin/resources/reorder`   | `{ orderedIds: string[] }`              | `{ ok }`              |
+**Files:** `VendorsClient.tsx`, `CategoriesTable.tsx`, `CategoryDialog.tsx`, `ListingsTable.tsx`, `ListingDialog.tsx`
 
-> **Dashboard stats endpoint not yet defined** — the UI needs `GET /api/admin/stats` → `DashboardStats`.
+### Categories
+
+| Property | Value |
+|---|---|
+| List | `fetchVendorCategories()` → `GET /vendors/categories?limit=100` → paginated `{ data: VendorCategory[], hasNextPage }`, unwrapped to `VendorCategory[]` |
+| Create | `createVendorCategory(input)` → `POST /vendors/categories` |
+| Update | `updateVendorCategory(id, input)` → `PATCH /vendors/categories/:id` |
+| Delete | `deleteVendorCategory(id)` → `DELETE /vendors/categories/:id` |
+
+```typescript
+interface VendorCategoryInput {
+  name: string; slug: string
+  parentCategory?: { id: string } | null
+  isActive: boolean; sortOrder: number
+}
+```
+
+### Listings
+
+| Property | Value |
+|---|---|
+| List | `fetchVendorListings()` → `GET /vendors/listings?limit=100` → unwrapped `VendorListing[]` |
+| Create | `createVendorListing(input)` → `POST /vendors/listings` |
+| Update | `updateVendorListing(id, input)` → `PATCH /vendors/listings/:id` |
+| Delete | `deleteVendorListing(id)` → `DELETE /vendors/listings/:id` |
+
+```typescript
+interface VendorListingInput {
+  name: string; category: { id: string }
+  bio?: string | null; links?: VendorListingLink[]
+  discountCode?: string | null; discountDescription?: string | null
+  isActive: boolean; sortOrder: number
+}
+```
+
+### Listing photos (up to `MAX_PHOTOS = 5` per listing in the UI)
+
+| Property | Value |
+|---|---|
+| List | `fetchVendorListingPhotos(vendorListingId)` → `GET /vendors/listing-photos?vendorListingId=&limit=50` |
+| Upload asset | `uploadMediaAsset(file)` → multipart `POST /media-assets/upload` → `{ id, photoUrl }` |
+| Attach photo | `createVendorListingPhoto(input)` → `POST /vendors/listing-photos` |
+| Delete | `deleteVendorListingPhoto(id)` → `DELETE /vendors/listing-photos/:id` |
+
+```typescript
+interface VendorListingPhotoInput {
+  vendorListing: { id: string }
+  mediaAssetId: string
+  photoType: 'LOGO' | 'HERO' | 'NORMAL'
+  sortOrder: number
+  caption?: string | null
+}
+```
+
+**All vendor endpoints live under `/vendors/*`, not `/admin/vendors/*`.**
 
 ---
 
-## 13. React Query Hook Contracts
+## 11. API Endpoint Summary
 
-All hooks use `@tanstack/react-query`.
+| Method | URL | Body | Notes |
+|---|---|---|---|
+| POST | `/auth/email/login` | `{ email, password }` | non-admin roles rejected client-side |
+| GET | `/auth/me` | — | hydrates session on load |
+| POST | `/auth/refresh` | (Bearer = refresh token) | |
+| POST | `/auth/logout` | — | |
+| POST | `/auth/forgot/password` | `{ email }` | admin-triggered reset |
+| GET | `/admin/overview` | — | dashboard stat cards |
+| GET | `/admin/analytics/user-growth` | `?range=` | |
+| GET | `/admin/analytics/artist-genres` | — | |
+| GET | `/admin/analytics/artist-locations` | — | |
+| GET | `/admin/users` | `?page=&limit=&role=` | |
+| POST | `/admin/user/approve` | `{ id }` | artist approval |
+| POST | `/admin/user/reject` | `{ id, feedback }` | |
+| POST | `/admin/user/req-changes` | `{ id, feedback }` | defined, unused by any component |
+| POST | `/admin/user/suspend` | `{ id, reason }` | |
+| POST | `/admin/user/unsuspend` | `{ id }` | |
+| POST | `/admin/user/ban` | `{ id, reason }` | |
+| PATCH | `/admin/users/:id/unlock` | — | |
+| GET | `/admin/artist/:id` | — | |
+| POST | `/admin/artist/:id/preview-token` | — | mints a one-time preview link |
+| GET | `/admin/venue/:id` | — | |
+| POST | `/admin/venue/approve` | `{ id }` | |
+| POST | `/admin/venue/reject` | `{ id, feedback }` | |
+| POST | `/admin/venue/region-suggestions/add` | `{ id }` | |
+| POST | `/admin/venue/region-suggestions/dismiss` | `{ id }` | |
+| GET | `/admin/conversations` | `?id=&artistId=&venueId=` | |
+| GET | `/admin/conversations/:id` | — | thread |
+| GET | `/admin/moderation` | — | |
+| POST | `/admin/moderation/approve` | `{ contentModId }` | |
+| POST | `/admin/moderation/reject` | `{ contentModId, reviewNotes }` | |
+| GET | `/admin/logs` | `?userId=` | |
+| GET | `/admin/resources` | — | |
+| PUT | `/admin/resources` | `{ items: ResourceItemInput[] }` | bulk create/update/reorder |
+| GET | `/vendors/categories` | `?limit=` | |
+| POST/PATCH/DELETE | `/vendors/categories[/:id]` | | |
+| GET | `/vendors/listings` | `?limit=` | |
+| POST/PATCH/DELETE | `/vendors/listings[/:id]` | | |
+| GET | `/vendors/listing-photos` | `?vendorListingId=&limit=` | |
+| POST/DELETE | `/vendors/listing-photos[/:id]` | | |
+| POST | `/media-assets/upload` | multipart `file` | vendor listing photos |
+| POST | `/files/upload` | multipart `file` | resource PDFs/thumbnails |
+| GET | `/api/health` | — | **local** Next.js route, not a backend call |
+
+---
+
+## 12. React Query Hook Contracts
+
+All hooks use `@tanstack/react-query` and are gated on
+`!useAuthContext().isLoading` so nothing fires before session restore
+completes.
 
 ```typescript
+// Overview + analytics
+['admin-overview']                          → fetchAdminOverview
+['admin-analytics','user-growth',range]     → fetchUserGrowth(range)        // poll 30s
+['admin-analytics','artist-genres']         → fetchArtistGenreDistribution  // poll 30s
+['admin-analytics','artist-locations']      → fetchArtistLocationDistribution // poll 30s
+
 // Users
-queryKey:  ['admin-users']
-queryFn:   fetchAdminUsers          // GET /api/admin/users
-staleTime: 2 * 60 * 1000           // 2 minutes
-returns:   User[]
+['admin-users', page, role]  → fetchAdminUsers(page, role)
 
-// Artist detail
-queryKey:  ['admin-artist', id]
-queryFn:   () => fetchAdminArtist(id)  // GET /api/admin/artist/:id
-enabled:   !!id
-returns:   Artist
-
-// Venue detail
-queryKey:  ['admin-venue', id]
-queryFn:   () => fetchAdminVenue(id)   // GET /api/admin/venue/:id
-enabled:   !!id
-returns:   Venue
+// Artist / Venue detail
+['admin-artist', id]  → fetchAdminArtist(id)   // enabled: !!id
+['admin-venue', id]   → fetchAdminVenue(id)    // enabled: !!id
 
 // Messages
-queryKey:  ['admin-messages']
-queryFn:   fetchAdminMessages       // GET /api/admin/messages
-returns:   Conversation[]
+['admin-conversations', filters]  → fetchAdminConversations(filters)  // staleTime 2min, poll 15s
+['conversation-thread', id]       → fetchConversationThread(id)       // poll 15s, enabled: !!id
 
 // Activity logs
-queryKey:  ['admin-logs']
-queryFn:   fetchAdminLogs           // GET /api/admin/logs
-returns:   ActivityLog[]
+['admin-logs', userId ?? 'all']  → fetchAdminLogs(userId)
 
-// Moderation queue
-queryKey:  ['moderation-queue']
-queryFn:   fetchModerationQueue     // GET /api/admin/moderation
-returns:   ModerationItem[]
+// Moderation
+['moderation-queue']  → fetchModerationQueue   // select: res ?? []
 
 // Resources
-queryKey:  ['admin-resources']
-queryFn:   fetchResources           // GET /api/admin/resources
-returns:   Resource[]
+['resources']  → fetchResources         // staleTime 5min
+                  useUpdateResources()  → updateResources (PUT, bulk)
+
+// Vendors
+['vendor-categories']            → fetchVendorCategories        // staleTime 5min
+['vendor-listings']              → fetchVendorListings           // staleTime 5min
+['vendor-listing-photos', id]    → fetchVendorListingPhotos(id)  // enabled: !!id
+
+// Auth
+['me']  → authApi.me   // retry: false
 ```
