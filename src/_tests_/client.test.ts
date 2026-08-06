@@ -14,7 +14,6 @@ describe('API refresh lock', () => {
   it('only calls refresh once for concurrent 401 requests', async () => {
     ;(refresh as jest.Mock).mockResolvedValue({
       token: 'new-token',
-      refreshToken: 'new-refresh',
       tokenExpires: 3600,
     })
 
@@ -23,13 +22,12 @@ describe('API refresh lock', () => {
       .mockResolvedValueOnce({
         status: 401,
         ok: false,
+        text: async () => '',
       })
       .mockResolvedValue({
         status: 200,
         ok: true,
-        json: async () => ({
-          success: true,
-        }),
+        text: async () => JSON.stringify({ success: true }),
       })
 
     await Promise.all([api('/test1'), api('/test2'), api('/test3')])
@@ -40,7 +38,6 @@ describe('API refresh lock', () => {
   it('retries request after refresh succeeds', async () => {
     ;(refresh as jest.Mock).mockResolvedValue({
       token: 'new-token',
-      refreshToken: 'new-refresh',
       tokenExpires: 3600,
     })
 
@@ -49,13 +46,12 @@ describe('API refresh lock', () => {
       .mockResolvedValueOnce({
         status: 401,
         ok: false,
+        text: async () => '',
       })
       .mockResolvedValueOnce({
         status: 200,
         ok: true,
-        json: async () => ({
-          message: 'success',
-        }),
+        text: async () => JSON.stringify({ message: 'success' }),
       })
 
     const result = await api('/profile')

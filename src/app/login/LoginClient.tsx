@@ -108,7 +108,6 @@ export default function LoginPage() {
           email: res.user.email,
           role,
         },
-        res.refreshToken,
         res.tokenExpires
       )
 

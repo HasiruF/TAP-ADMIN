@@ -23,42 +23,14 @@ interface AuthContextValue {
   isAuthenticated: boolean
   isLoading: boolean
 
-  setSession: (
-    token: string,
-    user: Authuser,
-    refreshToken?: string,
-    tokenExpires?: number
-  ) => void
+  setSession: (token: string, user: Authuser, tokenExpires?: number) => void
 
   logout: () => Promise<void>
 }
 
-/**
- * Session restoration flow:
- *
- * On application startup, the client checks for a stored refresh token
- * and attempts to restore the user's session.
- *
- * Security notes:
- * - Refresh tokens stored in localStorage can be compromised through XSS.
- * - Access tokens are intentionally kept in memory only and are cleared on logout.
- *
- * For higher-security environments:
- * - Backend should issue refresh tokens through HttpOnly Secure cookies.
- * - Session validation should be handled server-side.
- * - CSP and other XSS protections should be enabled.
- *
- * ⚠️ THREAT MODEL:
- * 1. XSS Attack → localStorage refresh token exposed → session hijacking
- *    MITIGATION: Move refresh token to HttpOnly cookie (requires backend change)
- * 2. CSRF Attack → tap_session cookie forged by attacker → false session state
- *    MITIGATION: Use SameSite=Lax/Strict and validate session on backend
- * 3. LocalStorage cleared by user → refresh token lost → forced logout
- *    MITIGATION: N/A - user choice to clear storage
- *
- * TODO: Add Content Security Policy (CSP) headers to app to reduce XSS surface
- * TODO: Implement server-side session validation as an additional layer
- */
+// Refresh token lives in an httpOnly cookie set by the backend — this file
+// never sees it. Session restoration on app boot works by calling refresh(),
+// which relies on the browser sending that cookie automatically.
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -76,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshAttempted = useRef(false)
 
   // ⚠️ SESSION RESTORATION: On first app load, attempt to restore the user's session
-  // from a stored refresh token. This allows the user to stay logged in across page reloads.
+  // via the httpOnly refresh-token cookie. This allows the user to stay logged in across page reloads.
   useEffect(() => {
     if (refreshAttempted.current) return
 
@@ -88,8 +60,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // so the client can proactively refresh before 401 errors occur.
         // TODO: Add error handling if tokenExpires is missing from response
         setAccessToken(res.token, res.tokenExpires)
-
-        localStorage.setItem('tap_refresh_token', res.refreshToken)
 
         // ⚠️ Fetch the current user info to populate user context
         const me = await authApi.me()
@@ -116,19 +86,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isLoading: false, // Signal that auth hydration is complete
         })
 
-        // ⚠️ tap_session is a marker cookie for middleware to check if user is logged in.
+        // ⚠️ tap_admin_session is a marker cookie for middleware to check if user is logged in.
         // It is NOT a secure session token—just a flag. Backend must validate actual session server-side.
         // Secure flag only set in production to allow local development over HTTP.
-        Cookies.set('tap_session', '1', {
+        // Named distinctly from tap-fe's tap_session — both apps share a cookie
+        // host, so identically-named cookies would clobber each other.
+        Cookies.set('tap_admin_session', '1', {
           path: '/',
           sameSite: 'lax', // ⚠️ Prevents CSRF attacks while allowing same-site requests
           secure: process.env.NODE_ENV === 'production',
         })
 
         if (me.user) {
-          // ⚠️ tap_role is a client-side convenience cookie for middleware route protections.
+          // ⚠️ tap_admin_role is a client-side convenience cookie for middleware route protections.
           // It should NOT be trusted on the backend—always validate user role server-side.
-          Cookies.set('tap_role', me.user.role, {
+          Cookies.set('tap_admin_role', me.user.role, {
             path: '/',
             sameSite: 'lax',
           })
@@ -148,15 +120,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
   }, [])
 
-  // ⚠️ setSession is called after successful login to store the session in memory, localStorage, and cookies.
+  // ⚠️ setSession is called after successful login to store the session in memory and set the marker cookies.
   // Do NOT call this during logout; use logout() instead to ensure all state is cleared.
   const setSession = useCallback(
-    (
-      token: string,
-      user: Authuser,
-      refreshToken?: string,
-      tokenExpires?: number
-    ) => {
+    (token: string, user: Authuser, tokenExpires?: number) => {
       // ⚠️ Access token lives ONLY in memory and is cleared on logout or page reload.
       // This prevents accidental exposure through localStorage/cookies.
       // ⚠️ tokenExpires (absolute epoch ms from the backend) lets the client
@@ -164,21 +131,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // only happens reactively after a 401.
       setAccessToken(token, tokenExpires)
 
-      // ⚠️ Refresh token is persisted in localStorage to allow session restoration after reload.
-      // If backend changes to send refresh token in HttpOnly cookie, remove this line.
-      if (refreshToken) {
-        localStorage.setItem('tap_refresh_token', refreshToken)
-      }
-
       // ⚠️ MIDDLEWARE FLAGS: These cookies are only for middleware route checks.
       // Do NOT trust them on the backend—always re-validate session server-side.
-      Cookies.set('tap_session', '1', {
+      // Named distinctly from tap-fe's tap_session/tap_role — see middleware.ts.
+      Cookies.set('tap_admin_session', '1', {
         path: '/',
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
       })
 
-      Cookies.set('tap_role', user.role, {
+      Cookies.set('tap_admin_role', user.role, {
         path: '/',
         sameSite: 'lax',
       })
@@ -205,7 +167,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Even if the backend logout fails, proceed with local cleanup (network error, etc.)
     } finally {
-      // ⚠️ TOTAL WIPEOUT: Clear ALL auth state from memory, localStorage, and cookies.
+      // ⚠️ TOTAL WIPEOUT: Clear ALL auth state from memory and the marker cookies
+      // (the refresh-token cookie itself is cleared server-side by authApi.logout()).
       // This ensures the user is fully logged out and cannot make authenticated requests.
       clearAuthState()
 
