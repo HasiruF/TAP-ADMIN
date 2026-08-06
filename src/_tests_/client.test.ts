@@ -14,7 +14,6 @@ describe('API refresh lock', () => {
   it('only calls refresh once for concurrent 401 requests', async () => {
     ;(refresh as jest.Mock).mockResolvedValue({
       token: 'new-token',
-      refreshToken: 'new-refresh',
       tokenExpires: 3600,
     })
 
@@ -39,7 +38,6 @@ describe('API refresh lock', () => {
   it('retries request after refresh succeeds', async () => {
     ;(refresh as jest.Mock).mockResolvedValue({
       token: 'new-token',
-      refreshToken: 'new-refresh',
       tokenExpires: 3600,
     })
 

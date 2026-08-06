@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshAttempted = useRef(false)
 
   // ⚠️ SESSION RESTORATION: On first app load, attempt to restore the user's session
-  // from a stored refresh token. This allows the user to stay logged in across page reloads.
+  // via the httpOnly refresh-token cookie. This allows the user to stay logged in across page reloads.
   useEffect(() => {
     if (refreshAttempted.current) return
 
@@ -167,7 +167,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Even if the backend logout fails, proceed with local cleanup (network error, etc.)
     } finally {
-      // ⚠️ TOTAL WIPEOUT: Clear ALL auth state from memory, localStorage, and cookies.
+      // ⚠️ TOTAL WIPEOUT: Clear ALL auth state from memory and the marker cookies
+      // (the refresh-token cookie itself is cleared server-side by authApi.logout()).
       // This ensures the user is fully logged out and cannot make authenticated requests.
       clearAuthState()
 
