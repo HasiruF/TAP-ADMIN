@@ -11,16 +11,12 @@ jest.mock('@/lib/api/auth', () => ({
 
 describe('AuthContext initialization', () => {
   beforeEach(() => {
-    localStorage.clear()
     jest.clearAllMocks()
   })
 
-  it('restores session when refresh token exists', async () => {
-    localStorage.setItem('tap_refresh_token', 'refresh-token')
-
+  it('restores session via the refresh-token cookie', async () => {
     jest.spyOn(auth, 'refresh').mockResolvedValue({
       token: 'access-token',
-      refreshToken: 'new-refresh',
       tokenExpires: 3600,
     })
 
@@ -37,7 +33,6 @@ describe('AuthContext initialization', () => {
   describe('AuthContext logout', () => {
     beforeEach(() => {
       jest.clearAllMocks()
-      localStorage.clear()
     })
 
     it('clears all auth state on logout', async () => {
@@ -52,8 +47,6 @@ describe('AuthContext initialization', () => {
       await act(async () => {
         await result.current.logout()
       })
-
-      expect(localStorage.getItem('tap_refresh_token')).toBeNull()
 
       expect(result.current.user).toBeNull()
 
