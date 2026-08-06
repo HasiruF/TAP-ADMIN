@@ -86,19 +86,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isLoading: false, // Signal that auth hydration is complete
         })
 
-        // ⚠️ tap_session is a marker cookie for middleware to check if user is logged in.
+        // ⚠️ tap_admin_session is a marker cookie for middleware to check if user is logged in.
         // It is NOT a secure session token—just a flag. Backend must validate actual session server-side.
         // Secure flag only set in production to allow local development over HTTP.
-        Cookies.set('tap_session', '1', {
+        // Named distinctly from tap-fe's tap_session — both apps share a cookie
+        // host, so identically-named cookies would clobber each other.
+        Cookies.set('tap_admin_session', '1', {
           path: '/',
           sameSite: 'lax', // ⚠️ Prevents CSRF attacks while allowing same-site requests
           secure: process.env.NODE_ENV === 'production',
         })
 
         if (me.user) {
-          // ⚠️ tap_role is a client-side convenience cookie for middleware route protections.
+          // ⚠️ tap_admin_role is a client-side convenience cookie for middleware route protections.
           // It should NOT be trusted on the backend—always validate user role server-side.
-          Cookies.set('tap_role', me.user.role, {
+          Cookies.set('tap_admin_role', me.user.role, {
             path: '/',
             sameSite: 'lax',
           })
@@ -131,13 +133,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // ⚠️ MIDDLEWARE FLAGS: These cookies are only for middleware route checks.
       // Do NOT trust them on the backend—always re-validate session server-side.
-      Cookies.set('tap_session', '1', {
+      // Named distinctly from tap-fe's tap_session/tap_role — see middleware.ts.
+      Cookies.set('tap_admin_session', '1', {
         path: '/',
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
       })
 
-      Cookies.set('tap_role', user.role, {
+      Cookies.set('tap_admin_role', user.role, {
         path: '/',
         sameSite: 'lax',
       })

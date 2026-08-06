@@ -27,8 +27,8 @@ export function getAccessToken() {
 export function clearAuthState() {
   setAccessToken(null)
 
-  Cookies.remove('tap_session', { path: '/' })
-  Cookies.remove('tap_role', { path: '/' })
+  Cookies.remove('tap_admin_session', { path: '/' })
+  Cookies.remove('tap_admin_role', { path: '/' })
 }
 let refreshPromise: Promise<RefreshResponse> | null = null
 
