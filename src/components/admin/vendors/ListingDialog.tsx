@@ -676,6 +676,7 @@ function PhotoSlot({
   existing,
   busy,
   isHero,
+  heroPending,
   onUpload,
   onDelete,
   onSetHero,
@@ -684,6 +685,7 @@ function PhotoSlot({
   existing?: VendorListingPhoto
   busy: boolean
   isHero?: boolean
+  heroPending?: boolean
   onUpload: () => void
   onDelete: (id: string) => void
   onSetHero?: (id: string) => void
@@ -725,9 +727,10 @@ function PhotoSlot({
             <button
               type="button"
               onClick={() => onSetHero(existing.id)}
+              disabled={heroPending}
               aria-label="Set as hero photo"
               title="Set as hero photo"
-              className="w-8 h-8 rounded-full flex items-center justify-center"
+              className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40"
               style={{ backgroundColor: 'rgba(13,13,13,0.7)', color: '#fff' }}
             >
               <Star size={14} />
@@ -843,20 +846,39 @@ function PhotosPanel({ vendorListingId }: { vendorListingId: string }) {
     }
   }
 
+  // Blocks every star button while one promotion is in flight — without this,
+  // two quick clicks on different photos both read the same stale `photos`
+  // snapshot and neither demotes the other, leaving two HERO photos (the
+  // backend doesn't enforce uniqueness, it's a client-side rule only).
+  const [settingHeroId, setSettingHeroId] = useState<string | null>(null)
+
   async function handleSetHero(photoId: string) {
-    const currentHero = photos.find(
-      (p) => p.photoType === 'HERO' && p.id !== photoId
-    )
-    if (currentHero) {
+    setSettingHeroId(photoId)
+    setUploadError(null)
+    try {
+      const currentHero = photos.find(
+        (p) => p.photoType === 'HERO' && p.id !== photoId
+      )
+      if (currentHero) {
+        await updatePhoto.mutateAsync({
+          id: currentHero.id,
+          input: { photoType: 'NORMAL' },
+        })
+      }
       await updatePhoto.mutateAsync({
-        id: currentHero.id,
-        input: { photoType: 'NORMAL' },
+        id: photoId,
+        input: { photoType: 'HERO' },
       })
+    } catch (err) {
+      setUploadError(
+        getFriendlyErrorMessage(
+          err,
+          "We couldn't update the hero photo. Please try again."
+        )
+      )
+    } finally {
+      setSettingHeroId(null)
     }
-    await updatePhoto.mutateAsync({
-      id: photoId,
-      input: { photoType: 'HERO' },
-    })
   }
 
   return (
@@ -882,6 +904,7 @@ function PhotosPanel({ vendorListingId }: { vendorListingId: string }) {
             existing={photo}
             busy={false}
             isHero={photo.photoType === 'HERO'}
+            heroPending={settingHeroId !== null}
             onUpload={triggerUpload}
             onDelete={(id) => deletePhoto.mutate(id)}
             onSetHero={handleSetHero}
