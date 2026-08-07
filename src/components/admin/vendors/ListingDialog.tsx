@@ -333,27 +333,16 @@ function ListingForm({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm">Discount %</label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={discountDescription}
-                      onChange={(e) => setDiscountDescription(e.target.value)}
-                      className="pr-7"
-                      style={{
-                        backgroundColor: 'var(--muted)',
-                        borderColor: 'var(--border)',
-                      }}
-                    />
-                    <span
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none"
-                      style={{ color: 'var(--muted-foreground)' }}
-                    >
-                      %
-                    </span>
-                  </div>
+                  <label className="text-sm">Discount description</label>
+                  <Input
+                    value={discountDescription}
+                    onChange={(e) => setDiscountDescription(e.target.value)}
+                    placeholder="e.g. 10% off, Buy one get one free"
+                    style={{
+                      backgroundColor: 'var(--muted)',
+                      borderColor: 'var(--border)',
+                    }}
+                  />
                 </div>
               </div>
 
