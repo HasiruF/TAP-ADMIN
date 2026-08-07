@@ -15,7 +15,9 @@ export async function fetchVendorListings(): Promise<VendorListing[]> {
 
 export interface VendorListingInput {
   name: string
-  category: { id: string }
+  /** All subcategories this vendor belongs to — must share one top-level parent. */
+  categories: { id: string }[]
+  location?: string | null
   bio?: string | null
   links?: VendorListingLink[]
   discountCode?: string | null

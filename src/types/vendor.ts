@@ -17,7 +17,11 @@ export interface VendorListingLink {
 export interface VendorListing {
   id: string
   name: string
+  /** Denormalized primary category — mirrors categories[0], kept for backward compatibility. */
   category: VendorCategory
+  /** Full set of subcategories this vendor belongs to — all share one top-level parent. */
+  categories: VendorCategory[]
+  location: string | null
   bio: string | null
   links: VendorListingLink[]
   discountCode: string | null

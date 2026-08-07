@@ -37,34 +37,65 @@ import type { VendorListing } from '@/types/vendor'
 const ALL_CATEGORIES = '__all__'
 
 /** Top-level category slugs, set by the vendor-category seed — mirrors tap-fe's VendorDirectoryPanel. */
-type TypeFilter = 'all' | 'services' | 'products-and-tools'
+type TypeFilter = 'all' | 'services' | 'products-and-tools' | 'musicians'
 
 const TYPE_FILTERS: { id: TypeFilter; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'services', label: 'Service' },
   { id: 'products-and-tools', label: 'Product & Tool' },
+  { id: 'musicians', label: 'Session Musicians' },
 ]
 
-function vendorTypeSlug(listing: VendorListing): TypeFilter {
-  return listing.category.parentCategory?.slug === 'products-and-tools'
-    ? 'products-and-tools'
+const TYPE_LABEL: Record<Exclude<TypeFilter, 'all'>, string> = {
+  services: 'Service',
+  'products-and-tools': 'Product & Tool',
+  musicians: 'Session Musicians',
+}
+
+const TYPE_COLORS: Record<
+  Exclude<TypeFilter, 'all'>,
+  { bg: string; text: string; border: string }
+> = {
+  services: {
+    bg: 'rgba(174,190,221,0.18)',
+    text: '#3c4f78',
+    border: 'rgba(174,190,221,0.5)',
+  },
+  'products-and-tools': {
+    bg: 'rgba(159,209,196,0.18)',
+    text: '#2f6a5c',
+    border: 'rgba(159,209,196,0.5)',
+  },
+  musicians: {
+    bg: 'rgba(201,168,76,0.16)',
+    text: '#8a6d1f',
+    border: 'rgba(201,168,76,0.5)',
+  },
+}
+
+/** A vendor's categories all share one top-level parent — a category with
+ * no parent of its own (e.g. Musicians) is its own type. */
+function vendorTypeSlug(listing: VendorListing): Exclude<TypeFilter, 'all'> {
+  const primary = listing.categories?.[0] ?? listing.category
+  const slug = primary?.parentCategory?.slug ?? primary?.slug
+  return slug === 'products-and-tools' || slug === 'musicians'
+    ? slug
     : 'services'
 }
 
 function TypeBadge({ listing }: { listing: VendorListing }) {
-  const isProduct = vendorTypeSlug(listing) === 'products-and-tools'
+  const type = vendorTypeSlug(listing)
+  const colors = TYPE_COLORS[type]
   return (
     <span
       className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
       style={{
-        backgroundColor: isProduct
-          ? 'rgba(159,209,196,0.18)'
-          : 'rgba(174,190,221,0.18)',
-        color: isProduct ? '#2f6a5c' : '#3c4f78',
-        border: `1px solid ${isProduct ? 'rgba(159,209,196,0.5)' : 'rgba(174,190,221,0.5)'}`,
+        backgroundColor: colors.bg,
+        color: colors.text,
+        border: `1px solid ${colors.border}`,
       }}
     >
-      {isProduct ? 'Product & Tool' : 'Service'}
+      {TYPE_LABEL[type]}
     </span>
   )
 }
@@ -88,7 +119,10 @@ export function ListingsTable() {
     return listings.filter((l) => {
       const matchesSearch = !q || l.name.toLowerCase().includes(q)
       const matchesCategory =
-        categoryFilter === ALL_CATEGORIES || l.category.id === categoryFilter
+        categoryFilter === ALL_CATEGORIES ||
+        (l.categories?.length ? l.categories : [l.category]).some(
+          (c) => c.id === categoryFilter
+        )
       const matchesType =
         typeFilter === 'all' || vendorTypeSlug(l) === typeFilter
       return matchesSearch && matchesCategory && matchesType
@@ -242,11 +276,22 @@ export function ListingsTable() {
                 <td className="p-3">
                   <TypeBadge listing={listing} />
                 </td>
-                <td className="p-3 truncate" title={listing.category.name}>
-                  <Badge variant="outline" className="max-w-full truncate">
-                    {listing.category.name}
-                  </Badge>
-                </td>
+                {(() => {
+                  const categoryNames = (
+                    listing.categories?.length
+                      ? listing.categories
+                      : [listing.category]
+                  )
+                    .map((c) => c.name)
+                    .join(', ')
+                  return (
+                    <td className="p-3 truncate" title={categoryNames}>
+                      <Badge variant="outline" className="max-w-full truncate">
+                        {categoryNames}
+                      </Badge>
+                    </td>
+                  )
+                })()}
                 <td className="p-3">
                   {listing.discountCode ? (
                     <span

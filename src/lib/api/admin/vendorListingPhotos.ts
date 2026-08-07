@@ -32,6 +32,16 @@ export function createVendorListingPhoto(
   })
 }
 
+export function updateVendorListingPhoto(
+  id: string,
+  input: Partial<VendorListingPhotoInput>
+): Promise<VendorListingPhoto> {
+  return api(`/vendors/listing-photos/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  })
+}
+
 export function deleteVendorListingPhoto(id: string): Promise<void> {
   return api(`/vendors/listing-photos/${id}`, { method: 'DELETE' })
 }

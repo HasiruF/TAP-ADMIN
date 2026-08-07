@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   fetchVendorListingPhotos,
   createVendorListingPhoto,
+  updateVendorListingPhoto,
   deleteVendorListingPhoto,
   VendorListingPhotoInput,
 } from '@/lib/api/admin/vendorListingPhotos'
@@ -19,6 +20,23 @@ export function useCreateVendorListingPhoto(vendorListingId: string | null) {
   return useMutation({
     mutationFn: (input: VendorListingPhotoInput) =>
       createVendorListingPhoto(input),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ['vendor-listing-photos', vendorListingId],
+      }),
+  })
+}
+
+export function useUpdateVendorListingPhoto(vendorListingId: string | null) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string
+      input: Partial<VendorListingPhotoInput>
+    }) => updateVendorListingPhoto(id, input),
     onSuccess: () =>
       queryClient.invalidateQueries({
         queryKey: ['vendor-listing-photos', vendorListingId],
