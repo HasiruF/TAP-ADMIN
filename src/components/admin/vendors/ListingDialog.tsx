@@ -337,7 +337,6 @@ function ListingForm({
                   <Input
                     value={discountDescription}
                     onChange={(e) => setDiscountDescription(e.target.value)}
-                    placeholder="e.g. 10% off, Buy one get one free"
                     style={{
                       backgroundColor: 'var(--muted)',
                       borderColor: 'var(--border)',
